@@ -105,7 +105,7 @@ this base position.
 
 =cut
 
-sub coord {
+sub coords {
   my $self = shift;
   if (@_) {
     my $arg = shift;
@@ -246,7 +246,7 @@ sub _find_base_posn {
     unless defined $tag;
 
   # Now need to find the target
-  my ($target) = $b->findnodes( './/target' );
+  my ($target) = $el->findnodes( './/target' );
 
   throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find target inside BASE element\n") 
     unless $target;
@@ -258,13 +258,13 @@ sub _find_base_posn {
   $self->coords( $self->_extract_coord_info( $target ) );
 
   # Look for tracking system
-  my ($tracksys) = $b->findnodes( './/TRACKING_SYSTEM' );
+  my ($tracksys) = $el->findnodes( './/TRACKING_SYSTEM' );
   if ($tracksys) {
-    $self->tracking_system = $tracksys->getAttribute( "SYSTEM" );
+    $self->tracking_system($tracksys->getAttribute( "SYSTEM" ));
   }
 
   # Look for an offset
-  my ($offset) = $b->findnodes('.//OFFSET');
+  my ($offset) = $el->findnodes('.//OFFSET');
   if (defined $offset) {
     # Parse the offset information
     my $dx = $self->_get_pcdata($offset, 'DC1');
