@@ -8,7 +8,7 @@ JAC::OCS::Config::Header - Parse and modify OCS JOS configurations
 
   use JAC::OCS::Config::Header;
 
-  $cfg = new JAC::OCS::Config::Header( File => 'header.ent');
+  $cfg = new JAC::OCS::Config::Header( File => 'jos.ent');
 
 =head1 DESCRIPTION
 
