@@ -164,7 +164,7 @@ sub parameters {
 
 =item B<num_cycles>
 
-Number of cycles.
+Number of cycles. This is the number of complete loops round the sequence.
 
 =cut
 
@@ -192,7 +192,7 @@ sub num_nod_sets {
 
 =item B<step_time>
 
-Step time
+Step time (in ms)
 
 =cut
 
@@ -206,7 +206,7 @@ sub step_time {
 
 =item B<jos_mult>
 
-.
+Unknown.
 
 =cut
 
@@ -220,7 +220,7 @@ sub jos_mult {
 
 =item B<jos_min>
 
-
+Minimum number of sequence steps.
 
 =cut
 
@@ -262,7 +262,9 @@ sub refs_per_cal {
 
 =item B<n_refsamples>
 
-Number of samples to integrate on the reference position.
+Number of samples to integrate for the first reference position.
+The number of samples in subsequent reference observations is calculated
+by the JOS.
 
 =cut
 
@@ -290,7 +292,8 @@ sub n_calsamples {
 
 =item B<n_skyrefsamples>
 
-Number of samples to use for a sky reference.
+Number of samples to use for a sky reference. Deprecated. Use N_REFSAMPLES
+instead.
 
 =cut
 
@@ -316,7 +319,7 @@ sub focus_steps {
   return $self->{FOCUS_STEPS};
 }
 
-=item B<FOCS_STEP>
+=item B<focus_step>
 
 Size of SMU movement for each step in mm.
 
