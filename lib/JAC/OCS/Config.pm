@@ -61,6 +61,9 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 # Overloading
 use overload '""' => "stringify";
 
+# Order in which the individual configs must be written to the file
+our @CONFIGS = qw/jos header tcs instrument_setup frontend acsis rts /;
+
 
 =head1 METHODS
 
@@ -118,6 +121,41 @@ sub comment {
   return $self->{COMMENT};
 }
 
+=item B<tasks>
+
+An array of task names that will be involved in the observation defined
+by this configuration.
+
+  @tasks = $cfg->tasks;
+
+Can be used to configure the JOS. Note that the JOS is not included in
+this list and also note that the tasks() method will not necessairly contain
+the same values since the task list in the JOS object is not necessairly derived
+from the configuration (it may just be the settings that were read from disk).
+
+=cut
+
+sub tasks {
+  my $self = shift;
+  my @tasks;
+  my %dups; # check for duplicates
+
+  # The tasks should retain the order delievered by the subsystems but
+  # we need to make sure that duplicates are removed
+  for my $o (@CONFIGS) {
+    next if $o eq 'jos';
+    if ($self->can($o) && defined $self->$o() && $self->$o->can( 'tasks' )) {
+      my @new = $self->$o->tasks;
+      for my $n (@new) {
+	next if exists $dups{$n};
+	$dups{$n} = undef;
+	push(@tasks, $n);
+      }
+    }
+  }
+  return @tasks;
+}
+
 =item B<jos>
 
 JOS configuration.
@@ -134,7 +172,6 @@ sub jos {
   }
   return $self->{JOS_CONFIG};
 }
-
 
 =item B<header>
 
@@ -342,12 +379,15 @@ sub write_file {
 =item B<instrument>
 
 Return the instrument (aka Front End) associated with this configuration.
+Can return empty string if the Instrment has not been defined.
 
 =cut
 
 sub instrument {
-  warn "instrument method Not yet implemented - assume ACSIS\n";
-  return "ACSIS";
+  my $self = shift;
+  my $instrument = $self->instrument_setup;
+  return '' unless defined $instrument;
+  return $instrument->name;
 }
 
 =item B<duration>
@@ -376,6 +416,10 @@ This method is also invoked via a stringification overload.
 The date of stringification and the version of the config object
 are written to the file as comments.
 
+If the JOS tasks method has no entries, the JOS object (if present)
+will be configured with the derived task list (see the C<tasks> method
+in this class).
+
 =cut
 
 sub stringify {
@@ -395,8 +439,15 @@ sub stringify {
   }
   $xml .= "  <!-- \n". $comment . "\n -->\n";
 
+  # Check jos tasks
+  my $jos = $self->jos;
+  if (defined $jos) {
+    my @tasks = $jos->tasks;
+    $jos->tasks( $self->tasks ) unless @tasks;
+  }
+
   # ask each child to stringify
-  for my $c (qw/ jos header tcs instrument_setup frontend acsis rts /) {
+  for my $c (@CONFIGS) {
     my $object = $self->$c;
     next unless defined $object;
     $xml .= $object->stringify( NOINDENT => 1 );
