@@ -32,7 +32,7 @@ use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 @EXPORT_OK = qw/  get_pcdata find_attr find_children get_pcdata_multi
-		  _check_range
+		  _check_range indent_xml_string
 		  /;
 
 =head1 FUNCTIONS
@@ -153,6 +153,60 @@ sub find_children {
   my @children = $el->getChildrenByTagName( $tag );
 
   return _check_range( \%range, "elements named '$tag'", @children);
+}
+
+=item B<indent_xml_string>
+
+Given an XML string, re-calculates indenting for pretty printing.
+
+  $xml = indent_xml_string( $xml );
+
+=cut
+
+sub indent_xml_string {
+  my $xml = shift;
+
+  # Split into individual lines [may be expensive in memory]
+  my @lines = split("\n",$xml);
+
+  # Re-indent the XML
+  $xml = '';
+  my $indent = 0;
+  for my $l (@lines) {
+    # clean leading space unless there are no open angle brackets
+    # at all
+    $l =~ s/^\s+// if $l =~ /</;
+
+    # indent to apply this time round depends on whether we
+    # are opening new elements (use previous value) or closing
+    # a set of elements (use correct value)
+    my $this_indent = $indent;
+
+    # See if indent has increased [simplistic approach]
+    # but should be okay since I try to create xml with stand alone
+    # elements rather than multiple elements per line
+    if ($l =~ />/ && ($l !~ /\/>/ && $l !~ /<\// && $l !~ /->/)) {
+      # Match closing angle bracket but no closing element \>
+      # This allows us to deal with elements that are spread over multiple
+      # lines with attributes
+      $indent ++;
+    } elsif ($l =~ /<\// && $l !~ /<\w/) {
+      # close bracket without open bracket
+      $indent --;
+      $this_indent = $indent;
+    }
+
+    # prepend current indent and store in output "buffer"
+    # if we just have a lone > assume we can put that on the previous line
+    if ($l =~ /^\s*>\s*$/) {
+      chomp($xml);
+      $xml .= " >\n";
+    } else {
+      $xml .= ("   " x $this_indent) . $l ."\n";
+    }
+  }
+
+  return $xml;
 }
 
 =back
