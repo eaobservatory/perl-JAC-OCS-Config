@@ -36,25 +36,25 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 # PREFIXES
 
 my %PREFIXES = (
-		Z => { factor => 24, name => 'yotta' },
-		E => { factor => 21, name => 'exa'},
-		P => { factor => 15, name => 'peta'},
-		T => { factor => 12, name => 'tera'},
-		G => { factor => 9, name => 'giga'},
-		M => { factor => 6, name => 'mega'},
-		k => { factor => 3, name => 'kilo'},
-		h => { factor => 2, name => 'hecto'},
-		da => { factor => 1, name => 'deca'},
-		d => { factor => -1, name => 'deci'},
-		c => { factor => -2, name => 'centi'},
-		'm' => { factor => -3, name => 'milli'},
-		mu => { factor => -6, name => 'micro'},
-		n => { factor => -9, name => 'nano'},
-		p => { factor => -12, name => 'pico'},
-		f => { factor => -15, name => 'femto'},
-		a => { factor => -18, name => 'atto'},
-		z => { factor => -21, name => 'zepto'},
-		'y' => { factor => -24, name => 'yocto'},
+		Z => { power => 24, name => 'yotta' },
+		E => { power => 21, name => 'exa'},
+		P => { power => 15, name => 'peta'},
+		T => { power => 12, name => 'tera'},
+		G => { power => 9, name => 'giga'},
+		M => { power => 6, name => 'mega'},
+		k => { power => 3, name => 'kilo'},
+		h => { power => 2, name => 'hecto'},
+		da => { power => 1, name => 'deca'},
+		d => { power => -1, name => 'deci'},
+		c => { power => -2, name => 'centi'},
+		'm' => { power => -3, name => 'milli'},
+		mu => { power => -6, name => 'micro'},
+		n => { power => -9, name => 'nano'},
+		p => { power => -12, name => 'pico'},
+		f => { power => -15, name => 'femto'},
+		a => { power => -18, name => 'atto'},
+		z => { power => -21, name => 'zepto'},
+		'y' => { power => -24, name => 'yocto'},
 	       );
 
 my %BASE_UNITS = ( 
@@ -186,20 +186,37 @@ sub prefix {
   return $self->{Prefix};
 }
 
-=item B<factor>
+=item B<power>
 
 The power of ten scaling factor that should be used to convert
 the number associated with this unit to a value that requires no
-prefix. For example, MHz, would return a factor of 6.
+prefix. For example, MHz, would return a power of 6.
+This can also be thought of as the logarithm to base 10 of the
+multiplication factor.
+
+=cut
+
+sub power {
+  my $self = shift;
+  my $prefix = $self->prefix;
+  return 0 unless defined $prefix;
+  return 0 if $prefix eq '';
+  return 0 unless exists $PREFIXES{$prefix}->{power};
+  return $PREFIXES{$prefix}->{power};
+}
+
+=item B<factor>
+
+The scaling factor that should be used to convert the number
+associated with this unit to a value that requires no prefix.
+For example, MHz, would return a factor of one million.
 
 =cut
 
 sub factor {
   my $self = shift;
-  my $prefix = $self->prefix;
-  return 0 unless defined $prefix;
-  return 0 if $prefix eq '';
-  return $PREFIXES{$prefix}->{factor};
+  my $power = $self->power;
+  return ( 10 ** $power );
 }
 
 =item B<fullprefix>
@@ -218,6 +235,49 @@ sub fullprefix {
   return '' if $prefix eq '';
   return $PREFIXES{$prefix}->{name};
 }
+
+=back
+
+=head2 General Methods
+
+=over 4
+
+=item B<mult>
+
+Multiplicative factor that should be applied to a value to convert it
+from a number with the prefix associated with this object to another
+prefix.
+
+ $mult = $u->mult( '' );
+ $mult = $u->mult( 'T' );
+
+A blank string or undef is used to represent the base unit.
+Returns 0 if the supplied prefix is not recognized.
+
+=cut
+
+sub mult {
+  my $self = shift;
+  my $output = shift;
+
+  # Assume scaling to base unit if no ouput prefix
+  return $self->factor unless $output;
+
+  # return 0 if we do not know the power
+  return 0 unless exists $PREFIXES{$output};
+
+  # Always work in powers of ten to avoid tryting to multply 10^24
+  # by 10-24 just to get 1.
+
+  # This power converts from the current unit to the base unit
+  my $power = $self->power;
+
+  # Retrieve output power
+  my $outpow = $PREFIXES{$output}->{power};
+
+  return 10 ** ( $power - $outpow );
+}
+
 
 =back
 
