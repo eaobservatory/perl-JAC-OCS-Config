@@ -309,7 +309,7 @@ Return the instrument (aka Front End) associated with this configuration.
 =cut
 
 sub instrument {
-  warn "instrument method Not yet implemented\n";
+  warn "instrument method Not yet implemented - assume ACSIS\n";
   return "ACSIS";
 }
 
@@ -367,7 +367,7 @@ sub stringify {
 =item B<telescope>
 
 Return the telescope name associated with this Config.
-Always returns "JCMT" if no other information is available.
+Currently always returns "JCMT".
 
 =cut
 
@@ -384,6 +384,29 @@ node of the XML tree corresponding to the OCS config.
 
 sub getRootElementName {
   return( "OCS_CONFIG" );
+}
+
+=back
+
+=head2 Queue Compatibility Wrappers
+
+These methods are required to implement the JAC standard Queue interface.
+
+=over 4
+
+=item B<write_entry>
+
+Write configuration to disk and return the file name.
+
+  $file = $cfg->write_entry( $dir );
+
+Simple wrapper around C<write_file>.
+
+=cut
+
+sub write_entry {
+  my $self = shift;
+  return $self->write_file( @_ );
 }
 
 =back
