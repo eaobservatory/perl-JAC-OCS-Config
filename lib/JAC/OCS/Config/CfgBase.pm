@@ -304,7 +304,7 @@ sub _import_dom {
     # Now look for the relevant config information
     @nodes = $tree->findnodes(".//$elname");
 
-    croak "DOM contains multiple configurations!"
+    throw JAC::OCS::Config::Error::XMLSurfeit("DOM contains multiple configurations named $elname")
       if scalar(@nodes) > 1;
 
     # Jump out the loop if we have found something
@@ -312,7 +312,7 @@ sub _import_dom {
 
   }
 
-  croak "DOM contains no configurations!"
+  throw JAC::OCS::Config::Error::XMLEmpty("DOM contains no configurations named" . join(" or ",@elements) )
     if !scalar(@nodes);
 
   # found some configuration XML. Store it
@@ -320,41 +320,6 @@ sub _import_dom {
   $self->_rootnode( $nodes[0] );
   $self->_process_dom();
 }
-
-=item B<_get_pcdata>
-
-Given an element and a tag name, find the element corresponding to
-that tag and return the PCDATA entry from the last matching element.
-
- $pcdata = $msb->_get_pcdata( $el, $tag );
-
-Convenience wrapper.
-
-Returns C<undef> if the element can not be found.
-
-Returns C<undef> if the element can be found but does not contain
-anything (eg E<lt>targetName/E<gt>).
-
-Duplicated from C<OMP::MSB>. If this version is modified please propagate
-the change back to C<OMP::MSB>.
-
-=cut
-
-sub _get_pcdata {
-  my $self = shift;
-  my ($el, $tag ) = @_;
-  my @matches = $el->getChildrenByTagName( $tag );
-  my $pcdata;
-  if (@matches) {
-    my $child = $matches[-1]->firstChild;
-    # Return undef if the element contains no text children
-    return undef unless defined $child;
-    $pcdata = $child->toString;
-  }
-  return $pcdata;
-}
-
-=cut
 
 =end __PRIVATE_METHODS__
 
