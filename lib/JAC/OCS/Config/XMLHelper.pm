@@ -26,10 +26,14 @@ use warnings;
 use XML::LibXML;
 use Data::Dumper;
 
+use JAC::OCS::Config::Error;
+
 use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
-@EXPORT_OK = qw/  get_pcdata find_attr find_children_range get_pcdata_multi /;
+@EXPORT_OK = qw/  get_pcdata find_attr find_children get_pcdata_multi
+		  _check_range
+		  /;
 
 =head1 FUNCTIONS
 
@@ -114,46 +118,86 @@ sub find_attr {
   return %attr;
 }
 
-=item B<find_children_range>
+=item B<find_children>
 
 Return the child elements with the supplied tag name but throw an
 exception if the number of children found is not the same as the number
 expected.
 
-  @children = find_children_range( $el, $tag, min => 0, max => 1);
+  @children = find_children( $el, $tag, min => 0, max => 1);
 
 If neither min nor max are specified no exception will be thrown.
 
+In scalar context, returns the first match (useful is min and max are
+both equal to 1) or undef if no matches.
+
 =cut
 
-sub find_children_range {
+sub find_children {
   my $el = shift;
   my $tag = shift;
   my %range = @_;
 
   # Find the children
   my @children = $el->getChildrenByTagName( $tag );
-  my $count = scalar(@children);
 
-  if (exists $range{min} && $count < $range{min} ) {
+  return _check_range( \%range, "elements named '$tag'", @children);
+}
+
+=back
+
+=begin __PRIVATE_FUNCTIONS__
+
+Can be called from other Config subclasses.
+
+=over 4
+
+=item B<_check_range>
+
+Given a range specifier, an error message and a list of results,
+compare the list of results to the range and issue a error message
+is appropriate.
+
+  @results = _check_range( { max => 4, min => 0}, "elements", @list);
+
+Returns the list in list context, the first element in scalar context,
+else throws an exception.
+
+=cut
+
+sub _check_range {
+  my $range = shift;
+  my $errmsg = shift;
+  my @input = @_;
+
+  my %range = %$range;
+  my $count = scalar(@input);
+
+  if (exists $range->{min} && $count < $range{min} ) {
     # Too few
     if ($count == 0) {
-      throw JAC::OCS::Config::Error::XMLEmpty("No elements found named '$tag', expecting $range{min}");
+      throw JAC::OCS::Config::Error::XMLEmpty("No $errmsg, expecting $range{min}");
     } else {
-      throw JAC::OCS::config::Error::XMLBadStructure("Too few elements named '$tag'. Expected at least $range{min} but found $count");
+      throw JAC::OCS::Config::Error::XMLBadStructure("Too few $errmsg, expected at least $range{min} but found $count");
     }
   }
 
   if (exists $range{max} && $count > $range{max} ) {
     # Too many
-    throw JAC::OCS::Config::Error::XMLSurfeit("Too many elements named '$tag'. Expected no more than $range{max} but found $count");
+    throw JAC::OCS::Config::Error::XMLSurfeit("Too many $errmsg, Expected no more than $range{max} but found $count");
   }
 
+  if (wantarray) {
+    return @input;
+  } else {
+    return $input[0];
+  }
 
-  return @children;
 }
 
 =back
+
+=end __PRIVATE_FUNCTIONS__
 
 =head1 AUTHOR
 
