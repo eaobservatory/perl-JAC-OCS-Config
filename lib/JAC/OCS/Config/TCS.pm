@@ -29,6 +29,9 @@ use Carp;
 use warnings;
 use XML::LibXML;
 use Astro::Coords;
+use Data::Dumper;
+
+use JAC::OCS::Config::Error;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -76,6 +79,19 @@ sub new {
 =head2 Accessor Methods
 
 =over 4
+
+=item B<telescope>
+
+The name of the telescope. This is present as an attribute to the TCS_CONFIG
+element. If this class is reading TOML the telescope will not be defined.
+
+=cut
+
+sub telescope {
+  my $self = shift;
+  if (@_) { $self->{Telescope} = shift;}
+  return $self->{Telescope};
+}
 
 =item B<tags>
 
@@ -192,14 +208,14 @@ sub getRootElementName {
 Using the C<_rootnode> node referring to the top of the TCS XML,
 process the DOM tree and extract all the coordinate information.
 
- $self->_process_tcs_dom;
+ $self->_process_dom;
 
 Populates the TAGS hash with tag names and corresponding C<Astro::Coords>
 objects.
 
 =cut
 
-sub _process_tcs_dom {
+sub _process_dom {
   my $self = shift;
   my $el = $self->_rootnode;
 
@@ -244,14 +260,14 @@ sub _process_tcs_dom {
     # Now need to find the target
     my ($target) = $b->findnodes( './/target' );
 
-    throw JAC::OCS::Config::XMLBadStructure("Unable to find target inside BASE element\n") 
+    throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find target inside BASE element\n") 
       unless $target;
 
     # If we have not got a tag we should look for it in target
     $tag = $target->getAttribute( 'type' ) unless defined $tag;
 
     # Error if we do not have a tag
-    throw JAC::OCS::Config::XMLBadStructure("Unable to find tag associated with this base position") 
+    throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find tag associated with this base position") 
       unless defined $tag;
 
     # Force upper case
@@ -322,6 +338,8 @@ sub _extract_coord_info {
 
   # Get the coordinate frame. This is either "type", "TYPE" or "SYSTEM"
   # depending on the age of the XML. SYSTEM is the current version.
+  # Note that is SYSTEM is not provided, the DTD will provide a default
+  # if a DTD is specified.
   my $type;
   if ($sysname eq 'spherSystem') {
     $type = $system->getAttribute("SYSTEM");
@@ -330,6 +348,10 @@ sub _extract_coord_info {
   } else {
     $type = $system->getAttribute("TYPE");
   }
+
+  throw JAC::OCS::Config::Error::FatalError("Unable to determine the coordinate system. Have you included a reference to the TCS DTD?")
+    if !defined $type;
+
 
   # hmsdeg and degdeg are old variants of spherSystem
   if ($sysname eq "hmsdegSystem" or $sysname eq "degdegSystem"
@@ -355,7 +377,7 @@ sub _extract_coord_info {
     $c = new Astro::Coords( %coords,
 			    name => $name);
 
-    throw JAC::OCS::Config::FatalError("Error reading coordinates from XML for target $name / SpherSystem. Tried ".
+    throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name / SpherSystem. Tried ".
                                  Dumper(\%coords))
       unless defined $c;
 
@@ -406,7 +428,7 @@ sub _extract_coord_info {
     $c = Astro::Coords->new( elements => \%elements,
 			     name => $name);
 
-    throw JAC::OCS::Config::FatalError("Error reading coordinates from XML for target $name. Tried elements".
+    throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name. Tried elements".
                                  Dumper(\%elements))
       unless defined $c;
 
@@ -415,11 +437,11 @@ sub _extract_coord_info {
     # A planet that the TCS already knows about
     $c = Astro::Coords->new( planet => $name);
 
-    throw JAC::OCS::Config::FatalError("Unable to process planet $name\n")
+    throw JAC::OCS::Config::Error::FatalError("Unable to process planet $name\n")
       unless defined $c;
 
   } else {
-    throw JAC::OCS::Config::FatalError("Target system ($sysname) not recognized\n");
+    throw JAC::OCS::Config::Error::FatalError("Target system ($sysname) not recognized\n");
   }
 
   return $c;
