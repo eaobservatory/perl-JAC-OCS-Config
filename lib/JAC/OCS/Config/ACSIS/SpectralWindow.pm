@@ -237,7 +237,7 @@ sub baseline_region {
     @{$self->{BaseLineRegion}} =check_class_fatal("JAC::OCS::Config::Interval",
 						  @_);
   }
-  return $self->{BaseLineRegion};
+  return @{$self->{BaseLineRegion}};
 }
 
 =item B<baseline_fit>
@@ -255,7 +255,7 @@ sub baseline_fit {
   if (@_) { 
     %{$self->{BaseLineFitParams}} = @_;
   }
-  return $self->{BaseLineFitParams};
+  return %{$self->{BaseLineFitParams}};
 }
 
 =item B<line_region>
@@ -271,7 +271,7 @@ sub line_region {
     @{$self->{LineRegion}} =check_class_fatal("JAC::OCS::Config::Interval",
 					      @_);
   }
-  return $self->{LineRegion};
+  return @{$self->{LineRegion}};
 }
 
 =back
