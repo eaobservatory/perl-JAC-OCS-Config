@@ -29,11 +29,13 @@ use strict;
 use Carp;
 use warnings;
 use XML::LibXML;
+use Astro::SLA;
 use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::TCS::BASE;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -139,7 +141,7 @@ position in the XML.
 
 Also note that C<Astro::Coords> objects do not currently support
 OFFSETS and so any offsets present in the XML will not be present in
-the returned object. See the C<getTargetOffsets> method.
+the returned object. See the C<getTargetOffset> method.
 
 =cut
 
@@ -165,7 +167,7 @@ BASE/SCIENCE is equivalent to calling the C<getTarget> method.
 
 Note that C<Astro::Coords> objects do not currently support OFFSETS
 and so any offsets present in the XML will not be present in the
-returned object. See the C<getOffsets> method.
+returned object. See the C<getOffset> method.
 
 =cut
 
@@ -178,34 +180,34 @@ sub getCoords {
   # look for matching key or synonym
   $tag = $self->_translate_tag_name( $tag );
 
-  return (defined $tag ? $tags{$tag}->{coords} : undef );
+  return (defined $tag ? $tags{$tag}->coords : undef );
 }
 
 =item B<getTargetOffset>
 
-Wrapper for C<getOffsets> method. Returns any offset associated
+Wrapper for C<getOffset> method. Returns any offset associated
 with the base/science position.
 
 =cut
 
 sub getTargetOffset {
   my $self = shift;
-  return $self->getOffsets( "SCIENCE" );
+  return $self->getOffset( "SCIENCE" );
 }
 
-=item B<getOffsets>
+=item B<getOffset>
 
-Retrieve any offsets associated with the specified target. Offsets are
+Retrieve any offset associated with the specified target. Offsets are
 returned as a C<Astro::Coords::Offset> objects.
 Can return undef if no offset was specified.
 
-  $ref = $cfg->getOffsets( "SCIENCE" );
+  $ref = $cfg->getOffset( "SCIENCE" );
 
 This method may well be obsoleted by an upgrade to C<Astro::Coords>.
 
 =cut
 
-sub getOffsets {
+sub getOffset {
   my $self = shift;
   my $tag = shift;
 
@@ -214,7 +216,7 @@ sub getOffsets {
   # look for matching key or synonym
   $tag = $self->_translate_tag_name( $tag );
 
-  return (defined $tag ? $tags{$tag}->{offset} : undef );
+  return (defined $tag ? $tags{$tag}->offset : undef );
 }
 
 =item B<getTrackingSystem>
@@ -236,7 +238,7 @@ sub getTrackingSystem {
   # look for matching key or synonym
   $tag = $self->_translate_tag_name( $tag );
 
-  return (defined $tag ? $tags{$tag}->{tracking} : undef );
+  return (defined $tag ? $tags{$tag}->tracking_system : undef );
 }
 
 =back
@@ -366,94 +368,29 @@ sub _find_base_posns {
   my $self = shift;
   my $el = $self->_rootnode;
 
-  # Need to support two versions of the TCS XML.
-  # Old version has
-  # <base>
-  #  <target type="SCIENCE">
-  #       ...
-  # New version has:
-  # <BASE TYPE="Base">
-  #   <target>
-  #        ....
-  # and changes hmsdeg and degdeg to spherSystem
-
-
   # We need to parse each of the BASE positions specified
   # Usually SCIENCE, REFERENCE or BASE and SKY
+
   # We should find all the BASE entries and parse them in turn.
-  # Supporting the old style is a pain
+  # Note that we have to look out for both BASE (the modern form)
+  # and "base" the old-style.
 
-  my @base = $el->findnodes( './/BASE');
+  my @base = $el->findnodes( './/BASE | .//base ');
 
-  # if we have not got any we look for "base" - "the old version"
-  @base = $el->findnodes( './/base') unless @base;
-
-  # Could be an error (it is for now) but we may be specifying 
-  # "best guess" as an option for the translator for pointing and
-  # standards
-  throw JAC::OCS::Config::XMLBadStructure("No base target position specified in TCS XML\n")
+  # Throw an exception if we did not find anything since a base
+  # position is mandatory
+  throw JAC::OCS::Config::Error::XMLBadStructure("No base target position specified in TCS XML\n")
     unless @base;
-
 
   # For each of these nodes we need to extract the target information
   # and the tag
   my %tags;
   for my $b (@base) {
-    # The tag is either an attribute of BASE
-    # or an attribute of target
-    my $tag = $b->getAttribute( 'TYPE' );
 
-    # Now need to find the target
-    my ($target) = $b->findnodes( './/target' );
-
-    throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find target inside BASE element\n") 
-      unless $target;
-
-    # If we have not got a tag we should look for it in target
-    $tag = $target->getAttribute( 'type' ) unless defined $tag;
-
-    # Error if we do not have a tag
-    throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find tag associated with this base position") 
-      unless defined $tag;
-
-    # Force upper case
-    $tag = uc($tag);
-
-    # Create a new hash for the results
-    $tags{$tag} = {};
-
-    # Now extract the coordinate information
-    $tags{$tag}->{coords} =  $self->_extract_coord_info( $target );
-
-    # Look for an offset
-    my ($offset) = $b->findnodes('.//OFFSET');
-
-    # Look for tracking system
-    my ($tracksys) = $b->findnodes( './/TRACKING_SYSTEM' );
-    if ($tracksys) {
-      $tags{$tag}->{tracking} = $tracksys->getAttribute( "SYSTEM" );
-    }
-
-
-    if (defined $offset) {
-      # Parse the offset information
-      my $dx = $self->_get_pcdata($offset, 'DC1');
-      my $dy = $self->_get_pcdata($offset, 'DC2');
-      my $system = $offset->getAttribute( "SYSTEM" );
-      my $type   = $offset->getAttribute( "TYPE" );
-
-      # Options
-      my %opt = ( system => $system, projection => $type );
-      $opt{tracking_system} = $tags{$tag}->{tracking}
-	if exists $tags{$tag}->{tracking};
-
-      # Store in the tag
-      $tags{$tag}->{offset} = new Astro::Coords::Offset(
-							$dx, $dy,
-							%opt
-							);
-    }
-
+    # Create the object from the dom.
+    my $base = new JAC::OCS::Config::TCS::BASE( DOM => $b );
+    my $tag = $base->tag;
+    $tags{$tag} = $base;
 
   }
 
@@ -461,158 +398,6 @@ sub _find_base_posns {
   $self->tags( %tags );
 
 }
-
-=item B<_extract_coord_info>
-
-This routine will parse a TCS XML "target" element (supplied as a
-node) and return the relevant information in the form of a
-C<Astro::Coords> object.  Does not know about the TYPE associated with
-the coordinate.
-
- $coords = $self->_extract_coord_info( $element );
-
-=cut
-
-sub _extract_coord_info {
-  my $self = shift;
-  my $target = shift;
-
-  # Somewhere to store the information
-  my $c;
-
-  # Get the target name
-  my $name = $self->_get_pcdata($target, "targetName");
-  $name = '' unless defined $name;
-
-  # Now we need to look for the coordinates. If we have hmsdegSystem
-  # or degdegSystem (for Galactic) we translate those to a nice easy
-  # J2000. If we have conicSystem or namedSystem then we have a moving
-  # source on our hands and we have to work out it's azel dynamically
-  # If we have a degdegSystem with altaz we can always schedule it.
-  # spherSystem now replaces hmsdegsystem and degdegsystem
-
-  # Search for the element matching (this will be targetName 90% of the time)
-  # We know there is only one system element per target
-#  my ($system) = $self->_get_child_elements($target, qr/System$/);
-
-  # Find any nodes that end with "System"
-  my ($system) = $target->findnodes('.//*[contains(name(),"System")]');
-
-  # Get the coordinate system name
-  my $sysname = $system->getName;
-
-  # Get the coordinate frame. This is either "type", "TYPE" or "SYSTEM"
-  # depending on the age of the XML. SYSTEM is the current version.
-  # Note that is SYSTEM is not provided, the DTD will provide a default
-  # if a DTD is specified.
-  my $type;
-  if ($sysname eq 'spherSystem') {
-    $type = $system->getAttribute("SYSTEM");
-  } elsif (defined $system->getAttribute("type")) {
-    $type = $system->getAttribute("type");
-  } else {
-    $type = $system->getAttribute("TYPE");
-  }
-
-  throw JAC::OCS::Config::Error::FatalError("Unable to determine the coordinate system. Have you included a reference to the TCS DTD?")
-    if !defined $type;
-
-
-  # hmsdeg and degdeg are old variants of spherSystem
-  if ($sysname eq "hmsdegSystem" or $sysname eq "degdegSystem"
-     or $sysname eq 'spherSystem') {
-
-    # Get the "long" and "lat"
-    my $c1 = $self->_get_pcdata( $system, "c1");
-    my $c2 = $self->_get_pcdata( $system, "c2");
-
-    # degdeg uses different keys to hmsdeg
-    #print "System: $sysname\n";
-    my ($long ,$lat);
-    my %coords;
-    if ($type eq "J2000" or $type eq "B1950") {
-      %coords = ( ra => $c1, dec => $c2, type => $type);
-    } elsif ($type =~ /gal/i) {
-      %coords = ( long => $c1, lat => $c2, type => 'galactic', units=>'deg' );
-    } elsif ($type eq 'Az/El' || $type eq 'AZEL') {
-      %coords = ( az => $c1, el => $c2 );
-    }
-
-    # Create a new coordinate object
-    $c = new Astro::Coords( %coords,
-			    name => $name);
-
-    throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name / SpherSystem. Tried ".
-                                 Dumper(\%coords))
-      unless defined $c;
-
-  } elsif ($sysname eq "conicSystem") {
-
-    # Orbital elements. We need to get the (up to) 8 numbers
-    # and store them in an Astro::Coords.
-
-    # Lookup table for XML to SLALIB
-    # should probably put this in Astro::Coords::Elements
-    # and default to knowledge of units if, for example,
-    # supplied as 'inclination' rather than 'orbinc'
-    # XML should have epoch in MJD without modification
-    my %lut = (EPOCH  => 'epoch',
-               ORBINC => 'inclination',
-               ANODE  => 'anode',
-               PERIH  => 'perihelion',
-               AORQ   => 'aorq',
-               E      => 'e',
-               AORL   => 'LorM',
-               DM     => 'n',
-               EPOCHPERIH => 'epochPerih',
-              );
-
-    # Create an elements hash
-    my %elements;
-    for my $el (keys %lut) {
-
-      # Skip if we are dealing with "comet" or minor planet
-      # and are at DM
-      next if ($el eq 'DM' && ($type =~ /Comet/i || $type =~ /Minor/i));
-
-      # AORL is not relevant for comet
-      next if ($el eq 'AORL' && $type =~ /Comet/i);
-      # Get the value from XML
-      my $value = $self->_get_pcdata( $system, $lut{$el});
-
-      # Convert to radians
-      if ($el =~ /^(ORBINC|ANODE|PERIH|AORL|DM)$/) {
-        # Convert to radians
-        $value *= Astro::SLA::DD2R;
-      }
-
-      # Store the value
-      $elements{$el} = $value;
-
-    }
-    $c = Astro::Coords->new( elements => \%elements,
-			     name => $name);
-
-    throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name. Tried elements".
-                                 Dumper(\%elements))
-      unless defined $c;
-
- } elsif ($sysname eq "namedSystem") {
-
-    # A planet that the TCS already knows about
-    $c = Astro::Coords->new( planet => $name);
-
-    throw JAC::OCS::Config::Error::FatalError("Unable to process planet $name\n")
-      unless defined $c;
-
-  } else {
-    throw JAC::OCS::Config::Error::FatalError("Target system ($sysname) not recognized\n");
-  }
-
-  return $c;
-}
-
-=cut
 
 =end __PRIVATE_METHODS__
 
