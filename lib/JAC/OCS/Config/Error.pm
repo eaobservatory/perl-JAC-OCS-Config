@@ -195,6 +195,10 @@ in the constant C<OMP__AUTHFAIL>
 
 Method was called with incorrect arguments.
 
+=item B<JAC::OCS::Config::Error::BadClass>
+
+Method was supplied with an object of the incorrect class.
+
 =item B<JAC::OCS::Config::Error::DirectoryNotFound>
 
 The requested directory could not be found.
@@ -253,6 +257,9 @@ package JAC::OCS::Config::Error::Authentication;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::BadArgs;
+use base qw/ JAC::OCS::Config::Error /;
+
+package JAC::OCS::Config::Error::BadClass;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::DirectoryNotFound;
