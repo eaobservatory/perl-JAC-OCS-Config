@@ -34,7 +34,7 @@ use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
 
-use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::TCS::BASE;
 use JAC::OCS::Config::TCS::obsArea;
 
@@ -242,6 +242,30 @@ sub getTrackingSystem {
   return (defined $tag ? $tags{$tag}->tracking_system : undef );
 }
 
+=item B<getObsArea>
+
+Return the C<JAC::OCS::Config::TCS::obsArea> associated with this
+configuration.
+
+ $obs = $tcs->getObsArea();
+
+=cut
+
+sub getObsArea {
+  my $self = shift;
+  return $self->{OBSAREA};
+}
+
+
+# internal routine that will not trigger regeneration of XML
+sub _setObsArea {
+  my $self = shift;
+  my $obs = shift;
+  croak "Incorrect class for obsArea"
+    unless UNIVERSAL::isa($obs, "JAC::OCS::Config::TCS::obsArea");
+  $self->{OBSAREA} = $obs;
+}
+
 =back
 
 =head2 Class Methods
@@ -403,16 +427,23 @@ sub _find_base_posns {
 
 =item B<_find_obsArea>
 
+Extract observing area information from the XML.
+
 =cut
 
 sub _find_obsArea {
   my $self = shift;
   my $el = $self->_rootnode;
 
-  # pass this node directly to obsArea class
-  # Should we check the node exists? Or make sure that
-  # we use a try block that returns a specific error if node is not
-  # available?
+  # since there can only be at most one optional obsArea, pass this rootnode
+  # to the obsArea constructor but catch the special case of XMLEmpty
+  try {
+    my $b = 1;
+    my $obsa = new JAC::OCS::Config::TCS::obsArea( DOM => $el );
+    $self->_setObsArea( $obsa ) if defined $obsa;
+  } catch JAC::OCS::Config::Error::XMLEmpty with {
+    # this error is okay
+  };
 
 }
 
