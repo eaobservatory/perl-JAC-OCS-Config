@@ -80,7 +80,7 @@ sub new {
 
 =item B<rest_frequency>
 
-Rest frequency.
+Rest frequency. GHz.
 
 =cut
 
@@ -115,7 +115,7 @@ Selected sideband (USB or LSB).
 sub sideband {
   my $self = shift;
   if (@_) {
-    $self->{SIDEBAND} = shift;
+    $self->{SIDEBAND} = uc(shift);
   }
   return $self->{SIDEBAND};
 }
@@ -131,7 +131,7 @@ Can be SSB or DSB.
 sub sb_mode {
   my $self = shift;
   if (@_) {
-    $self->{SB_MODE} = shift;
+    $self->{SB_MODE} = uc(shift);
   }
   return $self->{SB_MODE};
 }
@@ -204,19 +204,28 @@ sub stringify {
 
   $xml .= "<FRONTEND_CONFIG>\n";
 
-  $xml .= "<REST_FREQUENCY>". $self->rest_frequency ."</REST_FREQUENCY>\n";
-  $xml .= "<FREQ_OFF_SCALE>". $self->freq_off_scale ."</FREQ_OFF_SCALE>\n";
+  # The mandatory keywords
+  my $rfreq = $self->rest_frequency;
+  throw JAC::OCS::Config::Error::FatalError( 'Must supply rest frequency in order to create XML') unless defined $rfreq;
+  $xml .= "<REST_FREQUENCY>". $rfreq ."</REST_FREQUENCY>\n";
+  $xml .= "<FREQ_OFF_SCALE>". (defined $self->freq_off_scale ?
+			       $self->freq_off_scale : 0).
+				 "</FREQ_OFF_SCALE>\n";
+  throw JAC::OCS::Config::Error::FatalError( 'Must supply sideband in order to create XML') unless defined $self->sideband;
+
   $xml .= "<SIDEBAND>". $self->sideband ."</SIDEBAND>\n";
 
   $xml .= "<SB_MODE>". $self->sb_mode ."</SB_MODE>\n"
-    if $self->sb_mode;
+    if defined $self->sb_mode;
 
   my %dop = $self->doppler;
-  $xml .= "<DOPPLER_TRACK ELEC_TUNING=\"".$dop{ELEC_TUNING}."\"\n";
-  $xml .= "               MECH_TUNING=\"".$dop{MECH_TUNING}."\" />\n";
+  if (keys %dop) {
+    $xml .= "<DOPPLER_TRACK ELEC_TUNING=\"".$dop{ELEC_TUNING}."\"\n";
+    $xml .= "               MECH_TUNING=\"".$dop{MECH_TUNING}."\" />\n";
+  }
 
   $xml .= "<OPTIMIZE>". $self->optimize ."</OPTIMIZE>\n"
-    if $self->optimize;
+    if defined $self->optimize;
 
 
   my %mask = $self->mask;
@@ -296,6 +305,27 @@ sub _process_dom {
   my %dopp = find_attr( $doppler, "MECH_TUNING","ELEC_TUNING");
   $self->doppler( %dopp );
 
+  # Mask
+  $self->_process_mask();
+
+  return;
+}
+
+=item B<_process_mask>
+
+Process all the RECEPTOR_MASK XML. and configure the mask() method in the
+object.
+
+  $cfg->_process_mask();
+
+=cut
+
+sub _process_mask {
+  my $self = shift;
+
+  # Find all the header items
+  my $el = $self->_rootnode;
+
   # Receptor Mask
   my @masks = find_children( $el, "RECEPTOR_MASK", min => 1);
   my %mask;
@@ -305,7 +335,6 @@ sub _process_dom {
   }
   $self->mask( %mask );
 
-  return;
 }
 
 =back
