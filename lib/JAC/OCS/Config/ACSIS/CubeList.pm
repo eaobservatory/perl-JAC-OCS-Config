@@ -160,13 +160,13 @@ sub stringify {
     $xml .= "<y_npix>$npix[1]</y_npix>\n";
 
     # projection and gridder
-    $xml .= "<projection>".$c->projection."</projection>\n";
-    $xml .= "<grid_function>".$c->grid_function."</grid_function>\n";
+    $xml .= "<projection type=\"".$c->projection."\" />\n";
+    $xml .= "<grid_function type=\"".$c->grid_function."\" />\n";
 
     if ($c->grid_function ne 'TopHat') {
       $xml .= "<FWHM>". $c->fwhm . "</FWHM>\n";
     }
-    $xml .= "<tcs_coord>".$c->tcs_coord."</tcs_coord>\n";
+    $xml .= "<tcs_coord type=\"".$c->tcs_coord."\" />\n";
     if ($c->grid_function ne 'TopHat') {
       # Note that the name is still smoothing radius
       $xml .= "<smoothing_rad>".$c->truncation_radius."</smoothing_rad>\n";
