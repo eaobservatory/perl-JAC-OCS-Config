@@ -33,6 +33,7 @@ use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
 
+use JAC::OCS::Config::TCS::Generic;
 use JAC::OCS::Config::Error;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -262,26 +263,13 @@ sub _find_base_posn {
   }
 
   # Look for an offset
-  my ($offset) = $el->findnodes('.//OFFSET');
-  if (defined $offset) {
-    # Parse the offset information
-    my $dx = $self->_get_pcdata($offset, 'DC1');
-    my $dy = $self->_get_pcdata($offset, 'DC2');
-    my $system = $offset->getAttribute( "SYSTEM" );
-    my $type   = $offset->getAttribute( "TYPE" );
+  my @offsets = JAC::OCS::Config::TCS::Generic::find_offsets( $el,
+							    $self->tracking_system);
+  throw JAC::OCS::Config::Error::XMLBadStructure( "Only one offset allowed in BASE position")
+    if scalar(@offsets) > 1;
 
-    # Options
-    my %opt = ( system => $system, projection => $type );
-    $opt{tracking_system} = $self->tracking_system
-      if defined $self->tracking_system;
-
-    # Store in the tag
-    $self->offset(new Astro::Coords::Offset(
-					    $dx, $dy,
-					    %opt
-					   )
-		 );
-  }
+  # Store in object
+  $self->offset( $offsets[0] ) if @offsets;
 
   return;
 }
