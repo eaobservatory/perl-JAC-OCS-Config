@@ -371,11 +371,15 @@ sub _process_dom {
   return;
 }
 
+=back
+
+=end __PRIVATE_METHODS__
+
 =head1 XML SPECIFICATION
 
 The Instrument XML configuration specification is documented in
 OCS/ICD/004 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/instrument.dtd>.
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/instrument.dtd.
 
 =head1 AUTHOR
 

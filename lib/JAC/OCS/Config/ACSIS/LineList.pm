@@ -52,11 +52,40 @@ sub getRootElementName {
 
 =back
 
+=begin __PRIVATE_METHODS__
+
+=head2 Private Methods
+
+=over 4
+
+=item B<_process_dom>
+
+Using the C<_rootnode> node referring to the top of the Instrument XML,
+process the DOM tree and extract all the coordinate information.
+
+ $self->_process_dom;
+
+Populates the object with the extracted results.
+
+=cut
+
+sub _process_dom {
+  my $self = shift;
+
+  # Find all the header items
+  my $el = $self->_rootnode;
+
+}
+
+=back
+
+=end __PRIVATE_METHODS__
+
 =head1 XML SPECIFICATION
 
 The ACSIS XML configuration specification is documented in
 OCS/ICD/005 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd>.
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd.
 
 =head1 AUTHOR
 

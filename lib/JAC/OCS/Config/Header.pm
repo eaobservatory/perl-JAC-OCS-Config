@@ -226,7 +226,7 @@ sub _process_dom {
 
 The Header XML configuration specification is documented in OCS/ICD/011
 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/011/headers.dtd>.
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/011/headers.dtd.
 
 =head1 SEE ALSO
 

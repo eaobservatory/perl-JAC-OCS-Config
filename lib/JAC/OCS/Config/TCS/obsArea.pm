@@ -79,6 +79,8 @@ sub new {
 			  );
 }
 
+=back
+
 =head2 Accessor Methods
 
 =over 4
@@ -417,6 +419,7 @@ sub _find_scan_area {
   return;
 }
 
+=back
 
 =end __PRIVATE_METHODS__
 

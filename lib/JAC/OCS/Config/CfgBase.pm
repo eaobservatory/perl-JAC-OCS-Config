@@ -113,6 +113,8 @@ sub new {
   return $cfg;
 }
 
+=back
+
 =head2 Accessor Methods
 
 =over 4
@@ -373,24 +375,9 @@ modification or content extraction.
 sub _process_dom {
 }
 
+=back
+
 =end __PRIVATE_METHODS__
-
-=head1 XML SPECIFICATION
-
-The TCS XML configuration specification is documented in OCS/ICD/006
-with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/006/tcs.dtd>. A
-schema is also available as part of the TOML definition used by the
-JAC Observing Tool, but note that the XML dialects differ in their uses
-even though they use the same low-level representation of an astronomical
-target.
-
-=head1 HISTORY
-
-This code was originally part of the C<OMP::MSB> class and was then
-extracted into a separate C<TOML::TCS> module. During work on the new
-ACSIS translator it was felt that a Config namespace was more correct
-and so the C<TOML> namespace was deprecated.
 
 =head1 AUTHOR
 

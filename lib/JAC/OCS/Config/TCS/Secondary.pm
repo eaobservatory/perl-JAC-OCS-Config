@@ -93,6 +93,8 @@ sub new {
 			  );
 }
 
+=back
+
 =head2 Accessor Methods
 
 =over 4
@@ -513,6 +515,7 @@ sub _find_jiggle_gen {
   return (wantarray ? @jiggles : $jiggles[0] );
 }
 
+=back
 
 =end __PRIVATE_METHODS__
 

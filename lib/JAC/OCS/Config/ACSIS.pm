@@ -107,7 +107,7 @@ sub red_obs_mode {
   return $self->{RED_OBS_MODE};
 }
 
-=item B<red_obs_mode>
+=item B<red_recipe_id>
 
 (Optional) String that could be used as an ID for the dr recipe.
 
@@ -534,11 +534,15 @@ sub _process_dom {
   return;
 }
 
+=back
+
+=end __PRIVATE_METHODS__
+
 =head1 XML SPECIFICATION
 
 The ACSIS XML configuration specification is documented in
 OCS/ICD/005 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd>.
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd.
 
 =head1 AUTHOR
 

@@ -88,6 +88,8 @@ sub new {
 			  );
 }
 
+=back
+
 =head2 Accessor Methods
 
 =over 4
@@ -785,7 +787,7 @@ sub _toString_rotator {
 
 The TCS XML configuration specification is documented in OCS/ICD/006
 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/006/tcs.dtd>. A
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/006/tcs.dtd. A
 schema is also available as part of the TOML definition used by the
 JAC Observing Tool, but note that the XML dialects differ in their uses
 even though they use the same low-level representation of an astronomical

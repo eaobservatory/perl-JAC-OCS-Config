@@ -73,6 +73,8 @@ sub new {
   return $self->SUPER::new( @_ );
 }
 
+=back
+
 =head2 Accessor Methods
 
 =over 4
@@ -498,6 +500,8 @@ sub _extract_coord_info {
 
   return $c;
 }
+
+=back
 
 =end __PRIVATE_METHODS__
 

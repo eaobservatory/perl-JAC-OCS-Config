@@ -308,11 +308,15 @@ sub _process_dom {
   return;
 }
 
+=back
+
+=end __PRIVATE_METHODS__
+
 =head1 XML SPECIFICATION
 
 The frontend XML configuration specification is documented in
 OCS/ICD/004 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/004/frontend_configure.dtd>.
+http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/004/frontend_configure.dtd.
 
 =head1 AUTHOR
 
