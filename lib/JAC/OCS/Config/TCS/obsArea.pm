@@ -76,6 +76,7 @@ sub new {
   return $self->SUPER::new( @_,
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    MAPAREA => {},
+								    OFFSETS => [],
 								    SCAN => {},
 								   }
 			  );
@@ -242,7 +243,7 @@ sub stringify {
   $xml .= "<obsArea>\n";
 
   # position angle for the area
-  if ($self->posang) {
+  if (defined $self->posang) {
     $xml .= pa_to_xml( $self->posang );
   }
 
@@ -265,10 +266,11 @@ sub stringify {
 
     my %scan = $self->scan;
     $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
-    $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n";
+    $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n" if defined $scan{SYSTEM};
     $xml .= "      DY=\"$scan{DY}\"\n";
-    $xml .= "      REVERSAL=\"$scan{REVERSAL}\"\n";
-    $xml .= "      TYPE=\"$scan{TYPE}\" >\n";
+    $xml .= "      REVERSAL=\"$scan{REVERSAL}\"\n" if defined $scan{REVERSAL};
+    $xml .= "      TYPE=\"$scan{TYPE}\"" if defined $scan{TYPE};
+    $xml .= " >\n";
 
     for my $pa (@{ $scan{PA} }) {
       $xml .= pa_to_xml( $pa );
