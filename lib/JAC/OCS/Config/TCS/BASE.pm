@@ -193,6 +193,10 @@ sub stringify {
   my $ts = $self->tracking_system;
   if (defined $ts) {
     $xml .= "  <!-- Select a tracking coordinate system -->\n";
+    if ($ts eq 'TRACKING') {
+      $xml .= "<!-- Tracking system was TRACKING but translator does not yet choose anything other than J2000. Need to fix -->\n";
+      $ts = 'J2000';
+    }
     $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
   }
 
