@@ -34,7 +34,7 @@ use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr/;
-use JAC::OCS::Config::TCS::Generic;
+use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml offset_to_xml /;
 use JAC::OCS::Config::Error;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -152,6 +152,49 @@ sub tracking_system {
     $self->{TRACKING_SYSTEM} = shift;
   }
   return $self->{TRACKING_SYSTEM};
+}
+
+=item B<stringify>
+
+XML representation of BASE position.
+
+ $xml = $b->stringify;
+
+=cut
+
+sub stringify {
+  my $self = shift;
+  my %args = @_;
+
+  my $xml = '';
+
+  $xml .= "<!-- BASE element contains target, offset and tracking system -->\n";
+
+  my $tag = $self->tag;
+  $xml .= "<BASE TYPE=\"$tag\">\n";
+  $xml .= "  <!-- First define a target -->\n";
+
+  my $c = $self->coords;
+  # Convert Astro::Coords object to XML
+  $xml .= coords_to_xml( $c );
+
+  # Now offsets
+  my $o = $self->offset;
+  if ($o) {
+    $xml .= "  <!-- Now define an offset from the target position -->\n";
+    $xml .= offset_to_xml( $o );
+  }
+
+  # and tracking system
+  my $ts = $self->tracking_system;
+  if (defined $ts) {
+    $xml .= "  <!-- Select a tracking coordinate system -->\n";
+    $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
+  }
+
+  $xml .= "</BASE>\n";
+
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
 =back
@@ -352,17 +395,6 @@ sub _extract_coord_info {
       $coords{parallax} = $pm{parallax} if defined $pm{parallax};
       $coords{epoch} = $pm{epoch} if defined $pm{epoch};
       if (defined $pm{pm1} || defined $pm{pm2}) {
-	
-	# if pm1 exists we need to get the units
-	if (defined $pm{pm1}) {
-	  my ($pmnode) = $system->findnodes(".//pm1");
-	  my $units = $pmnode->getAttribute("units");
-	  if ($units eq 'sec-year') {
-	    # need to correct to arcsec
-	    $pm{pm1} *= Astro::SLA::DS2R;
-	  }
-	}
-
 	$pm{pm1} ||= 0.0;
 	$pm{pm2} ||= 0.0;
 	$coords{pm} = [ $pm{pm1}, $pm{pm2} ];
