@@ -88,7 +88,9 @@ sub new {
 
 =item B<cubes>
 
-Array of C<JAC::OCS::Config::ACSIS::Cube> objects.
+Hash of C<JAC::OCS::Config::ACSIS::Cube> objects. Values should be
+JAC::OCS::Config::ACSIS::Cube objects. Keys are the cube ID to use in
+the list.
 
 =cut
 
@@ -117,13 +119,13 @@ sub stringify {
   my %cubes = $self->cubes;
 
   # loop over all cubes
-  for my $k (keys %cubes) {
+  for my $k (sort keys %cubes) {
     my $c = $cubes{$k};
     $xml .= "<cube id=\"$k\">\n";
 
     # Group centre (optional)
-    my $gc = $c->group_centre;
-    if ($gc) {
+    my $gc = $c->group_centre();
+    if (defined $gc) {
       $xml .= "<group_centre>\n";
 
       # use simple format
@@ -134,10 +136,12 @@ sub stringify {
 
     # Pixel size (arcsec)
     my @pixsize = $c->pixsize;
-    $xml .= "<x_pix_size units=\"arcsec\">".$pixsize[0]->arcsec
-      ."</x_pix_size>\n";
-    $xml .= "<y_pix_size units=\"arcsec\">".$pixsize[1]->arcsec
-      ."</y_pix_size>\n";
+    if (@pixsize) {
+      $xml .= "<x_pix_size units=\"arcsec\">".$pixsize[0]->arcsec
+        ."</x_pix_size>\n";
+      $xml .= "<y_pix_size units=\"arcsec\">".$pixsize[1]->arcsec
+        ."</y_pix_size>\n";
+    }
 
     # Data source
     $xml .= "<data_source>\n";
@@ -145,7 +149,7 @@ sub stringify {
     $xml .= interval_to_xml( $c->spw_interval );
     $xml .= "</data_source>\n";
 
-    # Offsets
+    # Pixel Offsets
     my @offset = $c->offset;
     $xml .= "<x_offset>$offset[0]</x_offset>\n";
     $xml .= "<y_offset>$offset[1]</y_offset>\n";
@@ -158,8 +162,15 @@ sub stringify {
     # projection and gridder
     $xml .= "<projection>".$c->projection."</projection>\n";
     $xml .= "<grid_function>".$c->grid_function."</grid_function>\n";
+
+    if ($c->grid_function ne 'TopHat') {
+      $xml .= "<FWHM>". $c->fwhm . "</FWHM>\n";
+    }
     $xml .= "<tcs_coord>".$c->tcs_coord."</tcs_coord>\n";
-    $xml .= "<truncation_rad>".$c->truncation_radius."</truncation_rad>\n";
+    if ($c->grid_function ne 'TopHat') {
+      # Note that the name is still smoothing radius
+      $xml .= "<smoothing_rad>".$c->truncation_radius."</smoothing_rad>\n";
+    }
 
     $xml .= "</cube>\n";
   }
