@@ -384,10 +384,6 @@ sub stringify {
   my $self = shift;
   my %args = @_;
 
-  use Data::Dumper;
-  Carp::cluck("in stringify");
-  print Dumper([caller]);
-
   my $xml = '';
 
   $xml .= "<ACSIS_CONFIG>\n";
