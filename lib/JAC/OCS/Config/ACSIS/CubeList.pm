@@ -197,7 +197,7 @@ sub getRootElementName {
 
 =item B<_process_dom>
 
-Using the C<_rootnode> node referring to the top of the Instrument XML,
+Using the C<_rootnode> node referring to the top of the XML tree,
 process the DOM tree and extract all the coordinate information.
 
  $self->_process_dom;
