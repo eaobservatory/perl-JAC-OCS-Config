@@ -41,6 +41,7 @@ sub new {
   my $proto = shift;
   my $class = ref($proto) || $proto;
 
+  # read arguments into a hash
   my %args = @_;
 
   my $h = bless {}, $class;
@@ -123,21 +124,25 @@ sub value {
 =item B<source>
 
 Type of external data source that should be queried for the value.
-Allowed values are "GLISH" and "DRAMA".
+Allowed values are "GLISH" and "DRAMA", "DERIVED", "SELF" and "TRANSLATOR".
 
 =cut
 
 sub source {
   my $self = shift;
   if (@_) {
-    $self->{SOURCE} = shift;
+    $self->{SOURCE} = uc(shift);
   }
   return $self->{SOURCE};
 }
 
 =item B<task>
 
-Location of external data source that should be queried for the value.
+Location of external data source that should be queried for the value
+or, if source is DERIVED, the name of the task on which the method should
+be invoked to derive the header value.
+
+"TRANSLATOR" is a special case
 
 =cut
 
@@ -168,14 +173,77 @@ sub param {
 Whether the external data source should be queried at the "START"
 or "END" of the observation.
 
+Default value is "START".
+
 =cut
 
 sub event {
   my $self = shift;
   if (@_) {
-    $self->{EVENT} = shift;
+    $self->{EVENT} = uc(shift);
   }
-  return $self->{EVENT};
+  return (defined $self->{EVENT} ? $self->{EVENT} : 'START');
+}
+
+=item B<method>
+
+If source is DERIVED, method name to use to derive the header value.
+
+=cut
+
+sub method {
+  my $self = shift;
+  if (@_) {
+    $self->{METHOD} = shift;
+  }
+  return $self->{METHOD};
+}
+
+=item B<alt>
+
+Alternate XPATH specification into the OCS_CONFIG to use for the header value.
+
+=cut
+
+sub alt {
+  my $self = shift;
+  if (@_) {
+    $self->{ALT} = shift;
+  }
+  return $self->{ALT};
+}
+
+=item B<array>
+
+Boolean used if source is SELF to indicate whether the XML
+configuration node specified by PARAM refers to an array or a scalar
+value.
+
+Default is false.
+
+=cut
+
+sub array {
+  my $self = shift;
+  if (@_) {
+    $self->{ARRAY} = shift;
+  }
+  return $self->{ARRAY};
+}
+
+=item B<base>
+
+Used if the source is SELF to specify a base location in the XML tree that
+will be combined with the PARAM value in order to derive the true tree location.
+
+=cut
+
+sub base {
+  my $self = shift;
+  if (@_) {
+    $self->{BASE} = uc(shift);
+  }
+  return $self->{BASE};
 }
 
 
