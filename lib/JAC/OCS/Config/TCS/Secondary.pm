@@ -13,8 +13,7 @@ JAC::OCS::Config::TCS::Secondary - Parse and modify TCS observing area
   $cfg = new JAC::OCS::Config::TCS::Secondary( DOM => $dom );
 
   $pa       = $cfg->posang;
-  @offsets  = $cfg->offsets;
-
+  %c       = $cfg->chop;
 
 =head1 DESCRIPTION
 
