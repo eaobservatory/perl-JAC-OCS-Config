@@ -145,11 +145,7 @@ X and Y offset of the grid.
   ($dx, $dy) = $c->offset;
   $c->offset( @xy );
 
-Units TBD
-
-Offset could be stored with Projection but we need to define the
-meaning of Offset. Could be stored as Offset object or as Angle object.
-Still don't know units.
+Units are pixels but can be floating point.
 
 =cut
 
