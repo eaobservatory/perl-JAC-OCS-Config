@@ -33,6 +33,8 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 @EXPORT_OK = qw(
 		check_class
 		check_class_fatal
+		check_class_hash
+		check_class_hash_fatal
 	       );
 
 =head1 FUNCTIONS
@@ -95,8 +97,57 @@ sub check_class_fatal {
   return (wantarray ? @output : $output[0] );
 }
 
-=back
+=item B<check_class_hash>
 
+Check that all the values in the supplied hash are of the correct class.
+
+  %output = check_class_hash( $class, %input );
+
+Returns hash containing valid keys and values.
+
+=cut
+
+sub check_class_hash {
+  my $class = shift;
+  my %in = @_;
+  my %out;
+  for my $key (keys %in) {
+    my $retval = check_class( $class, $in{$key});
+    $out{$key} = $retval if defined $retval;
+  }
+  return %out;
+}
+
+=item B<check_class_hash_fatal>
+
+As C<check_class_hash> except that an exception is thrown if a value
+is not valid.
+
+=cut
+
+sub check_class_hash_fatal {
+  my $class = shift;
+  my %in = @_;
+
+  # could just pass all the values to check_class_fatal but
+  # in order for the error message to be useful we get the valid
+  # keys
+  my %valid = check_class_hash( $class, %in);
+
+  if (scalar keys %valid != scalar keys %in ) {
+    # problem. Build up error message.
+    # by seeing which keys in %in are not in %valid
+    my @invalid = grep { !exists $valid{$_} } keys %in;
+    throw JAC::OCS::Config::Error::BadClass( "The keys (".
+					     join(",",@invalid)
+					   .") are not of class '$class'");
+  }
+
+  # everything okay, return the input
+  return %in;
+}
+
+=back
 
 =head1 AUTHOR
 
