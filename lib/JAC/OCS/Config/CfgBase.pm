@@ -255,7 +255,6 @@ sub _import_xml_string {
 
   # create new parser
   my $parser = new XML::LibXML;
-  print "Validation : ". $self->_validation . "\n";
   $parser->validation( $self->_validation );
   $self->_parser( $parser );
 
@@ -304,7 +303,7 @@ sub _import_dom {
     # Now look for the relevant config information
     @nodes = $tree->findnodes(".//$elname");
 
-    throw JAC::OCS::Config::Error::XMLSurfeit("DOM contains multiple configurations named $elname")
+    throw JAC::OCS::Config::Error::XMLSurfeit("DOM contains multiple configurations named '$elname'")
       if scalar(@nodes) > 1;
 
     # Jump out the loop if we have found something
@@ -312,7 +311,7 @@ sub _import_dom {
 
   }
 
-  throw JAC::OCS::Config::Error::XMLEmpty("DOM contains no configurations named" . join(" or ",@elements) )
+  throw JAC::OCS::Config::Error::XMLConfigMissing("DOM contains no configurations named" . join(" or ",@elements) )
     if !scalar(@nodes);
 
   # found some configuration XML. Store it
