@@ -35,6 +35,8 @@ use XML::LibXML;
 use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
 
+use JAC::OCS::Config::TCS;
+
 use vars qw/ $VERSION /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
