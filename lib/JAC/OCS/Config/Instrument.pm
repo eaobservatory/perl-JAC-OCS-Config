@@ -26,7 +26,6 @@ use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error qw| :try |;
 
-use JAC::OCS::Config::XMLHelper;
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
