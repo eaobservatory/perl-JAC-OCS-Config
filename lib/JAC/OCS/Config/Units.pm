@@ -28,6 +28,7 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
+use warnings::register;
 
 use vars qw/ $VERSION /;
 
@@ -276,6 +277,42 @@ sub mult {
   my $outpow = $PREFIXES{$output}->{power};
 
   return 10 ** ( $power - $outpow );
+}
+
+
+=back
+
+=head2 Class Methods
+
+General routines that can be used for quick manipulations of units
+without requiring explicit instantiation of a Units object.
+
+=over 4
+
+=item B<to_base>
+
+Convert a value with supplied unit (eg GHz) to the equivalent value
+in the base unit (e.g. Hz).
+
+  $scaled = JAC::OCS::Config::Units->to_base( $value, $unit );
+
+Returns input if the unit does not parse (but does issue a warning
+if warnings are enabled)..
+
+=cut
+
+sub to_base {
+  my $class = shift;
+  my $input = shift;
+  my $unit_str = shift;
+
+  my $unit = $class->new( $unit_str );
+  if (!defined $unit) {
+    warnings::warnif("Supplied unit ('$unit_str') does not parse. Assuming scaling factor of 1");
+    return $input;
+  }
+
+  return ( $input * $unit->mult() );
 }
 
 
