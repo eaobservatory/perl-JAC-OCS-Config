@@ -25,6 +25,7 @@ use XML::LibXML;
 
 use JAC::OCS::Config::Error qw| :try |;
 
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
@@ -131,10 +132,9 @@ configuration.
 sub line_list {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to line_list must be a LineList object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::LineList");
-    $self->{LINE_LIST} = $arg;
+    $self->{LINE_LIST} = check_class_fatal("JAC::OCS::Config::ACSIS::LineList",
+					   shift
+					  );
   }
   return $self->{LINE_LIST};
 }
@@ -149,10 +149,9 @@ configuration.
 sub cube_list {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to cube_list must be a CubeList object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::CubeList");
-    $self->{CUBE_LIST} = $arg;
+    $self->{CUBE_LIST} = check_class_fatal("JAC::OCS::Config::ACSIS::CubeList",
+					   shift
+					  );
   }
   return $self->{CUBE_LIST};
 }
@@ -167,10 +166,9 @@ configuration.
 sub spw_list {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to spw_list must be a SPWList object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::SPWList");
-    $self->{SPW_LIST} = $arg;
+    $self->{SPW_LIST} = check_class_fatal("JAC::OCS::Config::ACSIS::SPWList",
+					   shift
+					  );
   }
   return $self->{SPW_LIST};
 }
@@ -185,10 +183,9 @@ configuration.
 sub acsis_if {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to acsis_if must be a ACSIS_IF object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::ACSIS_IF");
-    $self->{ACSIS_IF} = $arg;
+    $self->{ACSIS_IF} = check_class_fatal("JAC::OCS::Config::ACSIS::ACSIS_IF",
+					   shift
+					  );
   }
   return $self->{ACSIS_IF};
 }
@@ -203,10 +200,9 @@ configuration.
 sub acsis_corr {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to acsis_corr must be a ACSIS_CORR object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::ACSIS_CORR");
-    $self->{ACSIS_CORR} = $arg;
+    $self->{ACSIS_CORR} = check_class_fatal("JAC::OCS::Config::ACSIS::ACSIS_CORR",
+					   shift
+					  );
   }
   return $self->{ACSIS_CORR};
 }
@@ -221,10 +217,9 @@ configuration.
 sub acsis_map {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to acsis_corr must be a ACSIS_MAP object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::ACSIS_MAP");
-    $self->{ACSIS_MAP} = $arg;
+    $self->{ACSIS_MAP} = check_class_fatal("JAC::OCS::Config::ACSIS::ACSIS_MAP",
+					   shift
+					  );
   }
   return $self->{ACSIS_MAP};
 }
@@ -239,10 +234,9 @@ configuration.
 sub semantic_links {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to semantic_links must be a SemanticLinks object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::SemanticLinks");
-    $self->{SEMANTIC_LINKS} = $arg;
+    $self->{SEMANTIC_LINKS} = check_class_fatal("JAC::OCS::Config::ACSIS::SemanticLinks",
+					   shift
+					  );
   }
   return $self->{SEMANTIC_LINKS};
 }
@@ -257,10 +251,9 @@ configuration.
 sub red_config_list {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to red_config_list must be a RedConfigList object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::RedConfigList");
-    $self->{RED_CONFIG_LIST} = $arg;
+    $self->{RED_CONFIG_LIST} = check_class_fatal("JAC::OCS::Config::ACSIS::RedConfigList",
+					   shift
+					  );
   }
   return $self->{RED_CONFIG_LIST};
 }
@@ -275,10 +268,9 @@ configuration.
 sub gridder_config {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to gridder_config must be a GridderConfig object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::GridderConfig");
-    $self->{GRIDDER_CONFIG} = $arg;
+    $self->{GRIDDER_CONFIG} = check_class_fatal("JAC::OCS::Config::ACSIS::GridderConfig",
+					   shift
+					  );
   }
   return $self->{GRIDDER_CONFIG};
 }
@@ -293,10 +285,9 @@ configuration.
 sub rtd_config {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to rtd_config must be a RTDConfig object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::RTDConfig");
-    $self->{RTD_CONFIG} = $arg;
+    $self->{RTD_CONFIG} = check_class_fatal("JAC::OCS::Config::ACSIS::RTDConfig",
+					   shift
+					  );
   }
   return $self->{RTD_CONFIG};
 }
@@ -311,10 +302,9 @@ configuration.
 sub process_layout {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to process_layout must be a ProcessLayout object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::ProcessLayout");
-    $self->{PROCESS_LAYOUT} = $arg;
+    $self->{PROCESS_LAYOUT} = check_class_fatal("JAC::OCS::Config::ACSIS::ProcessLayout",
+					   shift
+					  );
   }
   return $self->{PROCESS_LAYOUT};
 }
@@ -329,10 +319,9 @@ configuration.
 sub process_links {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to process_links must be a ProcessLinks object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::ProcessLinks");
-    $self->{PROCESS_LINKS} = $arg;
+    $self->{PROCESS_LINKS} = check_class_fatal("JAC::OCS::Config::ACSIS::ProcessLinks",
+					   shift
+					  );
   }
   return $self->{PROCESS_LINKS};
 }
@@ -347,10 +336,9 @@ configuration.
 sub interface_list {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to interface_list must be a InterfaceList object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::InterfaceList");
-    $self->{INTERFACE_LIST} = $arg;
+    $self->{INTERFACE_LIST} = check_class_fatal("JAC::OCS::Config::ACSIS::InterfaceList",
+					   shift
+					  );
   }
   return $self->{INTERFACE_LIST};
 }
@@ -365,10 +353,9 @@ configuration.
 sub simulation {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Arg to simulation must be a Simulation object") 
-      unless UNIVERSAL::isa($arg, "JAC::OCS::Config::ACSIS::Simulation");
-    $self->{SIMULATION} = $arg;
+    $self->{SIMULATION} = check_class_fatal("JAC::OCS::Config::ACSIS::Simulation",
+					   shift
+					  );
   }
   return $self->{SIMULATION};
 }
