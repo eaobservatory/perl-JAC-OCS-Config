@@ -33,7 +33,9 @@ use Data::Dumper;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error;
-use JAC::OCS::Config::XMLHelper qw/ find_children find_attr /;
+use JAC::OCS::Config::XMLHelper qw/ find_children find_attr 
+				    indent_xml_string
+				    /;
 use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets 
 				       pa_to_xml offset_to_xml /;
 

@@ -33,7 +33,9 @@ use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
 
-use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr/;
+use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr
+				    indent_xml_string
+				    /;
 use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml offset_to_xml /;
 use JAC::OCS::Config::Error;
 
