@@ -11,7 +11,7 @@ my $cfg = new JAC::OCS::Config::TCS( XML => join("\n",@xml),
 
 isa_ok( $cfg, "JAC::OCS::Config::TCS" );
 
-is($cfg->telescope, "JCMT" );
+is($cfg->telescope, "JCMT", "Check telescope" );
 
 my $sci = $cfg->getTarget( "SCIENCE" );
 my $ref = $cfg->getTarget( "REFERENCE" );
@@ -19,13 +19,11 @@ my $ref = $cfg->getTarget( "REFERENCE" );
 my $distance = $sci->distance( $ref );
 is($distance, 0, "Distance between science and reference position");
 
-
-
 # Simple test snippet
 __DATA__
 <?xml version="1.0" encoding="US-ASCII"?>
 
-<!DOCTYPE TCS_CONFIG SYSTEM "http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/006/tcs.dtd">
+<!DOCTYPE TCS_CONFIG SYSTEM "file://localhost/JACdocs/JCMT/OCS/ICD/006/tcs.dtd">
 
 <TCS_CONFIG TELESCOPE="JCMT">
 
@@ -40,6 +38,11 @@ __DATA__
         <spherSystem>
            <c1>18:30:20.45</c1>
            <c2>17:25:43.8</c2>
+           <epoch>1997.3</epoch>
+           <pm1>1.5</pm1>
+           <pm2>-1.5</pm2>
+           <rv>-1000</rv>
+           <parallax>0.2</parallax>
         </spherSystem>
       </target>
 
