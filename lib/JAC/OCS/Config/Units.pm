@@ -90,10 +90,10 @@ my %BASE_UNITS = (
 		  # ACSIS these should be removed.
 		  # [we could have a way to register new units that conform
 		  # to SI prefixing standard]
-		  'm.s-1' => 'metres per second'
-		  'dBm'   => 'power ratio at 1 milliwatt 600 ohms'
+		  'm.s-1' => 'metres per second',
+		  'dBm'   => 'power ratio at 1 milliwatt 600 ohms',
 		  'pixel' => 'pixel',
-		  'channel' => 'channel'
+		  'channel' => 'channel',
 		 );
 
 
