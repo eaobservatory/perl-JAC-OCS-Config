@@ -103,6 +103,11 @@ as a hash.
 
 Missing attributes will not be included in the returned hash.
 
+In scalar context, the value associated with the first key in the list
+is returned (even if that value is missing).
+
+  $val = find_attr( $el, "KEY");
+
 =cut
 
 sub find_attr {
@@ -115,7 +120,13 @@ sub find_attr {
     $attr{$a} = $val if defined $val;
   }
 
-  return %attr;
+  if (wantarray) {
+    return %attr;
+  } else {
+    # inefficient since we find all the attributes before discarding them
+    return $attr{$keys[0]};
+  }
+
 }
 
 =item B<find_children>
