@@ -64,9 +64,9 @@ A special key (C<$JAC::OCS::Config::CfgBase::INITKEY>) can be supplied
 by a subclass to provide additional, sub-system specific
 initialisation keys. It should be a reference to a hash.
 
-The method will throw a BadArgs exception if the arguments
-are invalid (this may change), and a FatalError if no arguments are
-supplied.
+The method will throw a BadArgs exception if unrecognised arguments
+are found. It is possible to instantiate a blank object but it is the
+callers responsibility to populate it.
 
 =cut
 
@@ -80,6 +80,7 @@ sub new {
   my %extra;
   %extra = %{ $args{$INITKEY} }
     if exists $args{$INITKEY};
+  delete $args{$INITKEY};
 
   # Create the object
   my $cfg = bless {
@@ -106,10 +107,11 @@ sub new {
   } elsif (exists $args{File} && defined $args{File}) {
     $cfg->_import_xml_file( $args{File} );
   } elsif (%args) {
-    throw JAC::OCS::Config::Error::BadArgs("Arguments supplied to constructor but not recognized");
-  } else {
-    throw JAC::OCS::Config::Error::FatalError("Must supply arguments to constructor\n");
+    throw JAC::OCS::Config::Error::BadArgs("Arguments supplied [".
+					   join(",",keys %args).
+					   "] to $class constructor but not recognized");
   }
+
   return $cfg;
 }
 
