@@ -35,11 +35,15 @@ use Data::Dumper;
 
 use Astro::Coords::Offset;
 
-use JAC::OCS::Config::XMLHelper qw/ get_pcdata /;
+use JAC::OCS::Config::XMLHelper qw/ get_pcdata _check_range find_children 
+				    find_attr get_pcdata_multi
+				    /;
 
-use vars qw/ $VERSION /;
+use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+
+@EXPORT_OK = qw/ find_offsets find_pa /;
 
 =head1 FUNCTIONS
 
@@ -55,36 +59,44 @@ current children.
 
 Returns an empty list if no offsets are found.
 
-An optional second argument can be used to specify the TRACKING
+The number of offsets found can be verified if optional
+hash arguments are provided. An exception will be thrown if the
+number found is out of range. See also C<XMLHelper::find_children>.
+
+ @offsets = find_offsets( $rootnode, min => 1, max => 4 );
+
+Finally, an optional hash argument can be used to specify the TRACKING
 system in scope for this offset if known.
 
- @offsets = find_offsets( $rootnode, 'J2000' );
+ @offsets = find_offsets( $rootnode, tracking => 'J2000' );
+
+In scalar context, returns the first element.
 
 =cut
 
 sub find_offsets {
   my $el = shift;
-  my $tracksys = shift;
+  my %args = @_;
+
+  my $tracksys = $args{tracking};
 
   # look for children called OFFSET
-  my @matches = $el->getChildrenByTagName( 'OFFSET' );
+  # but disable range check until we know how many valid ones we find
+  my @matches = find_children($el, "OFFSET");
 
   my @offsets;
   for my $o (@matches) {
-    my $dx = get_pcdata( $o, 'DC1');
-    my $dy = get_pcdata( $o, 'DC1');
-    my $system = $o->getAttribute('SYSTEM');
-    my $type = $o->getAttribute('TYPE');
+    my %xy = get_pcdata_multi( $o, "DC1", "DC2" );
 
     # Build up options hash for offset constructor
-    my %opt = ( system => $system, projection => $type );
+    my %opt = find_attr( $o, "SYSTEM","TYPE");
     $opt{tracking_system} = $tracksys if defined $tracksys;
 
     # Create the object
-    push(@offsets, new Astro::Coords::Offset($dx, $dy, %opt ) );
+    push(@offsets, new Astro::Coords::Offset($xy{DC1}, $xy{DC2}, %opt ) );
   }
 
-  return @offsets;
+  return _check_range(\%args, "offsets", @offsets);
 }
 
 =item B<find_pa>
@@ -94,13 +106,23 @@ C<Astro::Coords::Angle> object.
 
  @pa = find_pa( $rootnode );
 
+The number of position angles found can be verified if optional
+hash arguments are provided. An exception will be thrown if the
+number found is out of range. See also C<XMLHelper::find_children>.
+
+ @pa = find_pa( $rootnode, min => 1, max => 4 );
+
+In scalar context returns the first pa.
+
 =cut
 
 sub find_pa {
   my $el = shift;
+  my %range = @_;
 
   # look for children called PA
-  my @matches = $el->getChildrenByTagName( 'PA' );
+  # but disable range check until we know how many valid ones we find
+  my @matches = find_children( $el, "PA" );
 
   # Now iterate over all matches
   my @posangs;
@@ -112,9 +134,8 @@ sub find_pa {
 					     range => 'PI',
 					   ) );
   }
-  return @posangs;
+  return _check_range(\%range, "position angles", @posangs);
 }
-
 
 =back
 
