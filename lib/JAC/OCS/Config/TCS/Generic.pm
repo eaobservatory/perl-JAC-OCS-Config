@@ -177,8 +177,8 @@ sub offset_to_xml {
   $xml .= ">\n";
 
   my @offsets = $off->offsets();
-  $xml .= "  <DC1>".$offsets[0]->degrees."</DC1>\n";
-  $xml .= "  <DC2>".$offsets[1]->degrees."</DC2>\n";
+  $xml .= "  <DC1>".$offsets[0]->arcsec."</DC1>\n";
+  $xml .= "  <DC2>".$offsets[1]->arcsec."</DC2>\n";
   $xml .= "</OFFSET>\n";
   return $xml;
 }
@@ -233,14 +233,20 @@ sub coords_to_xml {
       if ($simple) {
 
 	# Simple format, ra/dec current epoch
-	$xml .= "    <c1>". $c->ra(format => 's')."</c1>\n";
-	$xml .= "    <c2>". $c->dec(format => 's')."</c2>\n";
+	my ($ra, $dec) = $c->radec;
+	$ra->str_delim(':');
+	$dec->str_delim(':');
+	$xml .= "    <c1>$ra</c1>\n";
+	$xml .= "    <c2>$dec</c2>\n";
 
       } else {
 
 	# Full spec, including proper motion and epoch
-	$xml .= "    <c1>". $c->ra2000(format => 's')."</c1>\n";
-	$xml .= "    <c2>". $c->dec2000(format => 's')."</c2>\n";
+	my ($ra, $dec) = $c->radec2000;
+	$ra->str_delim(':');
+	$dec->str_delim(':');
+	$xml .= "    <c1>$ra</c1>\n";
+	$xml .= "    <c2>$dec</c2>\n";
 
 	# proper motions in arcsec
 	my @pm = $c->pm;
