@@ -187,16 +187,35 @@ sub offset_to_xml {
 Convert C<Astro::Coords> object to TCS XML.
 Includes the <target> tags.
 
+  coords_to_xml( $c );
+
+An optional second argument can be used to specify that we require
+a simplistic XML format that has proper motions and parallax 
+implicitly present in the RA/Dec values rather than explicitly present
+relative to a previous epoch. This is important for systems that
+do not understand proper motions and/or parallax. If this argument
+is true, the simplified XML format will be used.
+
+  coords_to_xml( $c, 1);
+
+In simple mode, the target/targetName fields are not written out,
+only the spherSystem.
+
 =cut
 
 sub coords_to_xml {
   my $c = shift;
+  my $simple = shift;
   my $type = $c->type;
   my $name = $c->name;
   $name = "" if !defined $name;
 
-  my $xml = "<target>\n";
-  $xml .= "  <targetName>$name</targetName>\n";
+  my $xml = '';
+
+  if (!$simple) {
+    $xml = "<target>\n";
+    $xml .= "  <targetName>$name</targetName>\n";
+  }
 
   if ($type eq "PLANET") {
     # namedSystem
@@ -209,22 +228,33 @@ sub coords_to_xml {
     if ($type eq 'RADEC') {
       $sys = "J2000";
       $xml .= "  <spherSystem SYSTEM=\"$sys\">\n";
-      $xml .= "    <c1>". $c->ra2000(format => 's')."</c1>\n";
-      $xml .= "    <c2>". $c->dec2000(format => 's')."</c2>\n";
 
-      # proper motions in arcsec
-      my @pm = $c->pm;
-      if (@pm) {
-	$xml .= "    <epoch>2000.0</epoch>\n";
-	$xml .= "    <pm1>".$pm[0]."</pm1>\n";
-	$xml .= "    <pm2>".$pm[1]."</pm2>\n";
+      if ($simple) {
+
+	# Simple format, ra/dec current epoch
+	$xml .= "    <c1>". $c->ra(format => 's')."</c1>\n";
+	$xml .= "    <c2>". $c->dec(format => 's')."</c2>\n";
+
+      } else {
+
+	# Full spec, including proper motion and epoch
+	$xml .= "    <c1>". $c->ra2000(format => 's')."</c1>\n";
+	$xml .= "    <c2>". $c->dec2000(format => 's')."</c2>\n";
+
+	# proper motions in arcsec
+	my @pm = $c->pm;
+	if (@pm) {
+	  $xml .= "    <epoch>2000.0</epoch>\n";
+	  $xml .= "    <pm1>".$pm[0]."</pm1>\n";
+	  $xml .= "    <pm2>".$pm[1]."</pm2>\n";
+	}
       }
 
       # Radial Velocity goes here!
       warn "Radial Velocity is currently ignored in XML construction";
 
       $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
-	if defined $c->parallax;
+	if (defined $c->parallax && !$simple);
 
     } elsif ($type eq 'FIXED') {
       $sys = "AZEL";
@@ -268,7 +298,8 @@ sub coords_to_xml {
   } else {
     croak "Do not yet know how to xml-ify coords of type $type";
   }
-  $xml .= "</target>\n";
+
+  $xml .= "</target>\n" unless $simple;
 
   return $xml;
 }
