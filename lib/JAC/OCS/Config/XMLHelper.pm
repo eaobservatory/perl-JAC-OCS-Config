@@ -8,7 +8,8 @@ JAC::OCS::Config::XMLHelper - Helper functions for TCS XML parsing
 
   use JAC::OCS::Config::XMLHelper;
 
-  %attr = find_attr( @keys );
+  $pcdata = get_pcdata( $el, $elname );
+  %attr = find_attr( $el, @keys );
 
 =head1 DESCRIPTION
 
@@ -28,7 +29,7 @@ use Data::Dumper;
 use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
-@EXPORT_OK = qw/  get_pcdata /;
+@EXPORT_OK = qw/  get_pcdata find_attr find_children_range get_pcdata_multi /;
 
 =head1 FUNCTIONS
 
@@ -64,6 +65,92 @@ sub get_pcdata {
     $pcdata = $child->toString;
   }
   return $pcdata;
+}
+
+=item B<get_pcdata_multi>
+
+Same as C<get_pcdata> but can be run with multiple tag names.
+
+  %results = get_pcdata_multi( $el, @tags );
+
+There is an entry in the return hash for each input tag
+unless that tag could not be found.
+
+=cut
+
+sub get_pcdata_multi {
+  my $el = shift;
+  my @tags = @_;
+
+  my %results;
+  for my $t (@tags) {
+    my $val = get_pcdata( $el, $t);
+    $results{$t} = $val if defined $val;
+  }
+  return %results;
+}
+
+=item B<find_attr>
+
+Given the element object and a list of attributes, return the attributes
+as a hash.
+
+  %attr = find_attr( $el, @keys );
+
+Missing attributes will not be included in the returned hash.
+
+=cut
+
+sub find_attr {
+  my $el = shift;
+  my @keys = @_;
+
+  my %attr;
+  for my $a (@keys) {
+    my $val = $el->getAttribute( $a );
+    $attr{$a} = $val if defined $val;
+  }
+
+  return %attr;
+}
+
+=item B<find_children_range>
+
+Return the child elements with the supplied tag name but throw an
+exception if the number of children found is not the same as the number
+expected.
+
+  @children = find_children_range( $el, $tag, min => 0, max => 1);
+
+If neither min nor max are specified no exception will be thrown.
+
+=cut
+
+sub find_children_range {
+  my $el = shift;
+  my $tag = shift;
+  my %range = @_;
+
+  # Find the children
+  my @children = $el->getChildrenByTagName( $tag );
+  my $count = scalar(@children);
+
+  if (exists $range{min} && $count < $range{min} ) {
+    # Too few
+    if ($count == 0) {
+      throw JAC::OCS::Config::Error::XMLEmpty("No elements found named '$tag', expecting $range{min}");
+    } else {
+      throw JAC::OCS::config::Error::XMLBadStructure("Too few elements named '$tag'. Expected at least $range{min} but found $count");
+    }
+  }
+
+  if (exists $range{max} && $count > $range{max} ) {
+    # Too many
+    throw JAC::OCS::Config::Error::XMLSurfeit("Too many elements named '$tag'. Expected no more than $range{max} but found $count");
+  }
+
+
+  return @children;
 }
 
 =back
