@@ -35,12 +35,42 @@ use vars qw/ $VERSION @EXPORT_OK /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 @EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
+		  get_this_pcdata
 		  _check_range indent_xml_string
 	       );
 
 =head1 FUNCTIONS
 
 =over 4
+
+=item B<get_this_pcdata>
+
+Given an node object, return the first child as a string.
+
+ $string = get_this_pcdata( $el );
+
+The string is cleaned by removing leading and trailing whitespace.
+Can return undef if there is no child.
+
+=cut
+
+sub get_this_pcdata {
+  my $el = shift;
+
+  my $child = $el->firstChild;
+
+  # Return undef if the element contains no text children
+  return undef unless defined $child;
+  my $pcdata = $child->toString;
+
+  # strip leading and trailing spaces
+  if (defined $pcdata) {
+    $pcdata =~ s/^\s+//;
+    $pcdata =~ s/\s+$//;
+  }
+
+  return $pcdata;
+}
 
 =item B<get_pcdata>
 
@@ -66,17 +96,7 @@ sub get_pcdata {
   my @matches = $el->getChildrenByTagName( $tag );
   my $pcdata;
   if (@matches) {
-    my $child = $matches[-1]->firstChild;
-    # Return undef if the element contains no text children
-    return undef unless defined $child;
-    $pcdata = $child->toString;
-
-    # strip leading and trailing spaces
-    if (defined $pcdata) {
-      $pcdata =~ s/^\s+//;
-      $pcdata =~ s/\s+$//;
-    }
-
+    $pcdata = get_this_pcdata( $matches[-1] );
   }
   return $pcdata;
 }
