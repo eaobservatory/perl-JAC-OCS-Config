@@ -43,6 +43,7 @@ use JAC::OCS::Config::Instrument;
 use JAC::OCS::Config::Header;
 use JAC::OCS::Config::RTS;
 use JAC::OCS::Config::JOS;
+use JAC::OCS::Config::ACSIS;
 
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
@@ -102,6 +103,21 @@ sub new {
 
 =over 4
 
+=item B<comment>
+
+Text string to be inserted at the top of the stringified form of the
+configuration in addition to any internal comment added by this module.
+
+=cut
+
+sub comment {
+  my $self = shift;
+  if (@_) {
+    $self->{COMMENT} = shift;
+  }
+  return $self->{COMMENT};
+}
+
 =item B<jos>
 
 JOS configuration.
@@ -153,6 +169,26 @@ sub tcs {
     $self->{TCS_CONFIG} = $cfg;
   }
   return $self->{TCS_CONFIG};
+}
+
+=item B<acsis>
+
+ACSIS configuration. This can be undefined if ACSIS is not part of the
+observation.
+
+  $acsis_cfg = $cfg->acsis();
+
+=cut
+
+sub acsis {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("TCS must be a JAC::OCS::Config::ACSIS object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::ACSIS");
+    $self->{ACSIS_CONFIG} = $cfg;
+  }
+  return $self->{ACSIS_CONFIG};
 }
 
 =item B<instrument_setup>
@@ -279,6 +315,7 @@ sub write_file {
       ".xml";
 
   my $storename;
+  @dirs = ".";
   for my $dir (@dirs) {
 
     my $fullname = File::Spec->catdir( $TRANS_DIR, $dir, $cname );
@@ -336,6 +373,9 @@ This method is also invoked via a stringification overload.
 
   print "$sp";
 
+The date of stringification and the version of the config object
+are written to the file as comments.
+
 =cut
 
 sub stringify {
@@ -346,8 +386,17 @@ sub stringify {
 
   $xml .= "<OCS_CONFIG>\n";
 
+  # Insert any comment. Including a default comment.
+  my $comment = "Rendered as XML on ". gmtime() . "UT using Perl module\n";
+  $comment .= ref($self) . " version $VERSION Perl version $]\n";
+  if ($self->comment) {
+    # prepend
+    $comment = $self->comment ."\n" . $comment;
+  }
+  $xml .= "  <!-- \n". $comment . "\n -->\n";
+
   # ask each child to stringify
-  for my $c (qw/ jos header tcs instrument_setup frontend rts /) {
+  for my $c (qw/ jos header tcs instrument_setup frontend acsis rts /) {
     my $object = $self->$c;
     next unless defined $object;
     $xml .= $object->stringify( NOINDENT => 1 );
@@ -442,6 +491,9 @@ sub _process_dom {
 
   $cfg = find_children( $el, "TCS_CONFIG", min => 0, max => 1);
   $self->tcs( new JAC::OCS::Config::TCS( DOM => $cfg) ) if $cfg;
+
+  $cfg = find_children( $el, "ACSIS_CONFIG", min => 0, max => 1);
+  $self->acsis( new JAC::OCS::Config::ACSIS( DOM => $cfg) ) if $cfg;
 
   $cfg = find_children( $el, "INSTRUMENT", min => 0, max => 1);
   $self->instrument_setup( new JAC::OCS::Config::Instrument( DOM => $cfg) )
