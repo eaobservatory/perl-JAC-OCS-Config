@@ -265,9 +265,9 @@ sub _find_base_posn {
 
   # Look for an offset
   my @offsets = JAC::OCS::Config::TCS::Generic::find_offsets( $el,
-							    $self->tracking_system);
-  throw JAC::OCS::Config::Error::XMLBadStructure( "Only one offset allowed in BASE position")
-    if scalar(@offsets) > 1;
+							      min => 0,
+							      max => 1,
+							      tracking => $self->tracking_system);
 
   # Store in object
   $self->offset( $offsets[0] ) if @offsets;
