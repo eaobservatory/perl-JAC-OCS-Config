@@ -210,13 +210,18 @@ what will be returned by the overload methods.
 
 The configuration XML was not valid.
 
-=item B<JAC::OCS::Config::Error::XMLSurfeit>
+=item B<JAC::OCS::Config::Error::XMLConfigMissing>
 
-Too many relevant configs were found in the DOM tree.
+An element required for the Config constructor object
+(e.g TCS_CONFIG) was meant to be present but could not be found.
 
 =item B<JAC::OCS::Config::Error::XMLEmpty>
 
-No relevant configs were present in the XML.
+A requested element could not be found in the XML.
+
+=item B<JAC::OCS::Config::Error::XMLSurfeit>
+
+Too many relevant configs were found in the DOM tree.
 
 =back
 
@@ -259,11 +264,16 @@ use base qw/ JAC::OCS::Config::Error /;
 package JAC::OCS::Config::Error::XMLBadStructure;
 use base qw/ JAC::OCS::Config::Error /;
 
-package JAC::OCS::Config::Error::XMLSurfeit;
+package JAC::OCS::Config::Error::XMLConfigMissing;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::XMLEmpty;
 use base qw/ JAC::OCS::Config::Error /;
+
+package JAC::OCS::Config::Error::XMLSurfeit;
+use base qw/ JAC::OCS::Config::Error /;
+
+
 
 
 1;
