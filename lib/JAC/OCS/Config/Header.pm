@@ -98,7 +98,7 @@ sub items {
 
 =item B<stringify>
 
-
+Create XML representation of object.
 
 =cut
 
@@ -227,11 +227,7 @@ sub _process_dom {
 
 The Header XML configuration specification is documented in OCS/ICD/011
 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/011/headers.dtd>. A
-schema is also available as part of the TOML definition used by the
-JAC Observing Tool, but note that the XML dialects differ in their uses
-even though they use the same low-level representation of an astronomical
-target.
+L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/011/headers.dtd>.
 
 =head1 SEE ALSO
 
