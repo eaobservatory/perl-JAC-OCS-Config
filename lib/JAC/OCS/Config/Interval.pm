@@ -54,7 +54,10 @@ sub new {
   my $i = $class->SUPER::new( @_ );
 
   # Populate it with units
-  $i->units( $args{Units}) if exists $args{Units};
+  if (@_) {
+    my %args = @_;
+    $i->units( $args{Units}) if exists $args{Units};
+  }
 
   return $i;
 }
@@ -76,7 +79,7 @@ Can return C<undef> if no unit has been specified.
 
 =cut
 
-sub max {
+sub units {
   my $self = shift;
   if (@_) {
     $self->{Units} = shift;
