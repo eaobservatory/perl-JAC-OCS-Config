@@ -62,7 +62,7 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 use overload '""' => "stringify";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/jos header tcs instrument_setup frontend acsis rts /;
+our @CONFIGS = qw/jos header tcs instrument_setup frontend rts acsis /;
 
 
 =head1 METHODS
@@ -427,6 +427,11 @@ sub stringify {
   my %args = @_;
 
   my $xml = '';
+
+  # Standard declaration plus DTD
+  $xml .= '<?xml version="1.0" encoding="US-ASCII"?>' .
+    '<!DOCTYPE OCS_CONFIG  SYSTEM  "/JACdocs/JCMT/OCS//ICD/001/ocs.dtd">' .
+    "\n";
 
   $xml .= "<OCS_CONFIG>\n";
 
