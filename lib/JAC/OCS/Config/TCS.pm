@@ -201,6 +201,37 @@ sub isBlank {
   croak "Must implement this";
 }
 
+=item B<getTags>
+
+Returns a list of all the coordinate tags available in the object.
+
+  @tags = $cfg->getTags;
+
+=cut
+
+sub getTags {
+  my $self = shift;
+  my %tags = $self->tags;
+  return keys %tags;
+}
+
+=item B<getNonSciTags>
+
+Get the non-Science tags that are in use. This allows the science/Base tags
+to be extracted using the helper methods, and then the remaining tags to
+be processed without worrying about duplication of the primary tag.
+
+=cut
+
+sub getNonSciTags {
+  my $self = shift;
+  my %tags = $self->tags;
+  my @tags = keys %tags;
+
+  my @out = grep { $_ !~ /(BASE|SCIENCE)/ } @tags;
+  return @out;
+}
+
 =item B<getTarget>
 
 Retrieve the Base or Science position as an C<Astro::Coords> object.
@@ -432,7 +463,9 @@ sub getRootElementName {
 
 =item B<_translate_tag_name>
 
-Given  a tag name, check to see whether a tag of that name exists. If it does, return it, if it doesn't look up the tag name in the synonyms table. If the sysnonym exists, return that. Else return undef.
+Given a tag name, check to see whether a tag of that name exists. If
+it does, return it, if it doesn't look up the tag name in the synonyms
+table. If the synonym exists, return that. Else return undef.
 
  $tag = $cfg->_translate_tag_name( $tag );
 
