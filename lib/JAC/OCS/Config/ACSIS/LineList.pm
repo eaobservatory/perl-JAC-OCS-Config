@@ -85,6 +85,12 @@ and values the corresponding rest frequency of the line in Hz.
   %lines = $l->lines();
   $l->lines( %lines );
 
+The keys are of the form "CO2-1" and include the molecule and transition.
+Use the class method C<moltrans2key> to generate a key in a suitable form.
+
+Note that the accessor method can only be fully overwritten, not partially
+tweaked.
+
 =cut
 
 sub lines {
@@ -141,6 +147,25 @@ node of the XML tree corresponding to the ACSIS line list config.
 
 sub getRootElementName {
   return( "line_list" );
+}
+
+=item B<moltrans2key>
+
+Convert a molecular species and transtion into a key suitable for storing
+in this object C<lines> hash.
+
+ $key = $class->moltrans2key( $mol, $trans );
+
+=cut
+
+sub moltrans2key {
+  my $class = shift;
+  my ($mol, $trans) = @_;
+  $trans = '' if $mol eq $trans; # No Line == No Line
+  $trans =~ s/\s+//g;
+  $mol =~ s/\s+//g;
+  $mol = uc($mol);
+  return ($mol . $trans);
 }
 
 =back
