@@ -36,7 +36,8 @@ use Data::Dumper;
 
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::XMLHelper qw| find_children find_attr |;
-use JAC::OCS::Config::TCS::Generic qw| find_pa |;
+use JAC::OCS::Config::TCS::Generic qw| find_pa pa_to_xml offset_to_xml 
+				       coords_to_xml |;
 
 use JAC::OCS::Config::TCS::BASE;
 use JAC::OCS::Config::TCS::obsArea;
@@ -378,7 +379,43 @@ sub getRootElementName {
   return( "TCS_CONFIG", "SpTelescopeObsComp" );
 }
 
+=item B<stringify>
 
+Convert the class into XML form. This is either achieved simply by
+stringifying the DOM tree (assuming object content has not been
+changed) or by taking the object attributes and reconstructing the XML.
+
+ $xml = $tcs->stringify;
+
+=cut
+
+sub stringify {
+  my $self = shift;
+
+  # Should the <xml> and dtd prolog be included?
+  # Should we create a stringified form directly or build a DOM
+  # tree and stringify that?
+
+  my $xml = '';
+
+  # First the base element
+  $xml .= '<TCS_CONFIG ';
+
+  # telescope
+  my $tel = $self->telescope;
+  $xml .= "TELESCOPE=\"$tel\">\n" if $tel;
+
+  # Now add the constituents in turn
+  $xml .= $self->_toString_base;
+  $xml .= $self->_toString_slew;
+  $xml .= $self->_toString_obsArea;
+  $xml .= $self->_toString_secondary;
+  $xml .= $self->_toString_rotator;
+
+  $xml .= "</TCS_CONFIG>\n";
+
+  return $xml;
+}
 
 =back
 
@@ -609,6 +646,153 @@ sub _find_secondary {
   };
 
 }
+
+=back
+
+=head2 Stringification
+
+=over 4
+
+=item _toString_base
+
+Create the target XML (and associated tags).
+
+ $xml = $tcs->_toString_base();
+
+=cut
+
+sub _toString_base {
+  my $self = shift;
+
+  # First get the allowed tags
+  my %t = $self->tags;
+
+  my $xml = "";
+  for my $tag (keys %t) {
+    $xml .= "<!-- BASE element contains target, offset and tracking system -->\n";
+
+    $xml .= "<BASE TYPE=\"$tag\">\n";
+    $xml .= "  <!-- First define a target -->\n";
+
+    my $c = $self->getCoords( $tag );
+    # Convert object to XML
+    $xml .= coords_to_xml( $c );
+
+    # Now offsets
+    my $o = $self->getOffset( $tag );
+    if ($o) {
+      $xml .= "  <!-- Now define an offset from the target position -->\n";
+      $xml .= offset_to_xml( $o );
+    }
+
+    # and tracking system
+    my $ts = $self->getTrackingSystem( $tag );
+    if (defined $ts) {
+      $xml .= "  <!-- Select a tracking coordinate system -->\n";
+      $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
+    }
+
+    $xml .= "</BASE>\n";
+
+  }
+
+  return $xml;
+}
+
+=item _toString_slew
+
+Create string representation of the SLEW information.
+
+ $xml = $tcs->_toString_slew();
+
+=cut
+
+sub _toString_slew {
+  my $self = shift;
+  my $xml = '';
+  if ($self->isDOMValid("SLEW")) {
+    my $el = $self->_rootnode;
+    my $slew = find_children( $el, "SLEW", min => 0, max => 1);
+    $xml .= $slew->toString if $slew;
+  } else {
+    # Reconstruct XML
+    my %slew = $self->slew;
+    # Check we have something
+    if (keys %slew) {
+      $xml .= "\n<!-- Define the SLEW method -->\n\n";
+      $xml .= "<SLEW OPTION=\"$slew{OPTION}\" ";
+      $xml .= "TRACK_TIME=\"$slew{TRACK_TIME}\" "
+	if $slew{OPTION} eq 'TRACK_TIME';
+      $xml .= "CYCLE=\"$slew{CYCLE}\" "
+	if $slew{OPTION} eq 'CYCLE';
+      $xml .= " />\n";
+    }
+  }
+  return $xml;
+}
+
+=item _toString_obsArea
+
+=cut
+
+sub _toString_obsArea {
+  my $self = shift;
+  return "";
+}
+
+=item _toString_secondary
+
+Create the XML corresponding to the SECONDARY element.
+
+=cut
+
+sub _toString_secondary {
+  my $self = shift;
+  my $sec = $self->getSecondary;
+#  return (defined $sec ? $sec->stringify() : "" );
+  return "";
+}
+
+=item _toString_rotator
+
+Create string representation of the ROTATOR element.
+
+ $xml = $tcs->_toString_rotator();
+
+=cut
+
+sub _toString_rotator {
+  my $self = shift;
+  my $xml = '';
+  if ($self->isDOMValid("ROTATOR")) {
+    my $el = $self->_rootnode;
+    my $rot = find_children( $el, "ROTATOR", min => 0, max => 1);
+    $xml .= $rot->toString if $rot;
+  } else {
+    # Reconstruct XML
+    my %rot = $self->rotator;
+    # Check we have something
+    if (keys %rot) {
+      $xml .= "\n<!-- Configure the instrument rotator here -->\n\n";
+      $xml .= "<ROTATOR SYSTEM=\"$rot{SYSTEM}\" ";
+      $xml .= "SLEW_OPTION=\"$rot{SLEW_OPTION}\" " if exists $rot{SLEW_OPTION};
+      $xml .= "SLEW_OPTION=\"$rot{MOTION}\" " if exists $rot{MOTION};
+      $xml .= " >\n";
+
+      if (exists $rot{PA}) {
+	for my $pa (@{$rot{PA}}) {
+	  $xml .= "  ". pa_to_xml( $pa );
+	}
+      }
+
+      $xml .= "</ROTATOR>\n";
+
+    }
+  }
+  return $xml;
+}
+
+=back
 
 =end __PRIVATE_METHODS__
 
