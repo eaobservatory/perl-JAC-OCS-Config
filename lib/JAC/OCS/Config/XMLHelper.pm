@@ -298,6 +298,9 @@ object.
   @range = find_range( $el );
   $range = find_range( $el );
 
+The element can either be a node that contains <range> elements,
+or a <range> element itself.
+
 In scalar context, an exception is thrown unless there is exactly one <range>
 element present.
 
@@ -312,8 +315,13 @@ sub find_range {
     %options = (min=>1, max => 1);
   }
 
-  # locate the range
-  my @range = find_children( $el, "range", %options);
+  # locate the range [could be this element]
+  my @range;
+  if ($el->nodeName eq 'range') {
+    @range = ($el);
+  } else {
+    @range = find_children( $el, "range", %options);
+  }
 
   my @int;
   for my $r (@range) {
