@@ -179,6 +179,7 @@ sub stringify {
   for my $i ($self->items) {
     $xml .= "<HEADER TYPE=\"" . $i->type . "\"\n";
     $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n";
+    $xml .= "        COMMENT=\"" . $i->comment . "\"\n" if $i->comment;
     $xml .= "        VALUE=\"" . $i->value . "\" ";
 
     if ($i->source) {
