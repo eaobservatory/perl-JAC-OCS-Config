@@ -244,8 +244,24 @@ sub getNonSciTags {
   my %tags = $self->tags;
   my @tags = keys %tags;
 
-  my @out = grep { $_ !~ /(BASE|SCIENCE)/ } @tags;
+  my @out = grep { $_ !~ /(BASE|SCIENCE)/i } @tags;
   return @out;
+}
+
+=item B<getSciTag>
+
+Obtain the C<JAC::OCS::Config::TCS::BASE> object associated with the
+science position.
+
+  $sci = $tcs->getSciTag;
+
+=cut
+
+sub getSciTag {
+  my $self = shift;
+  $tag = $self->_translate_tag_name( 'SCIENCE' );
+  my %tags = $self->tags;
+  return $tags{$tag};
 }
 
 =item B<getTarget>
