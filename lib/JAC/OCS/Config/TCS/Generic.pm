@@ -177,8 +177,8 @@ sub offset_to_xml {
   $xml .= ">\n";
 
   my @offsets = $off->offsets();
-  $xml .= "  <DC1>$offsets[0]</DC1>\n";
-  $xml .= "  <DC2>$offsets[1]</DC2>\n";
+  $xml .= "  <DC1>".$offsets[0]->degrees."</DC1>\n";
+  $xml .= "  <DC2>".$offsets[1]->degrees."</DC2>\n";
   $xml .= "</OFFSET>\n";
   return $xml;
 }
