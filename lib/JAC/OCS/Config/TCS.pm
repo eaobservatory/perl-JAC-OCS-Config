@@ -35,9 +35,10 @@ use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error qw| :try |;
-use JAC::OCS::Config::XMLHelper qw| find_children find_attr |;
-use JAC::OCS::Config::TCS::Generic qw| find_pa pa_to_xml offset_to_xml 
-				       coords_to_xml |;
+use JAC::OCS::Config::XMLHelper qw| find_children find_attr
+				    indent_xml_string
+				    |;
+use JAC::OCS::Config::TCS::Generic qw| find_pa pa_to_xml offset_to_xml |;
 
 use JAC::OCS::Config::TCS::BASE;
 use JAC::OCS::Config::TCS::obsArea;
@@ -359,26 +360,6 @@ sub _setSecondary {
   $self->{SECONDARY} = $sec;
 }
 
-=back
-
-=head2 Class Methods
-
-=over 4
-
-=item B<getRootElementName>
-
-Return the name of the _CONFIG element that should be the root
-node of the XML tree corresponding to the TCS config.
-Returns two node names (one for TOML and one for TCS_CONFIG).
-
- @names = $tcs->getRootElementName;
-
-=cut
-
-sub getRootElementName {
-  return( "TCS_CONFIG", "SpTelescopeObsComp" );
-}
-
 =item B<stringify>
 
 Convert the class into XML form. This is either achieved simply by
@@ -391,6 +372,7 @@ changed) or by taking the object attributes and reconstructing the XML.
 
 sub stringify {
   my $self = shift;
+  my %args = @_;
 
   # Should the <xml> and dtd prolog be included?
   # Should we create a stringified form directly or build a DOM
@@ -414,7 +396,28 @@ sub stringify {
 
   $xml .= "</TCS_CONFIG>\n";
 
-  return $xml;
+  # Indent the xml
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
+}
+
+=back
+
+=head2 Class Methods
+
+=over 4
+
+=item B<getRootElementName>
+
+Return the name of the _CONFIG element that should be the root
+node of the XML tree corresponding to the TCS config.
+Returns two node names (one for TOML and one for TCS_CONFIG).
+
+ @names = $tcs->getRootElementName;
+
+=cut
+
+sub getRootElementName {
+  return( "TCS_CONFIG", "SpTelescopeObsComp" );
 }
 
 =back
@@ -669,31 +672,7 @@ sub _toString_base {
 
   my $xml = "";
   for my $tag (keys %t) {
-    $xml .= "<!-- BASE element contains target, offset and tracking system -->\n";
-
-    $xml .= "<BASE TYPE=\"$tag\">\n";
-    $xml .= "  <!-- First define a target -->\n";
-
-    my $c = $self->getCoords( $tag );
-    # Convert object to XML
-    $xml .= coords_to_xml( $c );
-
-    # Now offsets
-    my $o = $self->getOffset( $tag );
-    if ($o) {
-      $xml .= "  <!-- Now define an offset from the target position -->\n";
-      $xml .= offset_to_xml( $o );
-    }
-
-    # and tracking system
-    my $ts = $self->getTrackingSystem( $tag );
-    if (defined $ts) {
-      $xml .= "  <!-- Select a tracking coordinate system -->\n";
-      $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
-    }
-
-    $xml .= "</BASE>\n";
-
+    $xml .= $t{$tag}->stringify(NOINDENT => 1);
   }
 
   return $xml;
@@ -733,11 +712,15 @@ sub _toString_slew {
 
 =item _toString_obsArea
 
+Create string representation of observing area.
+
 =cut
 
 sub _toString_obsArea {
   my $self = shift;
-  return "";
+  my $obs = $self->getObsArea;
+  return "\n<!-- Set up observing area here -->\n\n".
+    (defined $obs ? $obs->stringify(NOINDENT => 1) : "" );
 }
 
 =item _toString_secondary
@@ -749,8 +732,8 @@ Create the XML corresponding to the SECONDARY element.
 sub _toString_secondary {
   my $self = shift;
   my $sec = $self->getSecondary;
-#  return (defined $sec ? $sec->stringify() : "" );
-  return "";
+  return "\n<!-- Set up Secondary mirror behaviour here -->\n\n".
+    (defined $sec ? $sec->stringify(NOINDENT => 1) : "" );
 }
 
 =item _toString_rotator
@@ -774,10 +757,12 @@ sub _toString_rotator {
     # Check we have something
     if (keys %rot) {
       $xml .= "\n<!-- Configure the instrument rotator here -->\n\n";
-      $xml .= "<ROTATOR SYSTEM=\"$rot{SYSTEM}\" ";
-      $xml .= "SLEW_OPTION=\"$rot{SLEW_OPTION}\" " if exists $rot{SLEW_OPTION};
-      $xml .= "SLEW_OPTION=\"$rot{MOTION}\" " if exists $rot{MOTION};
-      $xml .= " >\n";
+      $xml .= "<ROTATOR SYSTEM=\"$rot{SYSTEM}\"\n";
+      $xml .= "         SLEW_OPTION=\"$rot{SLEW_OPTION}\"\n"
+	if exists $rot{SLEW_OPTION};
+      $xml .= "         MOTION=\"$rot{MOTION}\"\n" 
+	if exists $rot{MOTION};
+      $xml .= ">\n";
 
       if (exists $rot{PA}) {
 	for my $pa (@{$rot{PA}}) {
