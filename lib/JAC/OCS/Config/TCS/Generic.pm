@@ -28,7 +28,7 @@ This package is not a class.
 
 use 5.006;
 use strict;
-use Carp;
+
 use warnings;
 use XML::LibXML;
 use Data::Dumper;
@@ -38,6 +38,7 @@ use Astro::Coords::Offset;
 
 use base qw/ Exporter /;
 
+use JAC::OCS::Config::Error;
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata _check_range find_children 
 				    find_attr get_pcdata_multi
 				    /;
@@ -250,8 +251,26 @@ sub coords_to_xml {
 	}
       }
 
-      # Radial Velocity goes here!
-      warn "Radial Velocity is currently ignored in XML construction";
+      # Radial Velocity
+      # TCS requires different velocity frame names
+      my $rv = $c->rv;
+      my $vf = $c->vframe;
+      my %vflut = ('HEL' => 'HELIOCENTRIC',
+		   'LSRK' => 'LSR',
+		   'GEO' => 'GEOCENTRIC',
+		   );
+      # correct to LSRK
+      if ( $vf eq 'LSRD') {
+	$vf = 'LSRK';
+	$rv += $c->vdiff( 'LSRK', 'LSRD' ); # Not checked
+      } elsif (exists $vflut{$vf}) {
+	$vf = $vflut{$vf};
+      } else {
+	throw JAC::OCS::Config::Error::FatalError("Unsupported velocity frame '$vf'");
+      }
+
+      $xml .= "    <rv defn=\"".$c->vdefn.
+	"\" frame=\"".$vf."\">". $rv ."</rv>\n";
 
       $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
 	if (defined $c->parallax && !$simple);
@@ -262,7 +281,7 @@ sub coords_to_xml {
       $xml .= "    <c1>". $c->az(format => 's')."</c1>\n";
       $xml .= "    <c2>". $c->el(format => 's')."</c2>\n";
     } else {
-      croak "Completely impossible - type neither RADEC nor FIXED but $type\n";
+      throw JAC::OCS::Config::Error::FatalError("Completely impossible - type neither RADEC nor FIXED but $type\n");
     }
     $xml .= "  </spherSystem>\n";
   } elsif ($type eq 'ELEMENTS') {
@@ -278,7 +297,7 @@ sub coords_to_xml {
     } elsif (exists $el{EPOCHPERIH}) {
       $type = 'comet';
     } else {
-      croak "Unable to determine element type!";
+      throw JAC::OCS::Config::Error::FatalError("Unable to determine element type!");
     }
 
     $xml .= "    <epoch>$el{EPOCH}</epoch>\n";
@@ -296,7 +315,7 @@ sub coords_to_xml {
     $xml .= "  </conicSystem>\n";
 
   } else {
-    croak "Do not yet know how to xml-ify coords of type $type";
+    throw JAC::OCS::Config::Error::FatalError("Do not yet know how to xml-ify coords of type $type");
   }
 
   $xml .= "</target>\n" unless $simple;
