@@ -217,11 +217,12 @@ sub coords_to_xml {
       my @pm = $c->pm;
       if (@pm) {
 	$xml .= "    <epoch>2000.0</epoch>\n";
-	$xml .= "    <pm1 units=\"arcsec-year\">".$pm[0]."</pm1>\n";
-	$xml .= "    <pm2 units=\"arcsec-year\">".$pm[1]."</pm2>\n";
+	$xml .= "    <pm1>".$pm[0]."</pm1>\n";
+	$xml .= "    <pm2>".$pm[1]."</pm2>\n";
       }
 
       # Radial Velocity goes here!
+      warn "Radial Velocity is currently ignored in XML construction";
 
     } elsif ($type eq 'FIXED') {
       $sys = "AZEL";
@@ -287,7 +288,7 @@ Convert "15.00" to "15" and "15.30" to "15.3".
 
 sub _clean_number {
   my $num = shift;
-  $num =~ s/0$//g; # strip trailing zeroes
+  $num =~ s/0+$//; # strip trailing zeroes
   $num =~ s/\.$//; # and trailing decimal point
   return $num;
 }
