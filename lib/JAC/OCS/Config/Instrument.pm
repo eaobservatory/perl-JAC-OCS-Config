@@ -245,7 +245,7 @@ sub stringify {
     $xml .= "          health=\"$rec{$r}{health}\"\n";
     my @xy = @{ $rec{$r}->{xypos}};
     $xml .= "          x=\"$xy[0]\"\n";
-    $xml .= "          x=\"$xy[1]\"\n";
+    $xml .= "          y=\"$xy[1]\"\n";
     $xml .= "          pol_type=\"$rec{$r}{pol_type}\" >\n";
 
     $xml .= "<sensitivity reference=\"$rec{$r}{refpix}\"\n";
