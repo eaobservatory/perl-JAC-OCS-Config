@@ -80,9 +80,6 @@ sub find_offsets {
     my %opt = ( system => $system, projection => $type );
     $opt{tracking_system} = $tracksys if defined $tracksys;
 
-    use Data::Dumper;
-    print Dumper( [$dx, $dy, \%opt]);
-
     # Create the object
     push(@offsets, new Astro::Coords::Offset($dx, $dy, %opt ) );
   }
