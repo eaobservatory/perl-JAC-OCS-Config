@@ -36,6 +36,7 @@ use Data::Dumper;
 
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::TCS::BASE;
+use JAC::OCS::Config::TCS::obsArea;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -327,6 +328,7 @@ sub _process_dom {
   # SLEW settings
 
   # Observing Area
+  $self->_find_obsArea();
 
   # Secondary mirror configuration
 
@@ -396,6 +398,21 @@ sub _find_base_posns {
 
   # Store the coordinate information
   $self->tags( %tags );
+
+}
+
+=item B<_find_obsArea>
+
+=cut
+
+sub _find_obsArea {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  # pass this node directly to obsArea class
+  # Should we check the node exists? Or make sure that
+  # we use a try block that returns a specific error if node is not
+  # available?
 
 }
 
