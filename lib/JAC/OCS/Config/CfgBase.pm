@@ -26,6 +26,9 @@ use JAC::OCS::Config::Error;
 
 use vars qw/ $VERSION $INITKEY /;
 
+# Overloading
+use overload '""' => "stringify";
+
 # This is the key that sub-classes should use if they want
 # to supply additional init values to the constructor
 $INITKEY = '__init';
@@ -183,6 +186,33 @@ sub _rootnode {
 
 =back
 
+=head2 General Methods
+
+=over 4
+
+=item B<stringify>
+
+Convert the object to XML. Called by the stringification operator
+and so has no arguments.
+
+=cut
+
+sub stringify {
+  my $self = shift;
+
+  # Presumably need to force synchronization of content with DOM
+
+  # Get root note
+  my $root = $self->_rootnode;
+
+  # Return text
+  return $root->toString;
+
+}
+
+
+=back
+
 =begin __PRIVATE_METHODS__
 
 =head2 Private Methods
@@ -248,6 +278,9 @@ Uses the getRootElementName method (in the subclass) to determine which
 CONFIG elements are actually useful (and sets the first matching node
 into the _rootnode attribute). Calls subclasses _process_dom method.
 
+Note that if the first element name matches, the second name will not
+be used.
+
 =cut
 
 sub _import_dom {
@@ -256,13 +289,28 @@ sub _import_dom {
 
   # Get the root element 
   my @elements = $self->getRootElementName();
-  my @xpath = join(" | ", map { "//$_" } @elements);
 
-  # Now look for the TCS information
-  my @nodes = $tree->findnodes(@xpath);
+  # Look for each element name, one at a time
+  my @nodes;
+  for my $elname (@elements) {
 
-  croak "DOM contains multiple configurations!"
-    if scalar(@nodes) > 1;
+    # If we are not a document object and the root node name is exactly
+    # what we want already, just use it.
+    if (!$tree->isa("XML::LibXML::Document") && $tree->nodeName eq $elname) {
+      @nodes = ($tree);
+      last;
+    }
+
+    # Now look for the relevant config information
+    @nodes = $tree->findnodes(".//$elname");
+
+    croak "DOM contains multiple configurations!"
+      if scalar(@nodes) > 1;
+
+    # Jump out the loop if we have found something
+    last if @nodes;
+
+  }
 
   croak "DOM contains no configurations!"
     if !scalar(@nodes);
