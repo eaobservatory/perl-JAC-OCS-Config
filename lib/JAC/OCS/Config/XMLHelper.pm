@@ -70,6 +70,13 @@ sub get_pcdata {
     # Return undef if the element contains no text children
     return undef unless defined $child;
     $pcdata = $child->toString;
+
+    # strip leading and trailing spaces
+    if (defined $pcdata) {
+      $pcdata =~ s/^\s+//;
+      $pcdata =~ s/\s+$//;
+    }
+
   }
   return $pcdata;
 }
