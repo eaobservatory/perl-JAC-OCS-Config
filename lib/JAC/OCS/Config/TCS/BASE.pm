@@ -302,6 +302,10 @@ sub _find_base_posn {
   throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find target inside BASE element\n") 
     unless $target;
 
+  # some old XML uses "Base" as the tag rather than "BASE" so convert
+  # early
+  $tag = "BASE" if $tag eq 'Base';
+
   # Store the tag
   $self->tag( $tag );
 
