@@ -98,6 +98,20 @@ sub new {
 
 =over 4
 
+=item B<tasks>
+
+Return the name of the OCS tasks requiring this configuration.
+
+ @task = $smu->tasks();
+
+Always returns 'SMU'.
+
+=cut
+
+sub tasks {
+  return ('SMU');
+}
+
 =item B<motion>
 
 The MOTION attribute reflects how the secondary is adjusted for
