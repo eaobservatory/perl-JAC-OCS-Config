@@ -175,6 +175,7 @@ sub stringify {
   $xml .= "<!-- BASE element contains target, offset and tracking system -->\n";
 
   my $tag = $self->tag;
+  $tag = 'Base' if $tag eq 'BASE'; # special case
   $xml .= "<BASE TYPE=\"$tag\">\n";
   $xml .= "  <!-- First define a target -->\n";
 
@@ -291,7 +292,7 @@ sub _find_base_posn {
     my ($tagnode) = $el->findnodes( './/target' );
     $tag = $tagnode->getAttribute('type');
   } else {
-    throw JAC::OCS::Config::Error::XMLBadStructure("Can find neither 'BASE' or 'base' element!");
+    throw JAC::OCS::Config::Error::XMLBadStructure("Can find neither 'BASE' nor 'base' element!");
   }
   throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find tag associated with this base position")
     unless defined $tag;
@@ -302,8 +303,7 @@ sub _find_base_posn {
   throw JAC::OCS::Config::Error::XMLBadStructure("Unable to find target inside BASE element\n") 
     unless $target;
 
-  # some old XML uses "Base" as the tag rather than "BASE" so convert
-  # early
+  # Use case insensitive BASE vs Base
   $tag = "BASE" if $tag eq 'Base';
 
   # Store the tag
