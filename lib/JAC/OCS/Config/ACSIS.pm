@@ -375,25 +375,38 @@ sub stringify {
 
   $xml .= "<ACSIS_CONFIG>\n";
 
-  $xml .= $self->line_list->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->cube_list->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->spw_list->stringify(NOINDENT=>0)  ."\n";
-  $xml .= $self->acsis_if->stringify(NOINDENT=>0)  ."\n";
-  $xml .= $self->acsis_corr->stringify(NOINDENT=>0)  ."\n";
-  $xml .= $self->acsis_map->stringify(NOINDENT=>0)  ."\n";
+  $xml .= $self->line_list->stringify(NOINDENT=>0) ."\n"
+    if defined $self->line_list;
+  $xml .= $self->cube_list->stringify(NOINDENT=>0) ."\n"
+    if defined $self->cube_list;
+  $xml .= $self->spw_list->stringify(NOINDENT=>0)  ."\n"
+    if defined $self->spw_list;
+  $xml .= $self->acsis_if->stringify(NOINDENT=>0)  ."\n"
+    if defined $self->acsis_if;
+  $xml .= $self->acsis_corr->stringify(NOINDENT=>0)  ."\n"
+    if defined $self->acsis_corr;
+  $xml .= $self->acsis_map->stringify(NOINDENT=>0)  ."\n"
+    if defined $self->acsis_map;
 
   $xml .= "<red_obs_mode>". $self->red_obs_mode . "</red_obs_mode>\n"
     if defined $self->red_obs_mode;
   $xml .= "<red_recipe_id>". $self->red_recipe_id . "</red_recipe_id>\n"
     if defined $self->red_recipe_id;
 
-  $xml .= $self->semantic_links->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->red_config_list->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->gridder_config->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->rtd_config->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->process_layout->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->process_links->stringify(NOINDENT=>0) ."\n";
-  $xml .= $self->interface_list->stringify(NOINDENT=>0) ."\n";
+  $xml .= $self->semantic_links->stringify(NOINDENT=>0) ."\n"
+    if defined $self->semantic_links;
+  $xml .= $self->red_config_list->stringify(NOINDENT=>0) ."\n"
+    if defined $self->red_config_list;
+  $xml .= $self->gridder_config->stringify(NOINDENT=>0) ."\n"
+    if defined $self->gridder_config;
+  $xml .= $self->rtd_config->stringify(NOINDENT=>0) ."\n"
+    if defined $self->rtd_config;
+  $xml .= $self->process_layout->stringify(NOINDENT=>0) ."\n"
+    if defined $self->process_layout;
+  $xml .= $self->process_links->stringify(NOINDENT=>0) ."\n"
+    if defined $self->process_links;
+  $xml .= $self->interface_list->stringify(NOINDENT=>0) ."\n"
+    if defined $self->interface_list;
 
   # optional
   $xml .= $self->simulation->stringify(NOINDENT=>0) ."\n"
