@@ -388,10 +388,10 @@ sub stringify {
 
   $xml .= "<ACSIS_CONFIG>\n";
 
-  $xml .= $self->line_list->stringify(NOINDENT=>0) ."\n"
-    if defined $self->line_list;
   $xml .= $self->cube_list->stringify(NOINDENT=>0) ."\n"
     if defined $self->cube_list;
+  $xml .= $self->line_list->stringify(NOINDENT=>0) ."\n"
+    if defined $self->line_list;
   $xml .= $self->spw_list->stringify(NOINDENT=>0)  ."\n"
     if defined $self->spw_list;
   $xml .= $self->acsis_if->stringify(NOINDENT=>0)  ."\n"
