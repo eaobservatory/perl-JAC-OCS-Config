@@ -36,6 +36,8 @@ use JAC::OCS::Config::XMLHelper qw| find_attr_child
 				    find_children
 				    indent_xml_string
 				    find_range
+				    interval_to_xml
+				    attrs_only
 				    |;
 
 use JAC::OCS::Config::Helper qw/ check_class_hash_fatal /;
@@ -141,7 +143,65 @@ sub stringify {
 
   # loop over all spectral windows
   for my $k (keys %spw) {
+    # Create each spectral window and then immediately include
+    # subband specifications
+    my %subbands = $spw{$k}->subbands;
 
+    # Now loop over each spectral window and associated subband
+    for my $spwid ($k, keys %subbands) {
+
+      # The actual spectral window object is either in %spw or %subbands
+      my $sw = ( exists $spw{$spwid} ? $spw{$spwid} : $subbands{$spwid});
+
+      $xml .= "<spectral_window id=\"$spwid\">\n";
+
+      if ($sw->subbands) {
+	$xml .= "<subband_list>\n";
+	my %sb = $sw->subbands;
+	$xml .= join("\n" ,map { "<subband ref=\"$_\"/>" } keys %sb) ."\n";
+	$xml .= "</subband_list>\n";
+      } else {
+	# mode, window and align
+	$xml .= attrs_only("bandwidth_mode", mode => $sw->bandwidth_mode);
+	$xml .= attrs_only("window", type => $sw->window);
+	$xml .= "<align_shift>".$sw->align_shift."</align_shift>\n";
+      }
+
+      $xml .= attrs_only( "rest_freq_ref", ref=> $sw->rest_freq_ref);
+      $xml .= attrs_only( "fe_sideband", sideband => $sw->fe_sideband);
+
+      # IF Coordinate
+      my $ifcrd = $sw->if_coordinate;
+      $xml .= "<if_coordinate>\n";
+      $xml .= "<if_ref_freq units=\"Hz\">".$ifcrd->if_freq."</if_ref_freq>\n";
+      $xml .= "<if_ref_channel>".$ifcrd->ref_channel."</if_ref_channel>\n";
+      $xml .= "<if_chan_width units=\"Hz\">".$ifcrd->channel_width."</if_chan_width>\n";
+      $xml .= "<if_nchans>".$ifcrd->nchannels."</if_nchans>\n";
+      $xml .= "</if_coordinate>\n";
+
+      my @blregion = $sw->baseline_region();
+      if (@blregion) {
+	my %params = $sw->baseline_fit;
+	$xml .= "<baseline_fit>\n";
+	if ($params{function} eq 'polynomial') {
+	  $xml .= attrs_only("fit_polynomial", "degree"=>$params{degree});
+	}
+
+	$xml .= "<fit_region>\n";
+	$xml .= interval_to_xml(@blregion);
+	$xml .= "</fit_region>\n";
+	$xml .= "</baseline_fit>\n";
+      }
+
+      my @lregion = $sw->line_region;
+      if (@lregion) {
+	$xml .= "<line_region>\n";
+	$xml .= interval_to_xml(@lregion);
+	$xml .= "</line_region>\n";
+      }
+
+      $xml .= "</spectral_window>\n";
+    }
   }
 
   $xml .= "</spw_list>\n";
