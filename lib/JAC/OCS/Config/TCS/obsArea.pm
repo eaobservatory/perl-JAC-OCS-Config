@@ -34,7 +34,8 @@ use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr /;
-use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets /;
+use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets 
+				       pa_to_xml offset_to_xml /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -198,6 +199,87 @@ sub scan {
     }
   }
   return %{ $self->{SCAN} };
+}
+
+=item B<mode>
+
+Return the type of observing area that has been specified.
+Can be either "offsets" or "area".
+
+=cut
+
+sub mode {
+  my $self = shift;
+
+  my $mode = '';
+  if ($self->maparea) {
+    $mode = "area";
+  } elsif ($self->offsets) {
+    $mode = "offsets";
+  } else {
+    croak "obsArea must be either offsets or map area";
+  }
+  return $mode;
+}
+
+=item B<stringify>
+
+Convert the object back into XML.
+
+  $xml = $obs->stringify( NOINDENT => 1);
+
+=cut
+
+sub stringify {
+  my $self = shift;
+  my %args = @_;
+  my $xml = "";
+
+  $xml .= "<obsArea>\n";
+
+  # position angle for the area
+  if ($self->posang) {
+    $xml .= pa_to_xml( $self->posang );
+  }
+
+  # get the mode
+  my $mode = $self->mode;
+
+  if ($mode eq 'offsets') {
+    for my $o ($self->offsets) {
+      $xml .= offset_to_xml( $o );
+    }
+  } elsif ($mode eq 'area') {
+    $xml .= "<SCAN_AREA>\n";
+
+    my @o = $self->offsets;
+    $xml .= offset_to_xml( $o[0] ) if @o;
+
+    my %area = $self->maparea;
+
+    $xml .= "<AREA HEIGHT=\"$area{HEIGHT}\" WIDTH=\"$area{WIDTH}\" />\n";
+
+    my %scan = $self->scan;
+    $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
+    $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n";
+    $xml .= "      DY=\"$scan{DY}\"\n";
+    $xml .= "      REVERSAL=\"$scan{REVERSAL}\"\n";
+    $xml .= "      TYPE=\"$scan{TYPE}\" >\n";
+
+    for my $pa (@{ $scan{PA} }) {
+      $xml .= pa_to_xml( $pa );
+    }
+
+    $xml .= "</SCAN>\n";
+
+    $xml .= "</SCAN_AREA>\n";
+  } else {
+    croak "Unrecognized obsArea mode '$mode'";
+  }
+
+  $xml .= "</obsArea>\n";
+
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
 =back

@@ -45,8 +45,10 @@ use Data::Dumper;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error;
-use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata /;
-use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets /;
+use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata 
+				    indent_xml_string
+				    /;
+use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets pa_to_xml /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -180,6 +182,103 @@ sub timing {
     }
   }
   return %{ $self->{TIMING} };
+}
+
+=item B<smu_mode>
+
+The observing mode implemented by the secondary mirror.
+Can be one of 
+
+   none
+   chop
+   jiggle
+   jiggle_chop
+
+=cut
+
+sub smu_mode {
+  my $self = shift;
+  my %c = $self->chop;
+  my %j = $self->jiggle;
+
+  my $mode;
+  if (%c && %j) {
+    $mode = "jiggle_chop";
+  } elsif (%c) {
+    $mode = "chop";
+  } elsif (%j) {
+    $mode = "jiggle";
+  } else {
+    $mode = "none";
+  }
+  return $mode;
+}
+
+=item B<stringify>
+
+Convert the class into XML form. This is either achieved simply by
+stringifying the DOM tree (assuming object content has not been
+changed) or by taking the object attributes and reconstructing the XML.
+
+ $xml = $sec->stringify;
+
+=cut
+
+sub stringify {
+  my $self = shift;
+  my %args = @_;
+  my $xml = "";
+
+  # motion
+  $xml .= "<SECONDARY ";
+  my $mo = $self->motion;
+  $xml .= "MOTION=\"$mo\"" if defined $mo;
+  $xml .= ">\n";
+
+  # Obs mode
+  my $mode = $self->smu_mode;
+
+  if ($mode ne "none") {
+    if ($mode eq 'jiggle_chop') {
+      $xml .= "<JIGGLE_CHOP>\n";
+    }
+
+    if ($mode eq 'jiggle' || $mode eq 'jiggle_chop') {
+      my %j = $self->jiggle;
+      $xml .= "<JIGGLE NAME=\"$j{NAME}\"\n";
+      $xml .= "        SYSTEM=\"$j{SYSTEM}\"\n";
+      $xml .= "        SCALE=\"$j{SCALE}\"\n";
+      $xml .= ">\n";
+
+      $xml .= pa_to_xml( $j{PA} );
+      $xml .= "</JIGGLE>\n";
+    }
+
+    if ($mode eq 'chop' || $mode eq 'jiggle_chop') {
+      my %c = $self->chop;
+      $xml .= "<CHOP SYSTEM=\"$c{SYSTEM}\" >\n";
+      $xml .= "<THROW>$c{THROW}</THROW>\n";
+      $xml .= pa_to_xml( $c{PA} );
+      $xml .= "</CHOP>\n";
+    }
+
+    if ($mode eq 'jiggle_chop') {
+      my %t = $self->timing;
+      $xml .= "<TIMING>\n";
+      if (exists $t{CHOPS_PER_JIG} && defined $t{CHOPS_PER_JIG}) {
+	$xml .= "<CHOPS_PER_JIG>$t{CHOPS_PER_JIG}</CHOPS_PER_JIG>\n";
+      } else {
+	$xml .= "<JIGS_PER_CHOP N_JIGS_ON=\"$t{N_JIGS_ON}\"\n";
+	$xml .= "               N_CYC_OFF=\"$t{N_CYC_OFF}\" />\n";
+      }
+      $xml .= "</TIMING>\n";
+      $xml .= "</JIGGLE_CHOP>\n";
+    }
+
+  }
+
+  $xml .= "</SECONDARY>\n";
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
 =back
