@@ -25,6 +25,7 @@ use XML::LibXML;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error qw| :try |;
+use JAC::OCS::Config::Units;
 
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
@@ -319,12 +320,14 @@ sub _process_dom {
   my %bwinfo = find_attr($child, "units","value");
 
   # simple unit parsing
-  my $l = substr($bwinfo{units},0,1);
   my $mult = 1;
-  if ($l eq 'M') {
-    $mult = 1e6;
-  } elsif ($l eq 'G') {
-    $mult = 1e9;
+  if (exists $bwinfo{units}) {
+    my $u = JAC::OCS::Config::Units->new( $bwinfo{units} );
+    if (defined $u) {
+      $mult = 10 ** $u->factor;
+    } else {
+      warn "Unable to parse units '$bwinfo{units} in Instrument\n";
+    }
   }
   $self->bandwidth( $bwinfo{value} * $mult );
 
