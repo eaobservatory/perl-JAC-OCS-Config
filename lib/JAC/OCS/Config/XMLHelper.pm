@@ -37,7 +37,7 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 @EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
 		  get_this_pcdata find_attr_child find_attrs_and_pcdata
-		  _check_range indent_xml_string find_range
+		  _check_range indent_xml_string find_range interval_to_xml
 	       );
 
 =head1 FUNCTIONS
@@ -197,8 +197,11 @@ sub find_attrs_and_pcdata {
   my $child = find_children( $el, $tag, min=>1, max=>1);
   my $pcdata = get_this_pcdata( $child );
 
+  # This returns XML::LibXML::Attr objects
   my @attributes = $child->attributes();
-  return ($pcdata, find_attr( $child, @attributes));
+
+  # Extract keys and values and return
+  return ($pcdata, map { $_->name, $_->value } @attributes);
 }
 
 
@@ -289,7 +292,7 @@ sub indent_xml_string {
 
 =item B<find_range>
 
-Locate and parse a <range> element. Returns a C<JAC::OCS::Config::Range>
+Locate and parse a <range> element. Returns a C<JAC::OCS::Config::Interval>
 object.
 
   @range = find_range( $el );
@@ -327,6 +330,24 @@ sub find_range {
   }
 
   return (wantarray ? @int : $int[0]);
+}
+
+=item B<interval_to_xml>
+
+Convert a C<JAC::OCS::Config::Interval> object to a standard
+ACSIS <range> element.
+
+=cut
+
+sub interval_to_xml {
+  my $i = shift;
+
+  my $xml = "";
+  $xml .= "<range units=\"".$i->units."\">\n";
+  $xml .= "  <min>". $i->min ."</min>\n";
+  $xml .= "  <max>". $i->max ."</max>\n";
+  $xml .= "</range>\n";
+  return $xml;
 }
 
 =back
