@@ -28,6 +28,7 @@ use XML::LibXML;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Interval;
 
 use base qw/ Exporter /;
 use vars qw/ $VERSION @EXPORT_OK /;
@@ -35,8 +36,8 @@ use vars qw/ $VERSION @EXPORT_OK /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 @EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
-		  get_this_pcdata
-		  _check_range indent_xml_string
+		  get_this_pcdata find_attr_child find_attrs_and_pcdata
+		  _check_range indent_xml_string find_range
 	       );
 
 =head1 FUNCTIONS
@@ -45,7 +46,7 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 =item B<get_this_pcdata>
 
-Given an node object, return the first child as a string.
+Given a node object, return the first child as a string.
 
  $string = get_this_pcdata( $el );
 
@@ -159,6 +160,48 @@ sub find_attr {
 
 }
 
+=item B<find_attr_child>
+
+Find attributes associated with a child element. There must be only a 
+single match for the child element name.
+
+  %attr = find_attr_child( $parent, $child_name, @attr_names );
+
+The end arguments and the return values match those of C<find_attr>
+
+=cut
+
+sub find_attr_child {
+  my ($el, $tag, @keys) = @_;
+  my $child = find_children( $el, $tag, min => 1, max => 1);
+  return find_attr( $child, @keys );
+}
+
+=item B<find_attrs_and_pcdata>
+
+Find both the PCDATA associated with an element and all the attributes
+associated with this element.
+
+  ($pcdata, %attributes) = find_attr_and_pcdata( $el, $tag );
+
+Note that this function looks for a child element (see C<get_pcdata>)
+and requires a single match of child element.
+
+Unlike C<find_attr>, all attributes are returned.
+
+=cut
+
+sub find_attrs_and_pcdata {
+  my ($el, $tag) = @_;
+
+  my $child = find_children( $el, $tag, min=>1, max=>1);
+  my $pcdata = get_this_pcdata( $child );
+
+  my @attributes = $child->attributes();
+  return ($pcdata, find_attr( $child, @attributes));
+}
+
+
 =item B<find_children>
 
 Return the child elements with the supplied tag name but throw an
@@ -172,6 +215,9 @@ If neither min nor max are specified no exception will be thrown.
 In scalar context, returns the first match (useful is min and max are
 both equal to 1) or undef if no matches.
 
+If either the root element or the tag are not defined, an empty list is
+returned (which may also trigger an out of range exception).
+
 =cut
 
 sub find_children {
@@ -180,7 +226,9 @@ sub find_children {
   my %range = @_;
 
   # Find the children
-  my @children = $el->getChildrenByTagName( $tag );
+  my @children;
+  @children = $el->getChildrenByTagName( $tag )
+    if (defined $tag && defined $el);
 
   return _check_range( \%range, "elements named '$tag'", @children);
 }
@@ -237,6 +285,48 @@ sub indent_xml_string {
   }
 
   return $xml;
+}
+
+=item B<find_range>
+
+Locate and parse a <range> element. Returns a C<JAC::OCS::Config::Range>
+object.
+
+  @range = find_range( $el );
+  $range = find_range( $el );
+
+In scalar context, an exception is thrown unless there is exactly one <range>
+element present.
+
+=cut
+
+sub find_range {
+  my $el = shift;
+
+  my %options;
+  if (!wantarray) {
+    # Scalar context so we are expecting exactly one range
+    %options = (min=>1, max => 1);
+  }
+
+  # locate the range
+  my @range = find_children( $el, "range", %options);
+
+  my @int;
+  for my $r (@range) {
+    my $units = find_attr( $r, "units");
+    my $min = get_pcdata( $r, "min");
+    my $max = get_pcdata( $r, "max");
+
+    my $interval = new JAC::OCS::Config::Interval( Min => $min,
+						   Max => $max,
+						   Units => $units,
+						 );
+
+    push(@int, $interval);
+  }
+
+  return (wantarray ? @int : $int[0]);
 }
 
 =back
