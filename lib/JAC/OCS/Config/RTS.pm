@@ -129,10 +129,11 @@ Array of sequence variants.
   @seq = $rts->sequence();
   $rts->sequence( @seq );
 
-Variants are stored as reference to an array of wait and put
-declarations.  The wait/put declarations are represented as hashes
-with keys name, input/output and value. "input" is used for wait declarations
-and output is used for put declarations.
+Variants are stored as reference to an hash of wait and put
+declarations. The hash key is the name of the declaration (e.g. putSC
+or waitSR). These in turn point to a reference to a hash specifying
+the declaration state with keys name, input/output and value. "input"
+is used for wait declarations and output is used for put declarations.
 
 =cut
 
@@ -171,15 +172,24 @@ sub stringify {
     my $counter = 0;
     for my $s (@seq) {
       $counter++;
-      # Array of arrays
+      # Array of hashes
       $xml .= "<position num=\"$counter\">\n";
-      for my $dec (@{$s}) {
-	my $name = $dec->{name};
-	my $input = $dec->{input};
-	my $output = $dec->{output};
-	my $value = $dec->{value};
-	$xml .= "<$name ";
-	if ($name =~ /^put/) {
+
+      # De ref to hash
+      my %decl = %{$s};
+
+      # Note that the order of keys is specified by the dtd
+      # so we have to go through all of them even if they do not exist
+      for my $dec (qw/ putDV putNDV putSC putNSC waitSR waitNSR 
+		       waitExtClk waitSamp/) {
+	next unless exists $decl{$dec};
+	my $type = $decl{$dec}->{type};
+	my $name = $decl{$dec}->{name};
+	my $input = $decl{$dec}->{input};
+	my $output = $decl{$dec}->{output};
+	my $value = $decl{$dec}->{value};
+	$xml .= "<$type name=\"$name\" ";
+	if ($type =~ /^put/) {
 	  $xml .= "output=\"$output\" ";
 	} else {
 	  $xml .= "input=\"$input\" ";
@@ -259,16 +269,16 @@ sub _process_dom {
     my @sequence;
     for my $d (@decl) {
       # need all the children starting with put or wait
-      my @declarations;
-      for my $c ($d->findnodes('.//*[contains(name(),"wait")]'),
-		 $d->findnodes('.//*[contains(name(),"put")]'),
+      my %declarations;
+      for my $c ($d->findnodes('.//*[contains(name(),"put")]'),
+		 $d->findnodes('.//*[contains(name(),"wait")]'),
 		) {
 	my $name = $c->nodeName;
-	my %attr = find_attr( $c, "output","value", "input");
-	$attr{name}= $name;
-	push(@declarations, \%attr);
+	my %attr = find_attr( $c, "output","value", "input", "name");
+	$attr{type}= $name;
+	$declarations{$name} = \%attr;
       }
-      push(@sequence, \@declarations);
+      push(@sequence, \%declarations);
     }
     $self->sequence( @sequence );
   }
