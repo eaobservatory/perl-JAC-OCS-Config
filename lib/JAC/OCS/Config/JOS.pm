@@ -40,6 +40,23 @@ use vars qw/ $VERSION /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
+# List of all recipe parameters
+# Should be extended to include corresponding recipe names
+our @PARAMS = (qw/
+		  NUM_CYCLES
+		  NUM_NOD_SETS
+		  STEP_TIME
+		  JOS_MULT
+		  JOS_MIN
+		  ROWS_PER_REF
+		  REFS_PER_CAL
+		  N_REFSAMPLES
+		  N_CALSAMPLES
+		  N_SKYREFSAMPLES
+		  FOCUS_STEPS
+		  FOCUS_STEP
+		  /);
+
 =head1 METHODS
 
 =head2 Constructor
@@ -68,7 +85,6 @@ sub new {
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    TASKS => [],
-								    PARAM => {},
 								   }
 			  );
 }
@@ -113,22 +129,206 @@ sub recipe {
 
 =item B<parameters>
 
-Recipe parameters (as a hash)
+Recipe parameters (as a hash). Parameters should be upper-cased. This
+is a wrapper for the independent accessor methods but limits the
+return parameters to those that are relevant for the registered
+recipe.
 
  %par = $jos->parameters;
  $jos->parameters( %par );
+
+If hash arguments are provided to this method, the values will be delegated to
+the corresponding parameter methods.
 
 =cut
 
 sub parameters {
   my $self = shift;
   if (@_) {
-    %{$self->{PARAM}} = @_;
+    my %input = @_;
+    for my $p (keys %input) {
+      my $method = lc($p);
+      $self->$method( $input{$p} ) if $self->can( $method );
+    }
   }
-  return %{$self->{PARAM}};
+  # return all relevant parameters
+  my %output;
+  for my $p (@PARAMS) {
+    my $method = lc($p);
+    # if defined
+    my $val= $self->$method() if $self->can($method);
+    $output{$p} = $val if defined $val;
+  }
+  return %output;
 }
 
+=item B<num_cycles>
 
+Number of cycles.
+
+=cut
+
+sub num_cycles {
+  my $self = shift;
+  if (@_) {
+    $self->{NUM_CYCLES} = shift;
+  }
+  return $self->{NUM_CYCLES};
+}
+
+=item B<num_nod_sets>
+
+Number of nod repeats.
+
+=cut
+
+sub num_nod_sets {
+  my $self = shift;
+  if (@_) {
+    $self->{NUM_NOD_SETS} = shift;
+  }
+  return $self->{NUM_NOD_SETS};
+}
+
+=item B<step_time>
+
+Step time
+
+=cut
+
+sub step_time {
+  my $self = shift;
+  if (@_) {
+    $self->{STEP_TIME} = shift;
+  }
+  return $self->{STEP_TIME};
+}
+
+=item B<jos_mult>
+
+.
+
+=cut
+
+sub jos_mult {
+  my $self = shift;
+  if (@_) {
+    $self->{JOS_MULT} = shift;
+  }
+  return $self->{JOS_MULT};
+}
+
+=item B<jos_min>
+
+
+
+=cut
+
+sub jos_min {
+  my $self = shift;
+  if (@_) {
+    $self->{JOS_MIN} = shift;
+  }
+  return $self->{JOS_MIN};
+}
+
+=item B<rows_per_ref>
+
+The number of raster rows to complete between reference observations.
+
+=cut
+
+sub rows_per_ref {
+  my $self = shift;
+  if (@_) {
+    $self->{ROWS_PER_REF} = shift;
+  }
+  return $self->{ROWS_PER_REF};
+}
+
+=item B<refs_per_cal>
+
+Number of sky references between each cal observation.
+
+=cut
+
+sub refs_per_cal {
+  my $self = shift;
+  if (@_) {
+    $self->{REFS_PER_CAL} = shift;
+  }
+  return $self->{REFS_PER_CAL};
+}
+
+=item B<n_refsamples>
+
+Number of samples to integrate on the reference position.
+
+=cut
+
+sub n_refsamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_REFSAMPLES} = shift;
+  }
+  return $self->{N_REFSAMPLES};
+}
+
+=item B<n_calsamples>
+
+Number of samples to integrate for the cal observation.
+
+=cut
+
+sub n_calsamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_CALSAMPLES} = shift;
+  }
+  return $self->{N_CALSAMPLES};
+}
+
+=item B<n_skyrefsamples>
+
+Number of samples to use for a sky reference.
+
+=cut
+
+sub n_skyrefsamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_SKYREFSAMPLES} = shift;
+  }
+  return $self->{N_SKYREFSAMPLES};
+}
+
+=item B<focus_steps>
+
+Number of smu positions to stop through for a focus observation.
+
+=cut
+
+sub focus_steps {
+  my $self = shift;
+  if (@_) {
+    $self->{FOCUS_STEPS} = shift;
+  }
+  return $self->{FOCUS_STEPS};
+}
+
+=item B<FOCS_STEP>
+
+Size of SMU movement for each step in mm.
+
+=cut
+
+sub focus_step {
+  my $self = shift;
+  if (@_) {
+    $self->{FOCUS_STEP} = shift;
+  }
+  return $self->{FOCUS_STEP};
+}
 
 =item B<stringify>
 
@@ -214,24 +414,14 @@ sub _process_dom {
     unless @tasks;
   $self->tasks( @tasks );
 
+  # get the recipe name
   my $rec = find_children( $el, "recipe", min => 1, max => 1 );
   my $rec_name = find_attr( $rec, "NAME" );
   $self->recipe( $rec_name );
 
+  # Find the parameters
   my $par_el = find_children( $rec, "parameters", min=>1, max=>1);
-  my %args = find_attr( $par_el, qw/ NUM_CYCLES
-				     NUM_NOD_SETS
-				     STEP_TIME
-				     JOS_MULT
-				     JOS_MIN
-				     ROWS_PER_REF
-				     REFS_PER_CAL
-				     N_REFSAMPLES
-				     N_CALSAMPLES
-				     N_SKYREFSAMPLES
-				     FOCUS_STEPS
-				     FOCUS_STEP
-				   /);
+  my %args = find_attr( $par_el, @PARAMS);
   $self->parameters( %args );
 
 
