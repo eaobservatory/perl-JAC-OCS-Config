@@ -300,7 +300,7 @@ sub stringify {
 
     my $refpix = $rec{$r}{refpix};
     if (!exists $rec{$refpix}) {
-      throw JAC::OCS::Config::FatalError('Reference pixel ($refpix) is not available to this instrument configuration');
+      throw JAC::OCS::Config::Error::FatalError("Reference pixel ($refpix) is not available to this instrument configuration");
     }
 
     $xml .= "<sensitivity reference=\"$refpix\"\n";
