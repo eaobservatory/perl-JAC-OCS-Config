@@ -8,7 +8,7 @@ JAC::OCS::Config::RTS - Parse and modify OCS RTS configurations
 
   use JAC::OCS::Config::RTS;
 
-  $cfg = new JAC::OCS::Config::RTS( File => 'fe.ent');
+  $cfg = new JAC::OCS::Config::RTS( File => 'rts.ent');
 
 =head1 DESCRIPTION
 
@@ -165,7 +165,7 @@ sub stringify {
 
   my @seq = $self->sequence;
   if (!@seq) {
-    $xml .= "<Sequence />\n";
+    $xml .= "<Sequence size=\"0\" />\n";
   } else {
     $xml .= "<Sequence size=\"".@seq."\">\n";
 
