@@ -24,11 +24,13 @@ a standard TOML file.
 
 =cut
 
+use 5.006;
 use strict;
 use Carp;
 use warnings;
 use XML::LibXML;
 use Astro::Coords;
+use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error;
@@ -96,10 +98,14 @@ sub telescope {
 =item B<tags>
 
 Hash containing the tags used in the TCS configuration as keys and the
-corresponding coordinate objects.
+corresponding coordinate information.
 
   my %tags = $cfg->tags;
   $cfg->tags( %tags );
+
+The content of this hash is not part of the public interface. Use the
+getCoords, getOffsets and getTrackingSystem methods for detailed
+information.
 
 =cut
 
@@ -131,6 +137,10 @@ Retrieve the Base or Science position as an C<Astro::Coords> object.
 Note that it is an error for there to be both a Base and a Science
 position in the XML.
 
+Also note that C<Astro::Coords> objects do not currently support
+OFFSETS and so any offsets present in the XML will not be present in
+the returned object. See the C<getTargetOffsets> method.
+
 =cut
 
 sub getTarget {
@@ -153,6 +163,10 @@ The following synonyms are supported:
 
 BASE/SCIENCE is equivalent to calling the C<getTarget> method.
 
+Note that C<Astro::Coords> objects do not currently support OFFSETS
+and so any offsets present in the XML will not be present in the
+returned object. See the C<getOffsets> method.
+
 =cut
 
 sub getCoords {
@@ -161,16 +175,68 @@ sub getCoords {
 
   my %tags = $self->tags;
 
-  my %synonyms = ( BASE => 'SCIENCE',
-		   SCIENCE => 'BASE',
-		   REFERENCE => 'SKY',
-		   SKY => 'REFERENCE',
-		 );
+  # look for matching key or synonym
+  $tag = $self->_translate_tag_name( $tag );
+
+  return (defined $tag ? $tags{$tag}->{coords} : undef );
+}
+
+=item B<getTargetOffset>
+
+Wrapper for C<getOffsets> method. Returns any offset associated
+with the base/science position.
+
+=cut
+
+sub getTargetOffset {
+  my $self = shift;
+  return $self->getOffsets( "SCIENCE" );
+}
+
+=item B<getOffsets>
+
+Retrieve any offsets associated with the specified target. Offsets are
+returned as a C<Astro::Coords::Offset> objects.
+Can return undef if no offset was specified.
+
+  $ref = $cfg->getOffsets( "SCIENCE" );
+
+This method may well be obsoleted by an upgrade to C<Astro::Coords>.
+
+=cut
+
+sub getOffsets {
+  my $self = shift;
+  my $tag = shift;
+
+  my %tags = $self->tags;
 
   # look for matching key or synonym
-  return $tags{$tag} if exists $tags{$tag};
-  return $tags{$synonyms{$tag}} if (exists $synonyms{$tag} && exists $tags{$synonyms{$tag}});
-  return undef;
+  $tag = $self->_translate_tag_name( $tag );
+
+  return (defined $tag ? $tags{$tag}->{offset} : undef );
+}
+
+=item B<getTrackingSystem>
+
+Each Base position can have a different tracking system to the start
+position specified in the target. (for example, a position can be
+specified in RA/Dec but the telescope can be told to track in AZEL)
+
+  $track_sys = $cfg->getTrackingSystem( "REFERENCE" );
+
+=cut
+
+sub getTrackingSystem {
+  my $self = shift;
+  my $tag = shift;
+
+  my %tags = $self->tags;
+
+  # look for matching key or synonym
+  $tag = $self->_translate_tag_name( $tag );
+
+  return (defined $tag ? $tags{$tag}->{tracking} : undef );
 }
 
 =back
@@ -203,6 +269,39 @@ sub getRootElementName {
 
 =over 4
 
+=item B<_translate_tag_name>
+
+Given  a tag name, check to see whether a tag of that name exists. If it does, return it, if it doesn't look up the tag name in the synonyms table. If the sysnonym exists, return that. Else return undef.
+
+ $tag = $cfg->_translate_tag_name( $tag );
+
+=cut
+
+{
+  my %synonyms = ( BASE => 'SCIENCE',
+		   SCIENCE => 'BASE',
+		   REFERENCE => 'SKY',
+		   SKY => 'REFERENCE',
+		 );
+
+
+  sub _translate_tag_name {
+    my $self = shift;
+    my $tag = shift;
+
+    my %tags = $self->tags;
+
+    if (exists $tags{$tag} ) {
+      return $tag;
+    } elsif (exists $synonyms{$tag} && exists $tags{ $synonyms{$tag} } ) {
+      # Synonym exists
+      return $synonyms{$tag};
+    } else {
+      return undef;
+    }
+  }
+}
+
 =item B<_process_dom>
 
 Using the C<_rootnode> node referring to the top of the TCS XML,
@@ -210,12 +309,60 @@ process the DOM tree and extract all the coordinate information.
 
  $self->_process_dom;
 
-Populates the TAGS hash with tag names and corresponding C<Astro::Coords>
-objects.
+Populates the object with the extracted results.
 
 =cut
 
 sub _process_dom {
+  my $self = shift;
+
+  # Get the telescope name (if possible)
+  $self->_find_telescope();
+
+  # Look for BASE positions
+  $self->_find_base_posns();
+
+  # SLEW settings
+
+  # Observing Area
+
+  # Secondary mirror configuration
+
+  # Beam rotator configuration
+
+  return;
+}
+
+=item B<_find_telescope>
+
+Extract telescope name from the DOM tree. Non-fatal if a telescope
+can not be located.
+
+The object is updated if a telescope is located.
+
+=cut
+
+sub _find_telescope {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  my $tel = $el->getAttribute( "TELESCOPE" );
+
+  $self->telescope( $tel ) if $tel;
+}
+
+=item B<_find_base_posns>
+
+Extract target information from the BASE elements in the TCS.
+An exception will be thrown if no base positions can be found.
+
+  $cfg->_find_base_posns();
+
+The state of the object is updated.
+
+=cut
+
+sub _find_base_posns {
   my $self = shift;
   my $el = $self->_rootnode;
 
@@ -236,7 +383,6 @@ sub _process_dom {
   # We should find all the BASE entries and parse them in turn.
   # Supporting the old style is a pain
 
-  # Look for BASE
   my @base = $el->findnodes( './/BASE');
 
   # if we have not got any we look for "base" - "the old version"
@@ -273,22 +419,41 @@ sub _process_dom {
     # Force upper case
     $tag = uc($tag);
 
+    # Create a new hash for the results
+    $tags{$tag} = {};
+
     # Now extract the coordinate information
-    $tags{$tag} =  $self->_extract_coord_info( $target );
+    $tags{$tag}->{coords} =  $self->_extract_coord_info( $target );
 
-    # There may be an offset for REFERENCE or SKY
-    if ($tag eq 'REFERENCE' || $tag eq 'SKY') {
-      # Look for an offset
-      my ($offset) = $b->findnodes('.//OFFSET');
+    # Look for an offset
+    my ($offset) = $b->findnodes('.//OFFSET');
 
-      if (defined $offset) {
-	# Parse the offset information
-#	$tags{$tag}->{OFFSET_DX} = $self->_get_pcdata($offset, 'DC1');
-#	$tags{$tag}->{OFFSET_DY} = $self->_get_pcdata($offset, 'DC2');
-	croak "Offsets not yet handled by Astro::Coords";
-      }
-
+    # Look for tracking system
+    my ($tracksys) = $b->findnodes( './/TRACKING_SYSTEM' );
+    if ($tracksys) {
+      $tags{$tag}->{tracking} = $tracksys->getAttribute( "SYSTEM" );
     }
+
+
+    if (defined $offset) {
+      # Parse the offset information
+      my $dx = $self->_get_pcdata($offset, 'DC1');
+      my $dy = $self->_get_pcdata($offset, 'DC2');
+      my $system = $offset->getAttribute( "SYSTEM" );
+      my $type   = $offset->getAttribute( "TYPE" );
+
+      # Options
+      my %opt = ( system => $system, projection => $type );
+      $opt{tracking_system} = $tags{$tag}->{tracking}
+	if exists $tags{$tag}->{tracking};
+
+      # Store in the tag
+      $tags{$tag}->{offset} = new Astro::Coords::Offset(
+							$dx, $dy,
+							%opt
+							);
+    }
+
 
   }
 
