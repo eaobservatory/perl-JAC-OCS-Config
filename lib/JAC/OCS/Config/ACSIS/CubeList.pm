@@ -24,17 +24,23 @@ use strict;
 use Carp;
 use warnings;
 use XML::LibXML;
+use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error qw| :try |;
 
+use JAC::OCS::Config::ACSIS::Cube;
+
 # Parsing spherSystem
 use JAC::OCS::Config::TCS::BASE;
+use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml /;
 
 use JAC::OCS::Config::XMLHelper qw( find_attr find_attrs_and_pcdata
 				    find_children find_attr_child 
 				    get_this_pcdata get_pcdata find_range
+				    interval_to_xml
+				    indent_xml_string
 				  );
-
+use JAC::OCS::Config::Helper qw/ check_class_hash_fatal /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -69,7 +75,7 @@ sub new {
   # extra initialiser
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    CUBES => [],
+								    CUBES =>{},
 								   }
 			  );
 }
@@ -89,14 +95,77 @@ Array of C<JAC::OCS::Config::ACSIS::Cube> objects.
 sub cubes {
   my $self = shift;
   if (@_) {
-    # Should check class
-    for my $c (@_) {
-      throw JAC::OCS::Config::Error::BadArgs("Class must be JAC::OCS::Config::ACSIS::Cube objects")
-	unless UNIVERSAL::isa($c, "JAC::OCS::Config::ACSIS::Cube");
-    }
-    @{$self->{CUBES}} = @_;
+    %{$self->{CUBES}} = check_class_hash_fatal("JAC::OCS::Config::ACSIS::Cube",
+					      @_);
   }
-  return @{$self->{CUBES}};
+  return %{$self->{CUBES}};
+}
+
+=item B<stringify>
+
+Create XML representation of object.
+
+=cut
+
+sub stringify {
+  my $self = shift;
+  my %args = @_;
+
+  my $xml = '';
+  $xml .= "<cube_list>\n";
+
+  my %cubes = $self->cubes;
+
+  # loop over all cubes
+  for my $k (keys %cubes) {
+    my $c = $cubes{$k};
+    $xml .= "<cube id=\"$k\">\n";
+
+    # Group centre (optional)
+    my $gc = $c->group_centre;
+    if ($gc) {
+      $xml .= "<group_centre>\n";
+
+      # use simple format
+      $xml .= coords_to_xml( $gc, 1);
+
+      $xml .= "</group_centre>\n";
+    }
+
+    # Pixel size (arcsec)
+    my @pixsize = $c->pixsize;
+    $xml .= "<x_pix_size units=\"arcsec\">".$pixsize[0]->arcsec
+      ."</x_pix_size>\n";
+    $xml .= "<y_pix_size units=\"arcsec\">".$pixsize[1]->arcsec
+      ."</y_pix_size>\n";
+
+    # Data source
+    $xml .= "<data_source>\n";
+    $xml .= "<spw_ref ref=\"".$c->spw_id."\"/>\n";
+    $xml .= interval_to_xml( $c->spw_interval );
+    $xml .= "</data_source>\n";
+
+    # Offsets
+    my @offset = $c->offset;
+    $xml .= "<x_offset>$offset[0]</x_offset>\n";
+    $xml .= "<y_offset>$offset[1]</y_offset>\n";
+
+    # Size of map
+    my @npix = $c->npix;
+    $xml .= "<x_npix>$npix[0]</x_npix>\n";
+    $xml .= "<y_npix>$npix[1]</y_npix>\n";
+
+    # projection and gridder
+    $xml .= "<projection>".$c->projection."</projection>\n";
+    $xml .= "<grid_function>".$c->grid_function."</grid_function>\n";
+    $xml .= "<tcs_coord>".$c->tcs_coord."</tcs_coord>\n";
+    $xml .= "<truncation_rad>".$c->truncation_radius."</truncation_rad>\n";
+
+    $xml .= "</cube>\n";
+  }
+
+  $xml .= "</cube_list>\n";
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
 =back
@@ -146,7 +215,7 @@ sub _process_dom {
   # need to get all the cube elements
   my @cxml = find_children( $el, "cube", min => 1 );
 
-  my @cubes;
+  my %cubes;
 
   # Now extract information from each cube
   for my $c (@cxml) {
@@ -171,9 +240,16 @@ sub _process_dom {
     # pixel size
     my %attr;
     (my $x_pix_size, %attr) = find_attrs_and_pcdata( $c, "x_pix_size" );
-    my $x_pix_size_units = $attr{units};
+    my $x_pix_size_units = (defined $attr{units} ? $attr{units} : '');
     (my $y_pix_size, %attr) = find_attrs_and_pcdata( $c, "y_pix_size" );
-    my $y_pix_size_units = $attr{units};
+    my $y_pix_size_units = (defined $attr{units} ? $attr{units} : '');
+
+    $x_pix_size = new Astro::Coords::Angle( $x_pix_size,
+					    units => $x_pix_size_units
+					  );
+    $y_pix_size = new Astro::Coords::Angle( $y_pix_size,
+					    units => $y_pix_size_units
+					  );
 
     # offset
     my $x_offset = get_pcdata( $c, "x_offset" );
@@ -192,8 +268,14 @@ sub _process_dom {
     # TCS coordinate system for regridding (AZEL or TRACKING)
     my $tcs_coord = find_attr_child( $c, "tcs_coord", "type");
 
-    # Smoothing radius (in arcsec)
+    # Gaussian FWHM
+    my $fwhm = get_pcdata( $c, "FWHM");
+
+    # Smoothing radius (in arcsec) [old]
     my $smoothing_rad = get_pcdata( $c, "smoothing_rad" );
+
+    # Truncation radius (in arcsec)
+    my $trun_rad = get_pcdata( $c, "truncation_rad" );
 
     # data source
     my $dsrc = find_children( $c, "data_source", min => 1, max => 1);
@@ -201,10 +283,24 @@ sub _process_dom {
     my $spw = find_attr_child( $dsrc, "spw_ref", "ref" );
     my $ds_range = find_range( $dsrc );
 
+    $cubes{$id} =
+	 new JAC::OCS::Config::ACSIS::Cube(
+					   group_centre => $coords,
+					   pixsize => [$x_pix_size, $y_pix_size],
+					   offset => [$x_offset, $y_offset],
+					   npix => [$x_npix, $y_npix],
+					   projection => $projection,
+					   grid_function => $grid_function,
+					   tcs_coord => $tcs_coord,
+					   fwhm => $fwhm,
+					   truncation_radius => $trun_rad,
+					   spw_id => $spw,
+					   spw_interval => $ds_range,
+					  );
   }
 
   # store the cubes
-  $self->cubes( @cubes );
+  $self->cubes( %cubes );
 
 }
 
