@@ -33,6 +33,7 @@ use warnings;
 use XML::LibXML;
 use Data::Dumper;
 
+use Math::Trig qw/ rad2deg /;
 use Astro::Coords::Offset;
 
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata _check_range find_children 
@@ -43,7 +44,7 @@ use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
-@EXPORT_OK = qw/ find_offsets find_pa /;
+@EXPORT_OK = qw/ find_offsets find_pa pa_to_xml offset_to_xml coords_to_xml /;
 
 =head1 FUNCTIONS
 
@@ -137,7 +138,163 @@ sub find_pa {
   return _check_range(\%range, "position angles", @posangs);
 }
 
+=item B<pa_to_xml>
+
+Convert an C<Astro::Coords::Angle> object to TCS XML.
+
+ $xml = pa_to_xml( $ang );
+
+=cut
+
+sub pa_to_xml {
+  my $ang = shift;
+  my $deg = $ang->degrees;
+  # limit precision and clean up
+  $deg = _clean_number(sprintf("%.2f",$deg));
+  my $xml = "<PA>".$deg."</PA>\n";
+}
+
+=item B<offset_to_xml>
+
+Convert an C<Astro::Coords::Offset> object to TCS XML.
+
+ $xml = offset_to_xml( $off );
+
+=cut
+
+sub offset_to_xml {
+  my $off = shift;
+  my $xml = "";
+  my $sys = $off->system;
+  my $proj = $off->projection;
+
+  $xml .= "<OFFSET ";
+  $xml .= "SYSTEM=\"$sys\" " if defined $sys;
+  $xml .= "TYPE=\"$proj\" " if defined $proj;
+  $xml .= ">\n";
+
+  my @offsets = $off->offsets();
+  $xml .= "  <DC1>$offsets[0]</DC1>\n";
+  $xml .= "  <DC2>$offsets[1]</DC2>\n";
+  $xml .= "</OFFSET>\n";
+  return $xml;
+}
+
+=item B<coords_to_xml>
+
+Convert C<Astro::Coords> object to TCS XML.
+Includes the <target> tags.
+
+=cut
+
+sub coords_to_xml {
+  my $c = shift;
+  my $type = $c->type;
+  my $name = $c->name;
+  $name = "" if !defined $name;
+
+  my $xml = "<target>\n";
+  $xml .= "  <targetName>$name</targetName>\n";
+
+  if ($type eq "PLANET") {
+    # namedSystem
+    $xml .= "  <namedSystem type=\"major\" />\n";
+  } elsif ($type eq 'RADEC' || $type eq 'FIXED') {
+    # spherSystem
+    # Currently there are only two coordinate systems supported
+    # by Astro::Coords that make any sense: J2000 and AZEL
+    my $sys;
+    if ($type eq 'RADEC') {
+      $sys = "J2000";
+      $xml .= "  <spherSystem SYSTEM=\"$sys\">\n";
+      $xml .= "    <c1>". $c->ra2000(format => 's')."</c1>\n";
+      $xml .= "    <c2>". $c->dec2000(format => 's')."</c2>\n";
+
+      $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
+	if defined $c->parallax;
+
+      # proper motions in arcsec
+      my @pm = $c->pm;
+      if (@pm) {
+	$xml .= "    <epoch>2000.0</epoch>\n";
+	$xml .= "    <pm1 units=\"arcsec-year\">".$pm[0]."</pm1>\n";
+	$xml .= "    <pm2 units=\"arcsec-year\">".$pm[1]."</pm2>\n";
+      }
+
+      # Radial Velocity goes here!
+
+    } elsif ($type eq 'FIXED') {
+      $sys = "AZEL";
+      $xml .= "  <spherSystem SYSTEM=\"$sys\">\n";
+      $xml .= "    <c1>". $c->az(format => 's')."</c1>\n";
+      $xml .= "    <c2>". $c->el(format => 's')."</c2>\n";
+    } else {
+      croak "Completely impossible - type neither RADEC nor FIXED but $type\n";
+    }
+    $xml .= "  </spherSystem>\n";
+  } elsif ($type eq 'ELEMENTS') {
+    # conicSystem
+    $xml .= "  <conicSystem>\n";
+    my %el = $c->elements;
+
+    my $type;
+    if (exists $el{DM}) {
+      $type = 'major';
+    } elsif (exists $el{AORL}) {
+      $type = 'minor';
+    } elsif (exists $el{EPOCHPERIH}) {
+      $type = 'comet';
+    } else {
+      croak "Unable to determine element type!";
+    }
+
+    $xml .= "    <epoch>$el{EPOCH}</epoch>\n";
+    $xml .= "    <inclination>".rad2deg($el{ORBINC})."</inclination>\n";
+    $xml .= "    <anode>".rad2deg($el{ANODE})."</anode>\n";
+    $xml .= "    <perihelion>".rad2deg($el{PERIH})."</perihelion>\n";
+    $xml .= "    <aorq>$el{AORQ}</aorq>\n";
+    $xml .= "    <e>$el{E}</e>\n";
+    $xml .= "    <epochperih>$el{EPOCHPERIH}</epochperih>\n"
+      if exists $el{EPOCHPERIH};
+    $xml .= "    <LorM>".rad2deg($el{AORL})."</LorM>\n"
+      if exists $el{AORL};
+    $xml .= "    <n>".rad2deg($el{DM})."</n>\n" if exists $el{DM};
+
+    $xml .= "  </conicSystem>\n";
+
+  } else {
+    croak "Do not yet know how to xml-ify coords of type $type";
+  }
+  $xml .= "</target>\n";
+
+  return $xml;
+}
+
 =back
+
+=begin __PRIVATE__
+
+=head2 Private Functions
+
+=over 4
+
+=item B<_clean_number>
+
+Remove trailing zeroes and a trailing decimal point from numbers.
+Convert "15.00" to "15" and "15.30" to "15.3".
+
+=cut
+
+sub _clean_number {
+  my $num = shift;
+  $num =~ s/0$//g; # strip trailing zeroes
+  $num =~ s/\.$//; # and trailing decimal point
+  return $num;
+}
+
+=back
+
+=end __PRIVATE__
 
 =head1 AUTHOR
 
