@@ -66,6 +66,7 @@ sub new {
   # extra initialiser
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
+								    SEQUENCE => [],
 								   }
 			  );
 }
