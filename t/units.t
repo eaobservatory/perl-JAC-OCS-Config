@@ -11,42 +11,42 @@ my %units = (
 		     name => "hertz",
 		     symbol => 'Hz',
 		     prefix => 'M',
-		     factor => 6,
+		     power => 6,
 		     fullprefix => 'mega',
 		    },
 	     Glm => {
 		     name => "lumen",
 		     symbol => 'lm',
 		     prefix => 'G',
-		     factor => 9,
+		     power => 9,
 		     fullprefix => 'giga',
 		    },
 	     mum => {
 		     name => "metre",
 		     symbol => 'm',
 		     prefix => 'mu',
-		     factor => -6,
+		     power => -6,
 		     fullprefix => 'micro',
 		    },
 	     ZJy => {
 		     name => "jansky",
 		     symbol => 'Jy',
 		     prefix => 'Z',
-		     factor => 24,
+		     power => 24,
 		     fullprefix => 'yotta',
 		    },
 	     daPa => {
 		     name => "pascal",
 		     symbol => 'Pa',
 		     prefix => 'da',
-		     factor => 1,
+		     power => 1,
 		     fullprefix => 'deca',
 		    },
 	     g => {
 		     name => "gram",
 		     symbol => 'g',
 		     prefix => '',
-		     factor => 0,
+		     power => 0,
 		     fullprefix => '',
 		    },
 
@@ -62,3 +62,9 @@ for my $ustr (keys %units) {
     is($u->$m, $units{$ustr}->{$m}, "Compare $m");
   }
 }
+
+# mult factors
+my $u = new JAC::OCS::Config::Units( "MHz" );
+is ( $u->mult( 'M' ), 1, "Compare M to M");
+is ( $u->mult( '' ), 1E6, "Compare M to base");
+is ( $u->mult( 'G' ), 1E-3, "Compare M to G");
