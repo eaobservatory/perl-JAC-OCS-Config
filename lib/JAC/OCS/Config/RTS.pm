@@ -281,7 +281,7 @@ sub _process_dom {
 
 The RTS XML configuration specification is documented in
 OCS/ICD/012 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/rts.dtd.dtd>.
+L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/rts.dtd>.
 
 =head1 AUTHOR
 

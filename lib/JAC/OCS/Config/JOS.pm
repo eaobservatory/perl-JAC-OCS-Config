@@ -245,9 +245,9 @@ sub _process_dom {
 
 =head1 XML SPECIFICATION
 
-The JOS XML configuration specification is documented in OCS/ICD/???
+The JOS XML configuration specification is documented in OCS/ICD/018
 with a DTD available at
-L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/0??/jos.dtd>.
+L<http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/018/jos.dtd>.
 
 =head1 AUTHOR
 
