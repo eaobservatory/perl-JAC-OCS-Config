@@ -33,6 +33,7 @@ use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
 
+use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr/;
 use JAC::OCS::Config::TCS::Generic;
 use JAC::OCS::Config::Error;
 
@@ -293,7 +294,7 @@ sub _extract_coord_info {
   my $c;
 
   # Get the target name
-  my $name = $self->_get_pcdata($target, "targetName");
+  my $name = get_pcdata($target, "targetName");
   $name = '' unless defined $name;
 
   # Now we need to look for the coordinates. If we have hmsdegSystem
@@ -335,8 +336,7 @@ sub _extract_coord_info {
      or $sysname eq 'spherSystem') {
 
     # Get the "long" and "lat"
-    my $c1 = $self->_get_pcdata( $system, "c1");
-    my $c2 = $self->_get_pcdata( $system, "c2");
+    my %cc = get_pcdata_multi($system, "c1", "c2" );
 
     # degdeg uses different keys to hmsdeg
     #print "System: $sysname\n";
@@ -345,37 +345,35 @@ sub _extract_coord_info {
     if ($type eq "J2000" or $type eq "B1950") {
 
       # Proper motions and parallax
-      my $epoch = $self->_get_pcdata( $system, "epoch" );
-      my $pm1 = $self->_get_pcdata( $system, "pm1" );
-      my $pm2 = $self->_get_pcdata( $system, "pm2" );
-      my $parallax = $self->_get_pcdata( $system, "parallax" );
+      my %pm = get_pcdata_multi( $system, "epoch", "pm1", "pm2", "parallax");
 
-      %coords = ( ra => $c1, dec => $c2, type => $type);
+      %coords = ( ra => $cc{c1}, dec => $cc{c2}, type => $type);
 
-      $coords{parallax} = $parallax if defined $parallax;
-      $coords{epoch} = $epoch if defined $epoch;
-      if (defined $pm1 || defined $pm2) {
+      $coords{parallax} = $pm{parallax} if defined $pm{parallax};
+      $coords{epoch} = $pm{epoch} if defined $pm{epoch};
+      if (defined $pm{pm1} || defined $pm{pm2}) {
 	
 	# if pm1 exists we need to get the units
-	if (defined $pm1) {
+	if (defined $pm{pm1}) {
 	  my ($pmnode) = $system->findnodes(".//pm1");
 	  my $units = $pmnode->getAttribute("units");
 	  if ($units eq 'sec-year') {
 	    # need to correct to arcsec
-	    $pm1 *= Astro::SLA::DS2R;
+	    $pm{pm1} *= Astro::SLA::DS2R;
 	  }
 	}
 
-	$pm1 ||= 0.0;
-	$pm2 ||= 0.0;
-	$coords{pm} = [ $pm1, $pm2 ];
+	$pm{pm1} ||= 0.0;
+	$pm{pm2} ||= 0.0;
+	$coords{pm} = [ $pm{pm1}, $pm{pm2} ];
       }
 
 
     } elsif ($type =~ /gal/i) {
-      %coords = ( long => $c1, lat => $c2, type => 'galactic', units=>'deg' );
+      %coords = ( long => $cc{c1}, lat => $cc{c2}, 
+		  type => 'galactic', units=>'deg' );
     } elsif ($type eq 'Az/El' || $type eq 'AZEL') {
-      %coords = ( az => $c1, el => $c2 );
+      %coords = ( az => $cc{c1}, el => $cc{c2} );
     }
 
     # Get the velocity information
@@ -383,9 +381,8 @@ sub _extract_coord_info {
     my ($rv) = $system->findnodes(".//rv");
     my %vel;
     if ($rv) {
-      $vel{rv} = $self->_get_pcdata( $system, "rv" );
-      $vel{defn} = $rv->getAttribute( "defn" );
-      $vel{frame} = $rv->getAttribute( "frame" );
+      %vel = find_attr( $rv, "defn", "frame");
+      $vel{rv} = get_pcdata( $system, "rv" );
       warn "Found velocity information but ignored it [RV=$vel{rv}/Frame=$vel{frame}/Definition=$vel{defn}]\n";
     }
 
@@ -436,7 +433,7 @@ sub _extract_coord_info {
       # AORL is not relevant for comet
       next if ($el eq 'AORL' && $type =~ /Comet/i);
       # Get the value from XML
-      my $value = $self->_get_pcdata( $system, $lut{$el});
+      my $value = get_pcdata( $system, $lut{$el});
 
       # Convert to radians
       if ($el =~ /^(ORBINC|ANODE|PERIH|AORL|DM)$/) {
