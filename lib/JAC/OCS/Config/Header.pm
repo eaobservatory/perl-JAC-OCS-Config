@@ -95,6 +95,73 @@ sub items {
   return @{$self->{ITEMS}};
 }
 
+=item B<nitems>
+
+Return the number of items in the header.
+
+=cut
+
+sub nitems {
+  my $self = shift;
+  return ( $#{$self->{ITEMS}} + 1 );
+}
+
+=item B<item>
+
+Retrieve a specific Item object by index (if the argument looks like
+an integer), by keyword, by keyword pattern (if qr// object) or by
+code reference. 
+
+ $item = $hdr->item( 5 );
+ $item = $hdr->item( 'PROJECT' );
+ @items = $hdr->item( 'COMMENT' );
+ @items = $hdr->item( qr/CRVAL/ );
+
+If a code reference is specified, it will be called once for
+each item (with the item passed in as argument) and should return true or false
+depending on whether the item matches.
+
+ @items = $hdr->item( sub { $_[0]->method eq 'TRANSLATOR' } );
+
+In list context returns an empty list if no match. In scalar context
+returns the matching item, undef if no matches, or the first matching
+item. In most cases only one item will match in the header. HISTORY
+and COMMENT are the most common multiple matches.
+
+If an index is specified the array items start counting at 0.
+
+=cut
+
+sub item {
+  my $self = shift;
+  my $arg = shift;
+  return () unless defined $arg;
+
+  if ($arg =~ /^[0-9]+$/) {
+    if ($arg > -1 && $arg < $self->nitems) {
+      my @items = $self->items;
+      return $items[$arg];
+    } else {
+      return ();
+    }
+  } else {
+    # String or regexp match
+    my @items = $self->items;
+
+    my @match;
+    if (ref($arg) eq 'Regexp' ) {
+      @match = grep { $_->keyword =~ $arg } @items;
+    } elsif (ref($arg) eq 'CODE') {
+      @match = grep { $arg->( $_ ) } @items;
+    } else {
+      @match = grep { $_->keyword eq $arg } @items;
+    }
+
+    return (wantarray ? @match : $match[0] );
+  }
+}
+
+
 =item B<stringify>
 
 Create XML representation of object.
@@ -115,16 +182,52 @@ sub stringify {
     $xml .= "        VALUE=\"" . $i->value . "\" ";
 
     if ($i->source) {
+      my @attr;
       $xml .= ">\n";
       if ($i->source eq 'DRAMA') {
 	$xml .= "<DRAMA_MONITOR ";
+	@attr = qw/ TASK PARAM EVENT /;
+
+	# task and param are mandatory
+	if (!defined $i->task || !defined $i->param) {
+	  throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using DRAMA monitor");
+	}
+
       } elsif ($i->source eq 'GLISH') {
 	$xml .= "<GLISH_PARAMETER ";
+	@attr = qw/ TASK PARAM EVENT /;
+
+	# task and param are mandatory
+	if (!defined $i->task || !defined $i->param) {
+	  throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using GLISH parameter");
+	}
+
+      } elsif ($i->source eq 'DERIVED') {
+	$xml .= "<DERIVED ";
+	@attr = qw/ TASK METHOD EVENT /;
+
+	# task and method are mandatory
+	if (!defined $i->task || !defined $i->method) {
+	  throw JAC::OCS::Config::Error::FatalError( "One of task or method is undefined for keyword ". $i->keyword ." using derived header value");
+	}
+
+      } elsif ($i->source eq 'SELF') {
+	$xml .= "<SELF ";
+	@attr = qw/ PARAM ALT ARRAY BASE /;
+
+	# param is mandatory
+	if (!defined $i->param ) {
+	  throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
+	}
+
+
       } else {
 	croak "Unrecognized parameter source '".$i->source;
       }
-      $xml .= "TASK=\"".$i->task."\" PARAM=\"".$i->param."\" ";
-      $xml .= "EVENT=\"".$i->event."\"" if $i->event;
+      for my $a (@attr) {
+	my $method = lc($a);
+	$xml .= "$a=\"" . $i->$method . '" ' if $i->$method;
+      }
       $xml .= "/>\n";
       $xml .= "</HEADER>\n";
     } else {
@@ -132,7 +235,6 @@ sub stringify {
     }
 
   }
-
 
   $xml .= "</HEADER_CONFIG>\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
@@ -195,6 +297,8 @@ sub _process_dom {
 
     my @drama = find_children( $i, "DRAMA_MONITOR", min =>0, max=>1);
     my @glish = find_children( $i, "GLISH_PARAMETER", min =>0, max=>1);
+    my @derived = find_children( $i, "DERIVED", min =>0, max=>1);
+    my @self = find_children( $i, "SELF", min =>0, max=>1);
 
     my %mon;
     if (@drama) {
@@ -203,6 +307,12 @@ sub _process_dom {
     } elsif (@glish) {
       %mon = find_attr( $glish[0], "TASK", "PARAM", "EVENT");
       $mon{SOURCE} = "GLISH";
+    } elsif (@derived) {
+      %mon = find_attr( $derived[0], "TASK", "METHOD", "EVENT");
+      $mon{SOURCE} = "DERIVED";
+    } elsif (@self) {
+      %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE");
+      $mon{SOURCE} = "SELF";
     }
 
     # Now create object representation
