@@ -259,7 +259,7 @@ science position.
 
 sub getSciTag {
   my $self = shift;
-  $tag = $self->_translate_tag_name( 'SCIENCE' );
+  my $tag = $self->_translate_tag_name( 'SCIENCE' );
   my %tags = $self->tags;
   return $tags{$tag};
 }
