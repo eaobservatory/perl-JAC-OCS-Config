@@ -45,7 +45,7 @@ use Data::Dumper;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error;
-use JAC::OCS::Config::XMLHelper qw/ find_children find_attr /;
+use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata /;
 use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -275,16 +275,22 @@ sub _find_jiggle_chop {
     $self->jiggle( %$jig );
 
     # timing
-    croak "TIMING unfinished";
     my $timing = find_children($jchop, "TIMING", min=>1, max=>1 );
     my $cpj = find_children( $timing, "CHOPS_PER_JIG", min=>0,max=>1);
     my $jpc = find_children( $timing, "JIGS_PER_CHOP", min=>0,max=>1);
     my %timing;
     if ($cpj) {
       # just get the PCDATA
-#      $timing{CHOPS_PER_JIG} = get_pcdata()
+      $timing{CHOPS_PER_JIG} = get_pcdata($cpj, "CHOPS_PER_JIG");
+    } elsif ($jpc) {
+      # Attributes
+      my %jpc = find_attr( $jpc, "N_CYC_OFF", "N_JIGS_ON");
+      %timing = (%timing, %jpc);
 
+    } else {
+      throw JAC::OCS::Config::Error::XMLBadStructure("JIGGLE_CHOP must have either CHOPS_PER_JIG or JIGS_PER_CHOP defined");
     }
+    $self->timing( %timing );
 
   }
 
