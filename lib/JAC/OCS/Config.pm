@@ -35,7 +35,24 @@ use XML::LibXML;
 use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
 
+use JAC::OCS::Config::Error;
+
 use JAC::OCS::Config::TCS;
+use JAC::OCS::Config::Frontend;
+use JAC::OCS::Config::Instrument;
+use JAC::OCS::Config::Header;
+use JAC::OCS::Config::RTS;
+use JAC::OCS::Config::JOS;
+
+use JAC::OCS::Config::XMLHelper qw(
+				   find_children
+				   find_attr
+				   indent_xml_string
+				   get_pcdata_multi
+				  );
+
+# Bizarrely, inherit from a sub-class for DOM processing
+use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
@@ -56,68 +73,27 @@ The constructor takes an XML representation of the config
 as argument and returns a new object.
 
   $cfg = new JAC::OCS::Config( XML => $xml );
-  $cfg = new JAC::OCS::Config( FILE => $xmlfile );
+  $cfg = new JAC::OCS::Config( File => $xmlfile );
+  $cfg = new JAC::OCS::Config( DOM => $dom );
 
-The argument hash can either refer to an XML string or
-an XML file. If neither is supplied no object will be
-instantiated. If both C<XML> and C<FILE> keys exist, the
-C<XML> key takes priority.
+The argument hash can refer to an XML string, an XML file or a DOM
+tree. If neither is supplied no object will be instantiated. If both
+C<XML> and C<File> keys exist, the C<XML> key takes priority.
 
 Returns C<undef> if an object can not be constructed.
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+  my $self = shift;
 
-  throw JAC::OCS::Config::Error::BadArgs('Usage : JAC::OCS::Config->new(XML => $xml, FILE => $file)') unless @_;
+  # Now call base class with all the supplied options +
+  # extra initialiser
+  return $self->SUPER::new( @_,
+                            $JAC::OCS::Config::CfgBase::INITKEY => {
 
-  my %args = @_;
-
-  my $xml;
-  if (exists $args{XML}) {
-    $xml = $args{XML};
-  } elsif (exists $args{FILE}) {
-    # Dont check for existence - the open will do that for me
-    open my $fh, "<$args{FILE}" or return undef;
-    local $/ = undef; # slurp whole file
-    $xml = <$fh>;
-  } else {
-    warnings::warnif("Neither XML or FILE key specified to constructor");
-    # Nothing of use
-    return undef;
-  }
-
-  # Now convert XML to parse tree
-  my $parser = new XML::LibXML;
-  $parser->validation(0); # switch off validation for noew
-  my $tree = eval { $parser->parse_string( $xml ) };
-  if ($@) {
-    throw JAC::OCS::Config::Error::SpBadStructure("Error whilst parsing configuration XML: $@\n");
-  }
-
-  # Now create Config unblessed hash
-  my $cfg = {
-	     Parser => $parser,
-	     Tree => $tree,
-	    };
-
-  # and create the object
-  bless $cfg, $class;
-
-  # Now need to create the sub-objects
-  # One per sub-system
-
-  # First find the OCS_CONFIG root node
-
-  # Then find all the XXX_CONFIG nodes
-
-  # And for each one, instantiate a new Config::XXX object
-
-  # And store in a hash
-
-  return $cfg;
+                                                                   }
+                          );
 }
 
 =back
@@ -126,19 +102,108 @@ sub new {
 
 =over 4
 
-=item B<_tree>
+=item B<jos>
 
-Retrieves or sets the base of the document tree associated
-with the science program. In general this is DOM based. The
-interface does not guarantee the underlying object type
-since that relies on the choice of XML parser.
+JOS configuration.
 
 =cut
 
-sub _tree {
+sub jos {
   my $self = shift;
-  if (@_) { $self->{Tree} = shift; }
-  return $self->{Tree};
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("JOS must be a JAC::OCS::Config::JOS object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::JOS");
+    $self->{JOS_CONFIG} = $cfg;
+  }
+  return $self->{JOS_CONFIG};
+}
+
+
+=item B<header>
+
+Header configuration.
+
+=cut
+
+sub header {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("Header must be a JAC::OCS::Config::Header object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Header");
+    $self->{HEADER_CONFIG} = $cfg;
+  }
+  return $self->{HEADER_CONFIG};
+}
+
+
+=item B<tcs>
+
+TCS configuration.
+
+=cut
+
+sub tcs {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("TCS must be a JAC::OCS::Config::TCS object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::TCS");
+    $self->{TCS_CONFIG} = $cfg;
+  }
+  return $self->{TCS_CONFIG};
+}
+
+=item B<instrument_setup>
+
+Instrument configuration.
+
+=cut
+
+sub instrument_setup {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("Instrument setup must be a JAC::OCS::Config::Instrument object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Instrument");
+    $self->{INSTRUMENT_CONFIG} = $cfg;
+  }
+  return $self->{INSTRUMENT_CONFIG};
+}
+
+=item B<frontend>
+
+Frontend configuration.
+
+=cut
+
+sub frontend {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("Frontend must be a JAC::OCS::Config::Frontend object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Frontend");
+    $self->{FRONTEND_CONFIG} = $cfg;
+  }
+  return $self->{FRONTEND_CONFIG};
+}
+
+=item B<rts>
+
+RTS configuration.
+
+=cut
+
+sub rts {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("RTs must be a JAC::OCS::Config::RTS object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::RTS");
+    $self->{RTS_CONFIG} = $cfg;
+  }
+  return $self->{RTS_CONFIG};
 }
 
 
@@ -275,7 +340,21 @@ This method is also invoked via a stringification overload.
 
 sub stringify {
   my $self = shift;
-  $self->_tree->toString;
+  my %args = @_;
+
+  my $xml = '';
+
+  $xml .= "<OCS_CONFIG>\n";
+
+  # ask each child to stringify
+  for my $c (qw/ jos header tcs instrument_setup frontend rts /) {
+    my $object = $self->$c;
+    next unless defined $object;
+    $xml .= $object->stringify( NOINDENT => 1 );
+  }
+
+  $xml .= "</OCS_CONFIG>\n";
+  return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
 
@@ -293,6 +372,66 @@ Always returns "JCMT" if no other information is available.
 =cut
 
 sub telescope { return "JCMT" }
+
+=item B<getRootElementName>
+
+Return the name of the _CONFIG element that should be the root
+node of the XML tree corresponding to the OCS config.
+
+ @names = $tcs->getRootElementName;
+
+=cut
+
+sub getRootElementName {
+  return( "OCS_CONFIG" );
+}
+
+=back
+
+=begin __PRIVATE_METHODS__
+
+=head2 Private Methods
+
+=over 4
+
+=item B<_process_dom>
+
+Using the C<_rootnode> node referring to the top of the TCS XML,
+process the DOM tree and extract all the coordinate information.
+
+ $self->_process_dom;
+
+Populates the object with the extracted results.
+
+=cut
+
+sub _process_dom {
+  my $self = shift;
+
+  my $el = $self->_rootnode;
+
+  my $cfg = find_children( $el, "JOS_CONFIG", min => 0, max => 1);
+  $self->jos( new JAC::OCS::Config::JOS( DOM => $cfg) )
+    if $cfg;
+
+  $cfg = find_children( $el, "HEADER_CONFIG", min => 0, max => 1);
+  $self->header( new JAC::OCS::Config::Header( DOM => $cfg) ) if $cfg;
+
+  $cfg = find_children( $el, "TCS_CONFIG", min => 0, max => 1);
+  $self->tcs( new JAC::OCS::Config::TCS( DOM => $cfg) ) if $cfg;
+
+  $cfg = find_children( $el, "INSTRUMENT", min => 0, max => 1);
+  $self->instrument_setup( new JAC::OCS::Config::Instrument( DOM => $cfg) )
+    if $cfg;
+
+  $cfg = find_children( $el, "FRONTEND_CONFIG", min => 0, max => 1);
+  $self->frontend( new JAC::OCS::Config::Frontend( DOM => $cfg) ) if $cfg;
+
+  $cfg = find_children( $el, "RTS_CONFIG", min => 0, max => 1);
+  $self->rts( new JAC::OCS::Config::RTS( DOM => $cfg) ) if $cfg;
+
+  return;
+}
 
 =back
 
