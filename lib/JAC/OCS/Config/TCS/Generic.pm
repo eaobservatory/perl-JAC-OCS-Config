@@ -212,9 +212,6 @@ sub coords_to_xml {
       $xml .= "    <c1>". $c->ra2000(format => 's')."</c1>\n";
       $xml .= "    <c2>". $c->dec2000(format => 's')."</c2>\n";
 
-      $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
-	if defined $c->parallax;
-
       # proper motions in arcsec
       my @pm = $c->pm;
       if (@pm) {
@@ -225,6 +222,9 @@ sub coords_to_xml {
 
       # Radial Velocity goes here!
       warn "Radial Velocity is currently ignored in XML construction";
+
+      $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
+	if defined $c->parallax;
 
     } elsif ($type eq 'FIXED') {
       $sys = "AZEL";
