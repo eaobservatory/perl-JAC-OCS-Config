@@ -157,7 +157,19 @@ for the first slew of a configuration.
   $cfg->slew( %options );
   %options = $cfg->slew;
 
-Allowed keys are OPTION, TRACK_TIME and CYCLE
+Allowed keys are OPTION, TRACK_TIME and CYCLE.
+
+If OPTION is set, it will override any TRACK_TIME and CYCLE implied
+definition.
+
+If TRACK_TIME is set, OPTION will be set to 'TRACK_TIME' if OPTION is unset.
+
+If CYCLE is set, OPTION will be set to 'TRACK_TIME' if OPTION is unset.
+
+If OPTION is unset, but both TRACK_TIME and CYCLE are set, an error will be
+triggered when the XML is created.
+
+Default slew option is SHORTEST_SLEW.
 
 Currently no validation is performed on the values of the supplied hash.
 
@@ -736,16 +748,37 @@ sub _toString_slew {
   } else {
     # Reconstruct XML
     my %slew = $self->slew;
-    # Check we have something
+
+    # Slew is mandatory and we can default it to match the DTD if we do not
+    # have an explicit value
     $xml .= "\n<!-- Set up the SLEW method here -->\n\n";
-    if (keys %slew) {
-      $xml .= "<SLEW OPTION=\"$slew{OPTION}\" ";
-      $xml .= "TRACK_TIME=\"$slew{TRACK_TIME}\" "
-	if $slew{OPTION} eq 'TRACK_TIME';
-      $xml .= "CYCLE=\"$slew{CYCLE}\" "
-	if $slew{OPTION} eq 'CYCLE';
-      $xml .= " />\n";
+
+    # Normalise the hash
+    if (!$slew{OPTION}) {
+      # no explicit option
+      if (defined $slew{CYCLE} && defined $slew{TRACK_TIME}) {
+	throw JAC::OCS::Error::FatalError("No explicit Slew option but CYCLE and TRACK_TIME are specified. Please fix ambiguity.");
+      } elsif (defined $slew{CYCLE}) {
+	$slew{OPTION} = 'CYCLE';
+      } elsif (defined $slew{TRACK_TIME}) {
+	$slew{OPTION} = 'TRACK_TIME';
+      } else {
+	# default to longest track
+	$slew{OPTION} = 'SHORTEST_SLEW';
+      }
+    }	
+    if ($slew{OPTION} eq 'CYCLE' && !defined $slew{CYCLE}) {
+      throw JAC::OCS::Error::FatalError("Slew option says CYCLE but cycle is not specified");
+    } elsif ($slew{OPTION} eq 'TRACK_TIME' && !defined $slew{TRACK_TIME}) {
+      throw JAC::OCS::Error::FatalError("Slew option says TRACK_TIME but track time is not specified");
     }
+
+    $xml .= "<SLEW OPTION=\"$slew{OPTION}\" ";
+    $xml .= "TRACK_TIME=\"$slew{TRACK_TIME}\" "
+      if $slew{OPTION} eq 'TRACK_TIME';
+    $xml .= "CYCLE=\"$slew{CYCLE}\" "
+      if $slew{OPTION} eq 'CYCLE';
+    $xml .= " />\n";
   }
   return $xml;
 }
@@ -794,9 +827,17 @@ sub _toString_rotator {
   } else {
     # Reconstruct XML
     my %rot = $self->rotator;
-    # Check we have something
+    # Check we have something. ROTATOR is an optional element
+    $xml .= "\n<!-- Configure the instrument rotator here -->\n\n";
     if (keys %rot) {
-      $xml .= "\n<!-- Configure the instrument rotator here -->\n\n";
+
+       # Check that the slew option is okay
+      my %slew = $self->slew;
+      if ($rot{SLEW_OPTION} eq 'TRACK_TIME' &&
+	  !exists $slew{TRACK_TIME}) {
+	throw JAC::OCS::Config::Error::FatalError("Rotator is attempting to use TRACK_TIME slew option but no track time has been defined in the SLEW parameter");
+      }
+
       $xml .= "<ROTATOR SYSTEM=\"$rot{SYSTEM}\"\n";
       $xml .= "         SLEW_OPTION=\"$rot{SLEW_OPTION}\"\n"
 	if exists $rot{SLEW_OPTION};
