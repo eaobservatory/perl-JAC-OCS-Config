@@ -144,6 +144,9 @@ is returned (even if that value is missing).
 
 sub find_attr {
   my $el = shift;
+  croak "Internal programming error. Supplied attribute not defined" .
+    join(",",caller())
+    unless defined $el;
   my @keys = @_;
 
   my %attr;
