@@ -414,11 +414,16 @@ sub _extract_coord_info {
     # Get the velocity information
     my ($vel, $sor, $defn);
     my ($rv) = $system->findnodes(".//rv");
-    my %vel;
     if ($rv) {
-      %vel = find_attr( $rv, "defn", "frame");
+      my %vel = find_attr( $rv, "defn", "frame");
       $vel{rv} = get_pcdata( $system, "rv" );
-      warn "Found velocity information but ignored it [RV=$vel{rv}/Frame=$vel{frame}/Definition=$vel{defn}]\n";
+      if ($vel{defn} eq 'REDSHIFT') {
+	$coords{redshift} = $vel{rv};
+      } else {
+	$coords{rv} = $vel{rv};
+	$coords{vdefn} = $vel{defn};
+	$coords{vframe} = $vel{frame};
+      }
     }
 
     # Differential tracking rates
