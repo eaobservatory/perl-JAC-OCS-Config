@@ -30,7 +30,10 @@ use warnings;
 use XML::LibXML;
 use Data::Dumper;
 
+use Astro::Coords::Angle;
+
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::XMLHelper qw/ find_children_range find_attr /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -80,16 +83,66 @@ The global position angle associated with this observing area.
  $tag = $cfg->posang;
  $cfg->posang( 52.4 );
 
-=cut
+Stored as an C<Astro::Coords::Angle> object.
 
-# Should be an Angle object of some description.
+Can be undefined if no position angle has been specified.
+
+=cut
 
 sub posang {
   my $self = shift;
   if (@_) {
-    $self->{POSANG} = shift;
+    my $arg = shift;
+    throw JAC::OCS::Config::Error::BadArgs( "Pos Angle must be an Astro::Coords::Angle object")
+      unless UNIVERSAL::isa($arg, "Astro::Coords::Angle");
+    $self->{POSANG} = $arg;
   }
   return $self->{POSANG};
+}
+
+=item B<offsets>
+
+Offsets associated with this observing area. If more than one offset
+is present, the observing area is assumed to be multiple pointings.
+If one offset is present this could either indicate a single pointed
+observation or the offset for a scan. The choice depends on whether
+the scan area is defined or not.
+
+  @offsets = $obs->offsets;
+
+  $offsets = $obs->offsets;
+
+In scalar context, returns the first offset.
+
+If offsets are supplied, they are first validated (to make sure they
+are C<Astro::Coords::Offset> objects) and then stored in the object,
+overwriting previous entries.
+
+=cut
+
+sub offsets {
+  my $self = shift;
+  if (@_) {
+    my @valid;
+    for my $off (@_) {
+      # verify each class
+      push(@valid, $off)
+	if UNIVERSAL::isa($off, "Astro::Coords::Offset");
+    }
+    warnings::warnif("No offsets passed validation.")
+	unless @valid;
+    @{$self->{OFFSETS}} = @valid;
+  }
+  if (wantarray) {
+    return @{$self->{OFFSETS}};
+  } else {
+    # do not want to create an undef entry
+    if (scalar @{$self->{OFFSETS}}) {
+      return $self->{OFFSETS}->[0];
+    } else {
+      return undef;
+    }
+  }
 }
 
 =back
@@ -134,25 +187,106 @@ sub _process_dom {
   my $self = shift;
 
   # parse obsArea
-#  $self->_find_base_posn();
+#  return;
+
+  # Find the position angle
+  $self->_find_posang();
+
+  # Find any offsets
+  $self->_find_offsets();
+
+  # Find any scan area
+  # Noting that there will either be offsets at this level
+  # or a scan area, not both
+  $self->_find_scan_area();
 
   return;
 }
 
+=item B<_find_posang>
+
+Extract the position angle information if it
+exists and store them in the object.
+
+=cut
+
+sub _find_posang {
+  my $self = shift;
+
+  my @pa = JAC::OCS::Config::TCS::Generic::find_pa( $self->_rootnode );
+
+  # Should only be one PA here
+  throw JAC::OCS::Config::Error::XMLBadStructure("Can not have more than one PA element in obsArea")
+    if @pa > 1;
+
+  # store the angle
+  $self->posang( $pa[0] );
+
+}
+
+=item B<_find_offsets>
+
+Find offsets in the top level. These will be distinct pointing centres
+rather than scan area offsets.
+
+=cut
+
+sub _find_offsets {
+  my $self = shift;
+  my @offsets = JAC::OCS::Config::TCS::Generic::find_offsets( $self->_rootnode );
+
+  # Store them
+  $self->offsets( @offsets ) if @offsets;
+
+}
+
+=item B<_find_scan_area>
+
+The scan area defines a raster map. It can include an offset,
+and must include an area specification, and a scan specification.
+
+=cut
+
+sub _find_scan_area {
+  # Not clear if we should be creating a scan area object or not
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  # Find the SCAN_AREA
+  my $scanarea = find_children_range( $root, "SCAN_AREA", max => 1);
+  return unless $scanarea;
+
+  # We now have a scan area element
+  # Find the PA
+  my $pa = find_children_range( $scanarea, "PA", min => 1, max => 1);
+  $self->offsets( $pa );
+
+  # Area specification
+  my $area = find_children_range( $scanarea, "AREA", min => 1, max => 1);
+  my %area_info = find_attr( $area, "WIDTH", "HEIGHT" );
+
+  # Scan specification
+  my $scan = find_children_range( $scanarea, "SCAN", min => 1, max => 1);
+
+  # Attributes of scan
+  my %scan_info = find_attr( $scan, 
+			     "VELOCITY","SYSTEM","DY","REVERSAL",
+			     "TYPE");
+
+  # Allowed position angles of scan
+  my @spa = JAC::OCS::Config::TCS::Generic::find_pa( $scan );
+
+
+}
+
+
 =end __PRIVATE_METHODS__
-
-=head1 HISTORY
-
-This code was originally part of the C<OMP::MSB> class and was then
-extracted into a separate C<TOML::TCS> module. During work on the new
-ACSIS translator it was felt that a Config namespace was more correct
-and so the C<TOML> namespace was deprecated.
 
 =head1 AUTHOR
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2002-2004 Particle Physics and Astronomy Research Council.
+Copyright 2004 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
