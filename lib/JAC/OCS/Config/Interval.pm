@@ -48,9 +48,7 @@ keys C<Max> and C<Min>.
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
-
+  my $class = shift;
   my $i = $class->SUPER::new( @_ );
 
   # Populate it with units
