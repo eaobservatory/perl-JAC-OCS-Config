@@ -35,7 +35,7 @@ use Data::Dumper;
 
 use Astro::Coords::Offset;
 
-use JAC::OCS::Config::CfgBase; # for _get_pcdata class method
+use JAC::OCS::Config::XMLHelper qw/ get_pcdata /;
 
 use vars qw/ $VERSION /;
 
@@ -71,8 +71,8 @@ sub find_offsets {
 
   my @offsets;
   for my $o (@matches) {
-    my $dx = JAC::OCS::Config::CfgBase->_get_pcdata( $o, 'DC1');
-    my $dy = JAC::OCS::Config::CfgBase->_get_pcdata( $o, 'DC1');
+    my $dx = get_pcdata( $o, 'DC1');
+    my $dy = get_pcdata( $o, 'DC1');
     my $system = $o->getAttribute('SYSTEM');
     my $type = $o->getAttribute('TYPE');
 
@@ -86,6 +86,35 @@ sub find_offsets {
 
   return @offsets;
 }
+
+=item B<find_pa>
+
+Find the child PA element (or elements) and return a corresponding
+C<Astro::Coords::Angle> object.
+
+ @pa = find_pa( $rootnode );
+
+=cut
+
+sub find_pa {
+  my $el = shift;
+
+  # look for children called PA
+  my @matches = $el->getChildrenByTagName( 'PA' );
+
+  # Now iterate over all matches
+  my @posangs;
+  for my $o (@matches) {
+    my $posang = $o->firstChild;
+    next unless $posang;
+    push(@posangs, new Astro::Coords::Angle( $posang->toString,
+					     units => 'deg',
+					     range => 'PI',
+					   ) );
+  }
+  return @posangs;
+}
+
 
 =back
 
