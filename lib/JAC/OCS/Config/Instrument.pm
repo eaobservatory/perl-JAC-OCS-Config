@@ -8,7 +8,7 @@ JAC::OCS::Config::Instrument - Parse and modify OCS Instrument configurations
 
   use JAC::OCS::Config::Instrument;
 
-  $cfg = new JAC::OCS::Config::Instrument( File => 'rts.ent');
+  $cfg = new JAC::OCS::Config::Instrument( File => 'instrument_rxa.ent');
 
 =head1 DESCRIPTION
 
@@ -22,6 +22,7 @@ use strict;
 use Carp;
 use warnings;
 use XML::LibXML;
+use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error qw| :try |;
 
@@ -30,7 +31,7 @@ use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
 				   indent_xml_string
-				   get_pcdata_multi
+				   get_pcdata
 				  );
 
 
@@ -67,6 +68,9 @@ sub new {
   # extra initialiser
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
+								    RECEPTORS=>{},
+								    XYPOS => [],
+								    SMU_OFF => [],
 								   }
 			  );
 }
@@ -76,6 +80,139 @@ sub new {
 =head2 Accessor Methods
 
 =over 4
+
+=item B<receptors>
+
+Information concerning each receptor in the instrument.
+
+ %receptors = $ins->receptors;
+ $ins->receptors( %receptors );
+
+The hash is indexed by rhe receptor ID.
+
+=cut
+
+sub receptors {
+  my $self = shift;
+  if (@_) {
+    %{$self->{RECEPTORS}} = @_;
+  }
+  return %{$self->{RECEPTORS}};
+}
+
+=item B<name>
+
+Name of the instrument.
+
+=cut
+
+sub name {
+  my $self = shift;
+  if (@_) {
+    $self->{NAME} = shift;
+  }
+  return $self->{NAME};
+}
+
+=item B<bandwidth>
+
+Full bandwidth of the instrument, in Hz.
+
+=cut
+
+sub bandwidth {
+  my $self = shift;
+  if (@_) {
+    $self->{BW} = shift;
+  }
+  return $self->{BW};
+}
+
+=item B<wavelength>
+
+Approximate wavelength of the instrument band, in microns.
+
+=cut
+
+sub wavelength {
+  my $self = shift;
+  if (@_) {
+    $self->{WAVELENGTH} = shift;
+  }
+  return $self->{WAVELENGTH};
+}
+
+=item B<focal_station>
+
+Location of the instrument.
+
+  DIRECT - in the cabin
+  NASMYTH_L - left Nasmyth platform
+  NASYMTH_R - right Nasymth platform
+
+=cut
+
+sub focal_station {
+  my $self = shift;
+  if (@_) {
+    $self->{FOC_STATION} = shift;
+  }
+  return $self->{FOC_STATION};
+}
+
+=item B<if_center_freq>
+
+IF frequency.
+
+=cut
+
+sub if_center_freq {
+  my $self = shift;
+  if (@_) {
+    $self->{IF_CENTER_FREQ} = shift;
+  }
+  return $self->{IF_CENTER_FREQ};
+}
+
+=item B<position>
+
+X and Y Position of the instrument in the focal plane.
+
+ ($x, $y) = $ins->position;
+ $ins->position($x, $y);
+
+Units are arcsec.
+
+=cut
+
+sub position {
+  my $self = shift;
+  if (@_) {
+    @{$self->{XYPOS}} = @_;
+  }
+  return @{$self->{XYPOS}};
+}
+
+=item B<smu_offset>
+
+X, Y and Z offsets of the SMU when using this instrument.
+
+ ($x, $y, $z) = $ins->smu_offset;
+ $ins->position($x, $y, $z);
+
+Units are ???.
+
+=cut
+
+sub smu_offset {
+  my $self = shift;
+  if (@_) {
+    @{$self->{SMU_OFF}} = @_;
+  }
+  return @{$self->{SMU_OFF}};
+}
+
+
 
 =item B<stringify>
 
@@ -89,7 +226,38 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<INSTRUMENT>\n";
+  $xml .= "<INSTRUMENT NAME=\"".$self->name."\"\n";
+  $xml .= "            FOC_STATION=\"".$self->focal_station."\"\n";
+  my @xy = $self->position;
+  $xml .= "            X=\"".$xy[0]."\"\n";
+  $xml .= "            Y=\"".$xy[1]."\"\n";
+  $xml .= "            WAVELENGTH=\"".$self->wavelength."\"\n";
+  $xml .= ">\n";
+
+  $xml .= "<IF_CENTER_FREQ>". $self->if_center_freq .
+    "</IF_CENTER_FREQ>\n";
+  $xml .= "<bw units=\"Hz\" value=\"".$self->bandwidth."\" />\n";
+  my @smu = $self->smu_offset;
+  $xml .= "<smu_offset X=\"$smu[0]\" Y=\"$smu[1]\" Z=\"$smu[2]\" />\n";
+
+  my %rec = $self->receptors;
+  for my $r (keys %rec) {
+    $xml .= "<receptor id=\"$r\"\n";
+    $xml .= "          health=\"$rec{$r}{health}\"\n";
+    my @xy = @{ $rec{$r}->{xypos}};
+    $xml .= "          x=\"$xy[0]\"\n";
+    $xml .= "          x=\"$xy[1]\"\n";
+    $xml .= "          pol_type=\"$rec{$r}{pol_type}\" >\n";
+
+    $xml .= "<sensitivity reference=\"$rec{$r}{refpix}\"\n";
+    $xml .= "             value=\"$rec{$r}{sensitivity}\" />\n";
+
+    $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
+
+    $xml .= "</receptor>\n";
+  }
+
+
   $xml .= "</INSTRUMENT>\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
@@ -137,6 +305,60 @@ sub _process_dom {
 
   # Find all the header items
   my $el = $self->_rootnode;
+
+  my %attr = find_attr( $el, "NAME","FOC_STATION","X","Y","WAVELENGTH");
+
+  $self->name($attr{NAME});
+  $self->focal_station( $attr{FOC_STATION});
+  $self->position( $attr{X}, $attr{Y});
+  $self->wavelength( $attr{WAVELENGTH} );
+
+  my $if = get_pcdata( $el, "IF_CENTER_FREQ");
+  $self->if_center_freq( $if );
+
+  my $child = find_children( $el, "bw", min=>1,max=>1);
+  my %bwinfo = find_attr($child, "units","value");
+
+  # simple unit parsing
+  my $l = substr($bwinfo{units},0,1);
+  my $mult = 1;
+  if ($l eq 'M') {
+    $mult = 1e6;
+  } elsif ($l eq 'G') {
+    $mult = 1e9;
+  }
+  $self->bandwidth( $bwinfo{value} * $mult );
+
+  $child = find_children( $el, "smu_offset", min=>1,max=>1);
+  my %smu = find_attr($child, "X","Y","Z");
+  $self->smu_offset( @smu{"X","Y","Z"});
+
+  # now process the receptor info
+  my @r = find_children( $el, "receptor", min => 1);
+
+  my %receptor;
+  for my $r (@r) {
+    my %attr = find_attr( $r, "id","health","x","y","pol_type");
+    my $child = find_children($r,"sensitivity",min=>1,max=>1);
+    my %sens = find_attr($child, "reference","value");
+    $child = find_children($r,"angle",min=>1,max=>1);
+    my %ang = find_attr($child,"units","value");
+
+    $receptor{$attr{id}} = {
+			    health => $attr{health},
+			    xypos => [
+				      $attr{x},$attr{y}
+				     ],
+			    pol_type => $attr{pol_type},
+			    refpix => $sens{reference},
+						     sensitivity => $sens{value},
+			    angle => new Astro::Coords::Angle($ang{value},
+							      units => $ang{units}),
+			   };
+
+  }
+
+  $self->receptors(%receptor);
 
   return;
 }
