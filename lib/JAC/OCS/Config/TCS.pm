@@ -35,8 +35,12 @@ use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error qw| :try |;
+use JAC::OCS::Config::XMLHelper qw| find_children find_attr |;
+use JAC::OCS::Config::TCS::Generic qw| find_pa |;
+
 use JAC::OCS::Config::TCS::BASE;
 use JAC::OCS::Config::TCS::obsArea;
+use JAC::OCS::Config::TCS::Secondary;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -76,7 +80,8 @@ sub new {
   # extra initialiser
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    TAGS => {}
+								    TAGS => {},
+								    SLEW => {}
 								   }
 			  );
 }
@@ -84,6 +89,22 @@ sub new {
 =head2 Accessor Methods
 
 =over 4
+
+=item B<isConfig>
+
+Returns true if this object is derived from a TCS_CONFIG, false
+otherwise (e.g if it is derived from a TOML configuration or not
+derived from a DOM at all).
+
+=cut
+
+sub isConfig {
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  my $name = $root->nodeName;
+  return ( $name =~ /_CONFIG/ ? 1 : 0);
+}
 
 =item B<telescope>
 
@@ -118,6 +139,51 @@ sub tags {
     %{ $self->{TAGS} } = @_;
   }
   return %{ $self->{TAGS} };
+}
+
+=item B<slew>
+
+Slewing options define how the telescope will slew to the science target
+for the first slew of a configuration.
+
+  $cfg->slew( %options );
+  %options = $cfg->slew;
+
+Allowed keys are OPTION, TRACK_TIME and CYCLE
+
+Currently no validation is performed on the values of the supplied hash.
+
+=cut
+
+sub slew {
+  my $self = shift;
+  if (@_) {
+    %{ $self->{SLEW} } = @_;
+  }
+  return %{ $self->{SLEW} };
+}
+
+=item B<rotator>
+
+Image rotator options. This can be undefined.
+
+  $cfg->rotator( %options );
+  %options = $self->rotator;
+
+Allowed keys are SLEW_OPTION, MOTION, SYSTEM and PA.
+PA must refer to a reference to an array of C<Astro::Coords::Angle>
+objects.
+
+Currently no validation is performed on the values of the supplied hash.
+
+=cut
+
+sub rotator {
+  my $self = shift;
+  if (@_) {
+    %{ $self->{ROTATOR} } = @_;
+  }
+  return %{ $self->{ROTATOR} };
 }
 
 =item B<isBlank>
@@ -266,6 +332,32 @@ sub _setObsArea {
   $self->{OBSAREA} = $obs;
 }
 
+=item B<getSecondary>
+
+Return the C<JAC::OCS::Config::TCS::Secondary> object associated with this
+configuration.
+
+ $obs = $tcs->getSecondary();
+
+Can be undefined.
+
+=cut
+
+sub getSecondary {
+  my $self = shift;
+  return $self->{SECONDARY};
+}
+
+
+# internal routine that will not trigger regeneration of XML
+sub _setSecondary {
+  my $self = shift;
+  my $sec = shift;
+  croak "Incorrect class for Secondary"
+    unless UNIVERSAL::isa($sec, "JAC::OCS::Config::TCS::Secondary");
+  $self->{SECONDARY} = $sec;
+}
+
 =back
 
 =head2 Class Methods
@@ -350,13 +442,16 @@ sub _process_dom {
   $self->_find_base_posns();
 
   # SLEW settings
+  $self->_find_slew();
 
   # Observing Area
   $self->_find_obsArea();
 
   # Secondary mirror configuration
+  $self->_find_secondary();
 
   # Beam rotator configuration
+  $self->_find_rotator();
 
   return;
 }
@@ -377,6 +472,27 @@ sub _find_telescope {
   my $tel = $el->getAttribute( "TELESCOPE" );
 
   $self->telescope( $tel ) if $tel;
+}
+
+=item B<_find_slew>
+
+Find the slewing options (which must be present if this is a TCS_CONFIG).
+
+The object is updated if a SLEW is located.
+
+=cut
+
+sub _find_slew {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  my $min = ($self->isConfig ? 1 : 0);
+  my $slew = find_children( $el, "SLEW", min => $min, max => 1);
+  if ($slew) {
+    my %sopt = find_attr( $slew, "OPTION", "TRACK_TIME","CYCLE");
+    $self->slew( %sopt );
+  }
+
 }
 
 =item B<_find_base_posns>
@@ -436,12 +552,59 @@ sub _find_obsArea {
   my $el = $self->_rootnode;
 
   # since there can only be at most one optional obsArea, pass this rootnode
-  # to the obsArea constructor but catch the special case of XMLEmpty
+  # to the obsArea constructor but catch the special case of XMLConfigMissing
   try {
     my $b = 1;
     my $obsa = new JAC::OCS::Config::TCS::obsArea( DOM => $el );
     $self->_setObsArea( $obsa ) if defined $obsa;
-  } catch JAC::OCS::Config::Error::XMLEmpty with {
+  } catch JAC::OCS::Config::Error::XMLConfigMissing with {
+    # this error is okay
+  };
+
+}
+
+=item B<_find_rotator>
+
+Find the image rotator settings. This field is optional.
+The object is updated if a ROTATOR is located.
+
+=cut
+
+sub _find_rotator {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  my $rot = find_children( $el, "ROTATOR", min => 0, max => 1);
+  if ($rot) {
+    my %ropt = find_attr( $rot, "SYSTEM","SLEW_OPTION", "MOTION");
+
+    # Allow multiple PA children
+    my @pa = find_pa( $rot );
+
+    $self->rotator( %ropt,
+		    PA => \@pa,
+	       );
+  }
+
+}
+
+=item B<_find_secondary>
+
+Specifications for the secondary mirror motion during the observation.
+The object is update if a SECONDARY element is located.
+
+=cut
+
+sub _find_secondary {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  # since there can only be at most one optional SECONDARY, pass this rootnode
+  # to the SECONDARY constructor but catch the special case of XMLConfigMissing
+  try {
+    my $sec = new JAC::OCS::Config::TCS::Secondary( DOM => $el );
+    $self->_setSecondary( $sec ) if defined $sec;
+  } catch JAC::OCS::Config::Error::XMLConfigMissing with {
     # this error is okay
   };
 
