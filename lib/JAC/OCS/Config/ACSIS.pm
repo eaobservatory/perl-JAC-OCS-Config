@@ -94,6 +94,19 @@ sub new {
 
 =over 4
 
+=item B<tasks>
+
+OCS tasks that will be involved in the observation.
+
+ @tasks = $cfg->tasks;
+
+=cut
+
+sub tasks {
+  # kluge for now
+  return ('CONTROLLER', (map { 'CORRTASK'.$_ } (1..8)), 'IFTASK');
+}
+
 =item B<red_obs_mode>
 
 (Optional) String specifying the observing mode.

@@ -41,6 +41,15 @@ use vars qw/ $VERSION /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
+# map real instrument name to frontend task name
+our %TASKMAP = (
+		RXA3 => 'FE_A',
+		RXB3 => 'FE_B',
+		RXWC => 'FE_W',
+		RXWD => 'FE_W',
+		HARPB => 'FE_HARPB',
+		);
+
 =head1 METHODS
 
 =head2 Constructor
@@ -80,6 +89,27 @@ sub new {
 =head2 Accessor Methods
 
 =over 4
+
+=item B<tasks>
+
+Task or tasks that will be configured from this XML.
+
+ @tasks = $cfg->tasks;
+
+=cut
+
+sub tasks {
+  my $self = shift;
+  my $name = $self->name;
+
+  # if we already named FE_XXX that is the task name
+  if ($name =~ /^FE_/) {
+    return ($name);
+  } elsif (exists $TASKMAP{$name}) {
+    return $TASKMAP{$name};
+  }
+  return ();
+}
 
 =item B<receptors>
 

@@ -77,6 +77,19 @@ sub new {
 
 =over 4
 
+=item B<tasks>
+
+Task involved in RTS sequences.
+
+ @tasks = $cfg->tasks();
+
+=cut
+
+sub tasks {
+  return "RTS";
+}
+
+
 =item B<stTimeout>
 
 Timeour (ms) waiting for the start of sequence.

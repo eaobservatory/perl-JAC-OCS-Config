@@ -409,6 +409,23 @@ sub _setSecondary {
   $self->{SECONDARY} = $sec;
 }
 
+=item B<tasks>
+
+Name of the tasks that would be involved in reading this config.
+
+ @tasks = $tcs->tasks();
+
+Usually 'PTCS' plus SMU if a secondary configuration is available.
+
+=cut
+
+sub tasks {
+  my $self = shift;
+  my @tasks = ('PTCS');
+  push( @tasks, $self->getSecondary->tasks ) if defined $self->getSecondary;
+  return @tasks;
+}
+
 =item B<stringify>
 
 Convert the class into XML form. This is either achieved simply by
