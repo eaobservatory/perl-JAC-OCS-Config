@@ -242,12 +242,13 @@ sub stringify {
   my $self = shift;
 
   # Presumably need to force synchronization of content with DOM
+  # if we are doing this seriously.
 
   # Get root note
   my $root = $self->_rootnode;
 
   # Return text
-  return $root->toString;
+  return (defined $root ? $root->toString : "" );
 
 }
 
@@ -359,6 +360,17 @@ sub _import_dom {
   $self->_tree( $tree );
   $self->_rootnode( $nodes[0] );
   $self->_process_dom();
+}
+
+=item B<_process_dom>
+
+Dummy routine for processing a DOM tree. Does nothing and so is only
+useful if you intend to simply read the XML and write it out without
+modification or content extraction.
+
+=cut
+
+sub _process_dom {
 }
 
 =end __PRIVATE_METHODS__
