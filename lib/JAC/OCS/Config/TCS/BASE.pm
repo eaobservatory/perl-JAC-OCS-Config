@@ -351,7 +351,6 @@ sub _extract_coord_info {
 
   # Search for the element matching (this will be targetName 90% of the time)
   # We know there is only one system element per target
-#  my ($system) = $self->_get_child_elements($target, qr/System$/);
 
   # Find any nodes that end with "System"
   my ($system) = $target->findnodes('.//*[contains(name(),"System")]');
