@@ -236,7 +236,13 @@ sub stringify {
 
   $xml .= "<IF_CENTER_FREQ>". $self->if_center_freq .
     "</IF_CENTER_FREQ>\n";
-  $xml .= "<bw units=\"Hz\" value=\"".$self->bandwidth."\" />\n";
+
+  # MHz is a natural unit for bandwidth so multiply by 1E-6
+  # Using unit class in the off chance that I begin storing the
+  # bandwidth as an object with associated unit
+  my $u = new JAC::OCS::Config::Units('Hz');
+  $xml .= "<bw units=\"MHz\" value=\"".($self->bandwidth * $u->mult('M'))
+    ."\" />\n";
   my @smu = $self->smu_offset;
   $xml .= "<smu_offset X=\"$smu[0]\" Y=\"$smu[1]\" Z=\"$smu[2]\" />\n";
 
@@ -324,7 +330,7 @@ sub _process_dom {
   if (exists $bwinfo{units}) {
     my $u = JAC::OCS::Config::Units->new( $bwinfo{units} );
     if (defined $u) {
-      $mult = 10 ** $u->factor;
+      $mult = $u->mult( '' );
     } else {
       warn "Unable to parse units '$bwinfo{units} in Instrument\n";
     }
