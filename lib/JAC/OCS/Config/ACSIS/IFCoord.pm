@@ -36,10 +36,10 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 =item B<new>
 
-Create a new Cube object. Takes hash arguments, the names of which must
+Create a new IFCoord object. Takes hash arguments, the names of which must
 match accessor methods.
 
-  $c = new JAC::OCS::Config::ACSIS::Cube( projection => 'TAN' );
+  $c = new JAC::OCS::Config::ACSIS::IFCoord( if_freq => 5.0 );
 
 =cut
 

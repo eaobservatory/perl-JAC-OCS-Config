@@ -200,7 +200,7 @@ sub rest_freq_ref {
 
 =item B<fe_sideband>
 
-Sideband number to use in the frontend.
+Sideband to use in the frontend. -1 for LSB, +1 for USB.
 
 =cut
 
