@@ -38,6 +38,7 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 @EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
 		  get_this_pcdata find_attr_child find_attrs_and_pcdata
 		  _check_range indent_xml_string find_range interval_to_xml
+		  attrs_only
 	       );
 
 =head1 FUNCTIONS
@@ -342,20 +343,39 @@ sub find_range {
 
 =item B<interval_to_xml>
 
-Convert a C<JAC::OCS::Config::Interval> object to a standard
-ACSIS <range> element.
+Convert one or more C<JAC::OCS::Config::Interval> objects to a standard
+ACSIS <range> element (or multiple elements).
+
+ $xml = interval_to_xml( @intervals );
 
 =cut
 
 sub interval_to_xml {
-  my $i = shift;
+  my @in = @_;
 
   my $xml = "";
-  $xml .= "<range units=\"".$i->units."\">\n";
-  $xml .= "  <min>". $i->min ."</min>\n";
-  $xml .= "  <max>". $i->max ."</max>\n";
-  $xml .= "</range>\n";
+  for my $i (@in) {
+    $xml .= "<range units=\"".$i->units."\">\n";
+    $xml .= "  <min>". $i->min ."</min>\n";
+    $xml .= "  <max>". $i->max ."</max>\n";
+    $xml .= "</range>\n";
+  }
   return $xml;
+}
+
+=item B<attrs_only>
+
+Given an element name, and  a hash, return the XML string
+that assumes a simple element with only attributes and no
+PCDATA.
+
+ $xml = attrs_only( $el, %attr);
+
+=cut
+
+sub attrs_only {
+  my ($el, %attr) = @_;
+  return "<$el ". join(" ", map { "$_=\"$attr{$_}\"" } keys %attr ) ." />\n";
 }
 
 =back
