@@ -275,7 +275,7 @@ sub coords_to_xml {
 	throw JAC::OCS::Config::Error::FatalError("Unsupported velocity frame '$vf'");
       }
 
-      $xml .= "    <rv defn=\"".$c->vdefn.
+      $xml .= "    <rv defn=\"".lc($c->vdefn).
 	"\" frame=\"".$vf."\">". $rv ."</rv>\n";
 
       $xml .= "    <parallax>". $c->parallax ."</parallax>\n"
