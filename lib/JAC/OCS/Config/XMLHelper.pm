@@ -23,17 +23,20 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
+use Exporter;
 use XML::LibXML;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error;
 
+use base qw/ Exporter /;
 use vars qw/ $VERSION @EXPORT_OK /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
-@EXPORT_OK = qw/  get_pcdata find_attr find_children get_pcdata_multi
+
+@EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
 		  _check_range indent_xml_string
-		  /;
+	       );
 
 =head1 FUNCTIONS
 

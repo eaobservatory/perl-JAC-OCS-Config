@@ -36,6 +36,8 @@ use Data::Dumper;
 use Math::Trig qw/ rad2deg /;
 use Astro::Coords::Offset;
 
+use base qw/ Exporter /;
+
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata _check_range find_children 
 				    find_attr get_pcdata_multi
 				    /;
