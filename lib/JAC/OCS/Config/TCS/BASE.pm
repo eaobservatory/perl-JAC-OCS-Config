@@ -36,7 +36,7 @@ use Data::Dumper;
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr
 				    indent_xml_string
 				    /;
-use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml offset_to_xml /;
+use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml offset_to_xml find_offsets /;
 use JAC::OCS::Config::Error;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -311,10 +311,10 @@ sub _find_base_posn {
   }
 
   # Look for an offset
-  my @offsets = JAC::OCS::Config::TCS::Generic::find_offsets( $el,
-							      min => 0,
-							      max => 1,
-							      tracking => $self->tracking_system);
+  my @offsets = find_offsets( $el,
+			      min => 0,
+			      max => 1,
+			      tracking => $self->tracking_system);
 
   # Store in object
   $self->offset( $offsets[0] ) if @offsets;
