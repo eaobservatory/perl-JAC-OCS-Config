@@ -88,7 +88,20 @@ Information concerning each receptor in the instrument.
  %receptors = $ins->receptors;
  $ins->receptors( %receptors );
 
-The hash is indexed by rhe receptor ID.
+The hash is indexed by the receptor ID (and so is usable to generate
+a mask for the frontend) and each value is a reference to a hash containing
+the following information
+
+ health -  ON, OFF, or UNSTABLE
+ x      -  X coordinate (arcsec) of the pixel relative to the focal plane
+ y      -  Y coordinate (arcsec) of the pixel relative to the focal plane
+ pol_type - Polarisation type for this pixel (eg Linear)
+ refpix -  ID of reference pixel for gain calibration
+ sensitivity - Relative sensitivity of this pixel to the reference pixel
+ angle  - polarization angle (Astro::Coords::Angle object)
+
+The reference pixel should refer to one of the pixels in this receptor
+hash.
 
 =cut
 
@@ -155,7 +168,7 @@ Location of the instrument.
 sub focal_station {
   my $self = shift;
   if (@_) {
-    $self->{FOC_STATION} = shift;
+    $self->{FOC_STATION} = uc(shift);
   }
   return $self->{FOC_STATION};
 }
@@ -255,7 +268,12 @@ sub stringify {
     $xml .= "          y=\"$xy[1]\"\n";
     $xml .= "          pol_type=\"$rec{$r}{pol_type}\" >\n";
 
-    $xml .= "<sensitivity reference=\"$rec{$r}{refpix}\"\n";
+    my $refpix = $rec{$r}{refpix};
+    if (!exists $rec{$refpix}) {
+      throw JAC::OCS::Config::FatalError('Reference pixel ($refpix) is not available to this instrument configuration');
+    }
+
+    $xml .= "<sensitivity reference=\"$refpix\"\n";
     $xml .= "             value=\"$rec{$r}{sensitivity}\" />\n";
 
     $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
