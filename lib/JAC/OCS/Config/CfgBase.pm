@@ -88,6 +88,7 @@ sub new {
 		   ConfigNode => undef,
 		   FileName => undef,
 		   DTDValidation => 1,
+		   IsDOMValid => {},
 		   %extra
 		  }, $class;
 
@@ -126,6 +127,46 @@ sub filename {
   my $self = shift;
   if (@_) { $self->{FileName} = shift; }
   return $self->{FileName};
+}
+
+=item B<isDOMValid>
+
+Hash indicating whether any given element under the root _CONFIG
+element is valid in the DOM tree. All are set to true during the
+initial parse but can be invalidated subsequently by using accessor
+methods to change content. Obviously, if no DOM was used for constructing
+the object all values are false.
+
+  $cfg->isDOMValid( TCS_CONFIG => 1 );
+  $isok = $cfg->isDOMValid( "SECONDARY" );
+
+The keys are assumed to match element names and are used during
+object stringification.
+
+=cut
+
+sub isDOMValid {
+  my $self = shift;
+  # Alsways false if no DOM tree exists
+  return undef unless $self->_rootnode;
+  if (@_) {
+    # Single argument is a state query
+    if (scalar(@_) == 1) {
+      my $key = shift;
+      # make sure we do not make the hash bigger if the key is unrecognised
+      return undef unless exists $self->{DOMValid}->{$key};
+      return $self->{IsDOMValid}->{$key};
+    } else {
+      # more than one argument, hash arg
+      my %args = @_;
+      for my $a (keys %args) {
+	# Copy in booleans regardless of real values
+	$self->{IsDOMValid}->{$a} = ( $args{$a} ? 1 : undef );
+      }
+    }
+  }
+  # No action if no args since I do not really want to return
+  # a reference to the underlying hash.
 }
 
 =item B<_validation>
