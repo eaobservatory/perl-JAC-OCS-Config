@@ -83,7 +83,8 @@ sub new {
   return $self->SUPER::new( @_, 
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    TAGS => {},
-								    SLEW => {}
+								    SLEW => {},
+								    ROTATOR => {},
 								   }
 			  );
 }
@@ -134,6 +135,9 @@ corresponding coordinate information.
 The content of this hash is not part of the public interface. Use the
 getCoords, getOffsets and getTrackingSystem methods for detailed
 information.
+
+Currently, the values in the tags hash are C<JAC::OCS::Config::TCS::BASE>
+objects.
 
 =cut
 
@@ -418,7 +422,8 @@ sub stringify {
 
   # telescope
   my $tel = $self->telescope;
-  $xml .= "TELESCOPE=\"$tel\">\n" if $tel;
+  $xml .= "TELESCOPE=\"$tel\"" if $tel;
+  $xml .= ">\n";
 
   # Now add the constituents in turn
   $xml .= $self->_toString_base;
@@ -732,8 +737,8 @@ sub _toString_slew {
     # Reconstruct XML
     my %slew = $self->slew;
     # Check we have something
+    $xml .= "\n<!-- Set up the SLEW method here -->\n\n";
     if (keys %slew) {
-      $xml .= "\n<!-- Define the SLEW method -->\n\n";
       $xml .= "<SLEW OPTION=\"$slew{OPTION}\" ";
       $xml .= "TRACK_TIME=\"$slew{TRACK_TIME}\" "
 	if $slew{OPTION} eq 'TRACK_TIME';
