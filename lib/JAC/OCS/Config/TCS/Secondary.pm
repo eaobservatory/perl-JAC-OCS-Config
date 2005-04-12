@@ -250,6 +250,9 @@ sub stringify {
   $xml .= "MOTION=\"$mo\"" if defined $mo;
   $xml .= ">\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   # Obs mode
   my $mode = $self->smu_mode;
 

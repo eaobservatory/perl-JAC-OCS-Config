@@ -470,6 +470,9 @@ sub stringify {
   $xml .= "TELESCOPE=\"$tel\"" if $tel;
   $xml .= ">\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   # Now add the constituents in turn
   $xml .= $self->_toString_base;
   $xml .= $self->_toString_slew;

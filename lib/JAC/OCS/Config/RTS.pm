@@ -173,6 +173,9 @@ sub stringify {
 
   $xml .= "<RTS_CONFIG>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   $xml .= "<stTimeout value=\"".$self->stTimeout."\" />\n";
   $xml .= "<sampTimeout value=\"".$self->sampTimeout."\" />\n";
   $xml .= "<opMode value=\"".$self->opmode."\" />\n";

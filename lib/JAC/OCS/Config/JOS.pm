@@ -347,6 +347,9 @@ sub stringify {
 
   $xml .= "<JOS_CONFIG>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   my @tasks = $self->tasks;
   $xml .= "<tasks>".join(" ",@tasks)."</tasks>\n";
 

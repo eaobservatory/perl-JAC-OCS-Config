@@ -204,6 +204,9 @@ sub stringify {
 
   $xml .= "<FRONTEND_CONFIG>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   # The mandatory keywords
   my $rfreq = $self->rest_frequency;
   throw JAC::OCS::Config::Error::FatalError( 'Must supply rest frequency in order to create XML') unless defined $rfreq;

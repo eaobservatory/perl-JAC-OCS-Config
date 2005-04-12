@@ -116,6 +116,9 @@ sub stringify {
   my $xml = '';
   $xml .= "<cube_list>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   my %cubes = $self->cubes;
 
   # loop over all cubes

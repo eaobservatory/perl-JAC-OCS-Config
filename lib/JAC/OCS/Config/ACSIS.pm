@@ -388,6 +388,9 @@ sub stringify {
 
   $xml .= "<ACSIS_CONFIG>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   $xml .= $self->cube_list->stringify(NOINDENT=>0) ."\n"
     if defined $self->cube_list;
   $xml .= $self->line_list->stringify(NOINDENT=>0) ."\n"

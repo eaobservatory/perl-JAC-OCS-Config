@@ -176,6 +176,9 @@ sub stringify {
 
   $xml .= "<HEADER_CONFIG>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   for my $i ($self->items) {
     $xml .= "<HEADER TYPE=\"" . $i->type . "\"\n";
     $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n";

@@ -277,6 +277,9 @@ sub stringify {
   $xml .= "            WAVELENGTH=\"".$self->wavelength."\"\n";
   $xml .= ">\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   $xml .= "<IF_CENTER_FREQ>". $self->if_center_freq .
     "</IF_CENTER_FREQ>\n";
 

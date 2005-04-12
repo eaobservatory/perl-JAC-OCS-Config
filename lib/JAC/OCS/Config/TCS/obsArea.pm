@@ -242,6 +242,9 @@ sub stringify {
 
   $xml .= "<obsArea>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   # position angle for the area
   if (defined $self->posang) {
     $xml .= pa_to_xml( $self->posang );

@@ -131,6 +131,9 @@ sub stringify {
   my $xml = '';
   $xml .= "<spw_list>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   # data fields (order is important)
   my %df = $self->data_fields;
   for my $k ("doppler","spw_id","fe_lo") {

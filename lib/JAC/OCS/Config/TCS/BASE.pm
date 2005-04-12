@@ -172,6 +172,9 @@ sub stringify {
 
   my $xml = '';
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   $xml .= "<!-- BASE element contains target, offset and tracking system -->\n";
 
   my $tag = $self->tag;

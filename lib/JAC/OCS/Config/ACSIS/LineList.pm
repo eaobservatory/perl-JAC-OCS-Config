@@ -114,6 +114,9 @@ sub stringify {
   my $xml = '';
   $xml .= "<line_list>\n";
 
+  # Version declaration
+  $xml .= $self->_introductory_xml();
+
   my %lines = $self->lines;
 
   # current unit object
