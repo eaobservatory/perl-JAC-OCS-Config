@@ -18,7 +18,6 @@ C<OCS_CONFIG> root element).
 =cut
 
 use strict;
-use Carp;
 use warnings;
 use XML::LibXML;
 
@@ -27,7 +26,7 @@ use JAC::OCS::Config::Error;
 use vars qw/ $VERSION $INITKEY /;
 
 # Overloading
-use overload '""' => "stringify";
+use overload '""' => "_stringify_overload";
 
 # This is the key that sub-classes should use if they want
 # to supply additional init values to the constructor
@@ -245,8 +244,11 @@ sub _rootnode {
 
 =item B<stringify>
 
-Convert the object to XML. Called by the stringification operator
-and so has no arguments.
+Convert the object to XML. Ignores all arguments (although the specific
+child implementations will support hash arguments) and simply stringifies
+the root node.
+
+Indirectly called by the stringification operator.
 
 =cut
 
@@ -262,6 +264,11 @@ sub stringify {
   # Return text
   return (defined $root ? $root->toString : "" );
 
+}
+
+# forward onto stringify method
+sub _stringify_overload {
+  return $_[0]->stringify();
 }
 
 
@@ -285,10 +292,12 @@ it.
 sub _read_xml_from_file {
   my $self = shift;
   my $file = shift;
-  open my $fh, "< $file" || croak "Error opening XML file $file : $!";
+  open my $fh, "< $file" or
+    throw JAC::OCS::Config::Error::IOError("Error opening XML file $file : $!");
   local $/ = undef;
   my $xml = <$fh>;
-  close($fh) or croak "Error closing XML file $file : $!";
+  close($fh) or
+    throw JAC::OCS::Config::Error::IOError("Error closing XML file $file : $!");
   return $xml;
 }
 

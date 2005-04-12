@@ -59,7 +59,7 @@ use vars qw/ $VERSION /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
 # Overloading
-use overload '""' => "stringify";
+use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
 our @CONFIGS = qw/jos header tcs instrument_setup frontend rts acsis /;
@@ -329,7 +329,7 @@ sub write_file {
   # found in TRANS_DIR
   $TRANS_DIR = $self->outputdir unless defined $TRANS_DIR;
 
-  opendir my $dh, $TRANS_DIR ||
+  opendir my $dh, $TRANS_DIR or
     throw JAC::OCS::Config::Error::FatalError("Error opening OCS config output directory '$TRANS_DIR': $!");
 
   # Get all the dirs (making sure curdir is first in the list
@@ -362,11 +362,11 @@ sub write_file {
     $storename = $fullname unless defined $storename;
 
     # Open it [without checking to see if we are clobbering a pre-existing file]
-    open my $fh, "> $fullname" ||
-      throw JAC::OCS::Config::Error::FatalError("Error opening config output file $fullname: $!");
+    open my $fh, "> $fullname" or
+      throw JAC::OCS::Config::Error::IOError("Error opening config output file $fullname: $!");
     print $fh "$self";
-    close ($fh) ||
-      throw JAC::OCS::Config::Error::FatalError("Error closing config output file $fullname: $!");
+    close ($fh) or
+      throw JAC::OCS::Config::Error::IOError("Error closing config output file $fullname: $!");
 
     chmod $options{chmod}, $fullname
       if exists $options{chmod};
@@ -409,7 +409,24 @@ Convert the Science Program object into XML.
 
   $xml = $sp->stringify;
 
-This method is also invoked via a stringification overload.
+A hash argument can be used to control the output:
+
+  $xml = $sp->stringify( NOINDENT => 1 );
+
+The allowed options are:
+
+=over 8
+
+=item NOINDENT
+
+If false (the default), the XML string is returned formatted to reflect
+hierarchy. If true, the string will be returned without any indenting.
+This is usually used to prevent nodes within the parent from indenting
+prematurely.
+
+=back
+
+This method is also invoked (indirectly) via a stringification overload.
 
   print "$sp";
 
@@ -462,6 +479,11 @@ sub stringify {
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
+# The overloaded stringification must be forwarded
+# since the stringify() method deals with hash arguments.
+sub _stringify_overload {
+  return $_[0]->stringify();
+}
 
 =back
 
