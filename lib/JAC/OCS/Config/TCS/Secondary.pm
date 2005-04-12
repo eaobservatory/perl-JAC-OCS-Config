@@ -202,12 +202,18 @@ sub timing {
 =item B<smu_mode>
 
 The observing mode implemented by the secondary mirror.
-Can be one of 
+
+  $mode= $smu->smu_mode();
+
+Can be one of
 
    none
    chop
    jiggle
    jiggle_chop
+
+This mode is determined from the presence of CHOP and/or JIGGLE
+specifications in the object.
 
 =cut
 
