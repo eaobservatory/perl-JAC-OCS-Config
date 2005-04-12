@@ -210,6 +210,10 @@ reason. It's constructor takes two arguments. The first is a text
 value, the second is a numeric value, C<OMP__FATAL>. These values are
 what will be returned by the overload methods.
 
+=item B<JAC::OCS::Config::Error::IOError>
+
+An error occurred during I/O.
+
 =item B<JAC::OCS::Config::Error::XMLBadStructure>
 
 The configuration XML was not valid.
@@ -266,6 +270,9 @@ package JAC::OCS::Config::Error::DirectoryNotFound;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::FatalError;
+use base qw/ JAC::OCS::Config::Error /;
+
+package JAC::OCS::Config::Error::IOError;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::XMLBadStructure;
