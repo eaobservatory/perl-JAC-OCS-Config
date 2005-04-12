@@ -271,7 +271,6 @@ sub _stringify_overload {
   return $_[0]->stringify();
 }
 
-
 =back
 
 =begin __PRIVATE_METHODS__
@@ -432,6 +431,42 @@ modification or content extraction.
 =cut
 
 sub _process_dom {
+}
+
+=item B<_introductory_xml>
+
+Returns an XML snippet to be included at the top of the stringified
+XML (if requested by the specific subclass). Usually consists of a class
+name and version number.
+
+  $text = $self->_introductory_xml();
+
+=cut
+
+sub _introductory_xml {
+  my $self = shift;
+
+  # Use the VERSION method inherited from UNIVERSAL
+  my $version = $self->VERSION;
+
+  my $xml = "<!--\nCreated using class ".ref($self). " V$version\n";
+
+  # for debugging of translations, we really need to know the
+  # inheritance version numbers. This is hairy code using symbolic
+  # references so we have to limit the scope of strict relaxation.
+  {
+    no strict "refs";
+    my @isa = @{ ref($self)."::ISA" };
+
+    for my $b (@isa) {
+      $xml .= "+ which inherits from class $b V". ${ $b."::VERSION" } ."\n";
+    }
+  }
+
+  # close the comment
+  $xml .= "-->\n";
+
+  return $xml;
 }
 
 =back
