@@ -75,7 +75,7 @@ The constructor will locate the Secondary configuration in
 a C<< SECONDARY >> element. It will not attempt to verify that it has
 a C<< TCS_CONFIG >> element as parent.
 
-The method will die if no arguments are supplied.
+The method will return an unconfigured object if no arguments are supplied.
 
 =cut
 
@@ -153,7 +153,8 @@ sub jiggle {
 =item B<chop>
 
 Specification of the chop throw. Recognized keys are SYSTEM,
-THROW and PA. PA must be a C<Astro::Coords::Angle> object.
+THROW and PA. PA must be a C<Astro::Coords::Angle> object and
+THROW is in arcsec.
 
   %c = $obs->chop();
   $obs->chop( %c );
@@ -545,7 +546,7 @@ sub _find_jiggle_gen {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
