@@ -37,6 +37,7 @@ use Time::Piece qw/ :override /;
 
 use JAC::OCS::Config::Error;
 
+use JAC::OCS::Config::ObsSummary;
 use JAC::OCS::Config::TCS;
 use JAC::OCS::Config::Frontend;
 use JAC::OCS::Config::Instrument;
@@ -62,7 +63,7 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/jos header tcs instrument_setup frontend rts acsis /;
+our @CONFIGS = qw/obssum jos header tcs instrument_setup frontend rts acsis /;
 
 
 =head1 METHODS
@@ -154,6 +155,23 @@ sub tasks {
     }
   }
   return @tasks;
+}
+
+=item B<obssum>
+
+Observation summary as an C<JAC::OCS::Config::ObsSummary> object.
+
+=cut
+
+sub obssum {
+  my $self = shift;
+  if (@_) { 
+    my $cfg = shift;
+    throw JAC::OCS::Config::Error::BadArgs("obssum must be a JAC::OCS::Config::ObsSummary object")
+      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::ObsSummary");
+    $self->{OBS_SUMMARY} = $cfg;
+  }
+  return $self->{OBS_SUMMARY};
 }
 
 =item B<jos>
