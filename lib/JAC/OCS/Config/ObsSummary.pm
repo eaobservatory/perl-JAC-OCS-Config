@@ -98,17 +98,17 @@ sub switching_mode {
   return $self->{SWITCHING_MODE};
 }
 
-=item B<obs_type>
+=item B<type>
 
 The type of observation.
 
-  $type = $obs->obs_type();
+  $type = $obs->type();
 
 Usually one of 'science', 'pointing', or 'focus'.
 
 =cut
 
-sub obs_type {
+sub type {
   my $self = shift;
   if (@_) {
     $self->{OBS_TYPE} = shift;
@@ -156,10 +156,10 @@ sub stringify {
     (defined $self->switching_mode ? $self->switching_mode : '') 
     . "</switching_mode>\n";
   $xml .= "<obs_type>".
-    (defined $self->obs_type ? $self->obs_type : '')
+    (defined $self->type ? $self->type : '')
     . "</obs_type>\n";
-  $xml .= "<obs_comment>". $self->obs_comment . "</obs_comment>"
-    if $self->obs_comment;
+  $xml .= "<obs_comment>". $self->comment . "</obs_comment>"
+    if $self->comment;
 
   $xml .= "</OBS_SUMMARY>\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
@@ -211,7 +211,7 @@ sub _process_dom {
 
   $self->mapping_mode( get_pcdata( $el, "mapping_mode") );
   $self->switching_mode( get_pcdata( $el, "switching_mode") );
-  $self->comment( get_pcdata( $el, "obs_type") );
+  $self->type( get_pcdata( $el, "obs_type") );
   $self->comment( get_pcdata( $el, "comment") );
 
   return;
