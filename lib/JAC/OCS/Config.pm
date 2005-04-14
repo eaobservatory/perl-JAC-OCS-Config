@@ -131,9 +131,10 @@ by this configuration.
   @tasks = $cfg->tasks;
 
 Can be used to configure the JOS. Note that the JOS is not included in
-this list and also note that the tasks() method will not necessairly contain
-the same values since the task list in the JOS object is not necessairly derived
-from the configuration (it may just be the settings that were read from disk).
+this list and also note that the tasks() method will not necessairly
+contain the same values since the task list in the JOS object is not
+necessairly derived from the configuration (it may just be the
+settings that were read from disk).
 
 =cut
 
@@ -144,6 +145,7 @@ sub tasks {
 
   # The tasks should retain the order delievered by the subsystems but
   # we need to make sure that duplicates are removed
+  # For this reason, we do not use the _task_map method.
   for my $o (@CONFIGS) {
     next if $o eq 'jos';
     if ($self->can($o) && defined $self->$o() && $self->$o->can( 'tasks' )) {
@@ -326,8 +328,10 @@ be the last argument). Supported keys are:
 Returns the output filename with path information for the file written in
 the root directory.
 
-Currently, the config is written to the output directory and each
-sub-directory within that directory.
+The full config is written to the output directory. Additionally,
+if there are any directories in the output directory that match
+task names controlled by a specific config, that directory receives
+the configuration for that task.
 
 =cut
 
@@ -342,20 +346,24 @@ sub write_file {
 
   # Now if we have anything left its a directory
   my $TRANS_DIR = shift;
-
-  # The interface currently suggests that I write one copy into TRANS_DIR
-  # itself and another copy of the XML file into each of the directories
-  # found in TRANS_DIR
   $TRANS_DIR = $self->outputdir unless defined $TRANS_DIR;
 
+  # We need to read the directory to look for subdirs matching task names
   opendir my $dh, $TRANS_DIR or
     throw JAC::OCS::Config::Error::FatalError("Error opening OCS config output directory '$TRANS_DIR': $!");
 
-  # Get all the dirs (making sure curdir is first in the list
-  # so that when things paths are formed we end up in TRANS_DIR)
-  # except hidden dirs [assume unix hidden definition XXX]
-  my @dirs = (File::Spec->curdir,
-	      grep { -d File::Spec->catdir($TRANS_DIR,$_) && $_ !~ /^\./ } readdir($dh));
+  # Get all the dirs excluding unix hidden directories
+  my @dirs = grep { -d File::Spec->catdir($TRANS_DIR,$_)
+		    && $_ !~ /^\./
+		  } readdir($dh);
+
+  # Now we need to work out which directories are meant to receive
+  # configurations
+  my ($tmap, $invtmap) = $self->_task_map();
+
+  # loop over the directories, storing those that have a corresponding
+  # key in the inverse task map
+  @dirs = grep { exists $invtmap->{$_} } @dirs;;
 
   # Format is acsis_YYYYMMDD_HHMMSSuuuuuu.xml
   #  where uuuuuu is microseconds
@@ -365,14 +373,15 @@ sub write_file {
 
   # Rather than worry that the computer is so fast in looping that we might
   # reuse milli-seconds (and therefore have to check that we are not opening
-  # a file that has previously been created) micro-seconds in the filename
+  # a file that has previously been created) put micro-seconds in the filename
   my $cname = "acsis_". $ut->strftime("%Y%m%d_%H%M%S") .
     "_".sprintf("%06d",$mic_sec) .
       ".xml";
 
   my $storename;
-  @dirs = ".";
-  for my $dir (@dirs) {
+
+  # loop over the directories, making sure that current directory is included
+  for my $dir (File::Spec->curdir,@dirs) {
 
     my $fullname = File::Spec->catdir( $TRANS_DIR, $dir, $cname );
     print "Writing config to $fullname\n";
@@ -383,7 +392,16 @@ sub write_file {
     # Open it [without checking to see if we are clobbering a pre-existing file]
     open my $fh, "> $fullname" or
       throw JAC::OCS::Config::Error::IOError("Error opening config output file $fullname: $!");
-    print $fh "$self";
+
+    # Now we use the inverse map to select specific configurations for
+    # this directory
+    my %strargs;
+    if ($dir ne File::Spec->curdir && exists $invtmap->{$dir}) {
+      $strargs{CONFIGS} = $invtmap->{$dir};
+    }
+
+    print $fh $self->stringify( %strargs );
+
     close ($fh) or
       throw JAC::OCS::Config::Error::IOError("Error closing config output file $fullname: $!");
 
@@ -436,6 +454,13 @@ The allowed options are:
 
 =over 8
 
+=item CONFIGS
+
+A reference to an array of config objects (named after the corresponding
+methods in this class) that should be included in the stringification.
+If additional configurations are required (eg frontend requiring instrument)
+this will be handled automatically.
+
 =item NOINDENT
 
 If false (the default), the XML string is returned formatted to reflect
@@ -487,8 +512,42 @@ sub stringify {
     $jos->tasks( $self->tasks ) unless @tasks;
   }
 
+  # work out which configs we are including in the stringification
+  my @configs = @CONFIGS;
+
+  if (defined $args{CONFIGS}) {
+
+    # now we need to make sure that the configs array is complete.
+    # We first form a hash
+    my %local;
+    $local{$_}++ for @{ $args{CONFIGS} };
+
+    # so loop over all the configs and make sure we include the
+    # required additions. We do not loop over keys since we are
+    # adding keys. Note that this is not recursive so we are not
+    # resolving the case where a requirement of X on Y forces import
+    # of Z. We would need some recursion for that and the current
+    # OCS complexity does not warrant that
+    for my $c (@{ $args{CONFIGS} }) {
+      throw JAC::OCS::Config::Error::FatalError("Supplied configuration method '$c' is not supported") unless $self->can($c);
+      my $object = $self->$c;
+      next unless defined $object;
+      my @extras = $object->dtdrequires;
+      $local{$_}++ for @extras;
+    }
+
+    # and note that the order is mandated by the global @CONFIGS
+    # so we have to fix that
+    @configs = ();
+    for my $c (@CONFIGS) {
+      if (exists $local{$c}) {
+	push(@configs, $c);
+      }
+    }
+  }
+
   # ask each child to stringify
-  for my $c (@CONFIGS) {
+  for my $c (@configs) {
     my $object = $self->$c;
     next unless defined $object;
     $xml .= $object->stringify( NOINDENT => 1 );
@@ -563,6 +622,64 @@ sub write_entry {
 
 =over 4
 
+=item B<_task_map>
+
+Returns two hashes (as references). The first is a mapping from config
+method to task names, the second is the inverse mapping that maps a
+task name to a particular set of configurations.
+
+  ( $task_map, $inverse_map ) = $cfg->_task_map();
+
+In scalar context returns the forward mapping:
+
+  $task_map = $cfg->_task_map();
+
+Specific task ordering is lost.
+
+=cut
+
+sub _task_map {
+  my $self = shift;
+
+  my %map;
+  for my $c (@CONFIGS) {
+    # get the corresponding object
+    next unless $self->can( $c );
+    my $object = $self->$c;
+    next unless defined $object;
+    next unless $object->can( 'tasks' );
+
+    my @tasks;
+    if ($c eq 'jos') {
+      # JOS is currently a special case
+      @tasks = ('JOS');
+    } else {
+      @tasks = $object->tasks;
+    }
+
+    $map{$c} = \@tasks;
+  }
+
+  return \%map unless wantarray();
+
+  my %inverse;
+  # use a hash of hashes to build up the initial mapping
+  # since order is not relevant
+  for my $cfg (keys %map) {
+    for my $task (@{ $map{$cfg} }) {
+      $inverse{$task}{$cfg}++;
+    }
+  }
+
+  # and convert the hash of hash to hash of arrays
+  for my $task (keys %inverse) {
+    $inverse{$task} = [ keys %{ $inverse{$task} } ]
+  }
+
+  return (\%map, \%inverse);
+}
+
+
 =item B<_process_dom>
 
 Using the C<_rootnode> node referring to the top of the TCS XML,
@@ -613,7 +730,7 @@ Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2004 Particle Physics and Astronomy Research Council.
+Copyright (C) 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
