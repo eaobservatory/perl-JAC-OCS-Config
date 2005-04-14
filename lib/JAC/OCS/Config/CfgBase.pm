@@ -273,6 +273,31 @@ sub _stringify_overload {
 
 =back
 
+=head2 Class Methods
+
+=over 4
+
+=item B<dtdrequires>
+
+Returns the names of any associated configurations required for this
+configuration to be used in a full OCS_CONFIG.
+
+  @requires = $cfg->dtdrequires();
+
+Can return an empty list if the configuration does not need any additional
+information to be compliant.
+
+Mainly intended for use by top level configurations where the strings
+in the list must match method names in the C<JAC::OCS::Config> class.
+
+=cut
+
+sub dtdrequires {
+  return ();
+}
+
+=back
+
 =begin __PRIVATE_METHODS__
 
 =head2 Private Methods
@@ -477,7 +502,7 @@ sub _introductory_xml {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2002-2004 Particle Physics and Astronomy Research Council.
+Copyright 2002-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under

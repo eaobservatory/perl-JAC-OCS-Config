@@ -247,6 +247,20 @@ sub stringify {
 
 =over 4
 
+=item B<dtdrequires>
+
+Returns the names of any associated configurations required for this
+configuration to be used in a full OCS_CONFIG. The frontend requires
+'instrument_setup'.
+
+  @requires = $cfg->dtdrequires();
+
+=cut
+
+sub dtdrequires {
+  return ('instrument_setup');
+}
+
 =item B<getRootElementName>
 
 Return the name of the _CONFIG element that should be the root
@@ -354,7 +368,7 @@ http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/004/frontend_configure.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
