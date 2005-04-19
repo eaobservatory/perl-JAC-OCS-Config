@@ -104,12 +104,12 @@ Return the name of the OCS tasks requiring this configuration.
 
  @task = $smu->tasks();
 
-Always returns 'SMU'.
+Always returns 'SMUTASK'.
 
 =cut
 
 sub tasks {
-  return ('SMU');
+  return ('SMUTASK');
 }
 
 =item B<motion>
