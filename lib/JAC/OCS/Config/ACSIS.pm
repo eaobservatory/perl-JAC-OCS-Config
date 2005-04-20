@@ -100,11 +100,21 @@ OCS tasks that will be involved in the observation.
 
  @tasks = $cfg->tasks;
 
+The number of CORRTASKs depends on the receptors that are being used.
+
 =cut
 
 sub tasks {
-  # kluge for now
-  return ('CONTROLLER', (map { 'CORRTASK'.$_ } (1..8)), 'IFTASK');
+  my $self = shift;
+
+  # get the Corr tasks
+  my $map = $self->acsis_map;
+  my @corrtasks;
+  if (defined $map) {
+    @corrtasks = $map->tasks;
+  }
+
+  return ('CONTROLLER', @corrtasks, 'IFTASK');
 }
 
 =item B<red_obs_mode>
