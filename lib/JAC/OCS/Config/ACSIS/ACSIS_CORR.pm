@@ -175,7 +175,7 @@ sub _process_dom {
   my $el = $self->_rootnode;
 
   # All we have are map_id elements
-  my @cm = find_children( $el, "cm", min => 1 );
+  my @cm = find_children( $el, "cm", min => 1, max => 32 );
 
   my @bwmodes;
   for my $cmel (@cm) {
