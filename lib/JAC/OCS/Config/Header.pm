@@ -180,10 +180,14 @@ sub stringify {
   $xml .= $self->_introductory_xml();
 
   for my $i ($self->items) {
+
     $xml .= "<HEADER TYPE=\"" . $i->type . "\"\n";
-    $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n";
-    $xml .= "        COMMENT=\"" . $i->comment . "\"\n" if $i->comment;
-    $xml .= "        VALUE=\"" . $i->value . "\" ";
+    $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n"
+      unless ($i->type eq 'BLANKFIELD' || $i->type eq 'COMMENT');
+    $xml .= "        COMMENT=\"" . $i->comment . "\"\n" 
+     if (defined $i->comment);
+    $xml .= "        VALUE=\"" . $i->value . "\" "
+      unless $i->type eq 'BLANKFIELD';
 
     if ($i->source) {
       my @attr;
