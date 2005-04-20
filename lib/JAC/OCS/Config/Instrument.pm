@@ -12,8 +12,11 @@ JAC::OCS::Config::Instrument - Parse and modify OCS Instrument configurations
 
 =head1 DESCRIPTION
 
-This class can be used to parse and modify the Instrument configuration
-information present in the INSTRUMENT element of an OCS configuration.
+This class can be used to parse and modify the Instrument
+configuration information present in the INSTRUMENT element of an OCS
+configuration.  Note that this XML is not strictly configuration since
+it is present in the configuration XML to allow validation but is
+itself sent to the frontend for initialisation.
 
 =cut
 
@@ -40,15 +43,6 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 use vars qw/ $VERSION /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
-
-# map real instrument name to frontend task name
-our %TASKMAP = (
-		RXA3 => 'FE_A',
-		RXB3 => 'FE_B',
-		RXWC => 'FE_W',
-		RXWD => 'FE_W',
-		HARPB => 'FE_HARPB',
-		);
 
 =head1 METHODS
 
@@ -88,28 +82,12 @@ sub new {
 
 =head2 Accessor Methods
 
+Note that there is no C<tasks> method associated with this class
+because this XML represents initialisation rather than
+configuration. See the C<JAC::OCS::Config::Frontend> class for the
+task mapping for configuration.
+
 =over 4
-
-=item B<tasks>
-
-Task or tasks that will be configured from this XML.
-
- @tasks = $cfg->tasks;
-
-=cut
-
-sub tasks {
-  my $self = shift;
-  my $name = $self->name;
-
-  # if we already named FE_XXX that is the task name
-  if ($name =~ /^FE_/) {
-    return ($name);
-  } elsif (exists $TASKMAP{$name}) {
-    return $TASKMAP{$name};
-  }
-  return ();
-}
 
 =item B<receptors>
 
@@ -428,15 +406,15 @@ sub _process_dom {
 
 =head1 XML SPECIFICATION
 
-The Instrument XML configuration specification is documented in
-OCS/ICD/004 with a DTD available at
+The Instrument XML specification is documented in OCS/ICD/004 with a
+DTD available at
 http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/instrument.dtd.
 
 =head1 AUTHOR
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
