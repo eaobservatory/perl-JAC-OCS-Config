@@ -159,7 +159,8 @@ in this object C<lines> hash.
 
  $key = $class->moltrans2key( $mol, $trans );
 
-A transition such as '8 1 4 - 7 0 3' is converted to '8,1,4-7,0,3'.
+A transition such as '8 1 4 - 7 0 3' is converted to '8_1_4-7_0-3'.
+You can not use commas in an ID attribute.
 
 =cut
 
@@ -168,10 +169,14 @@ sub moltrans2key {
   my ($mol, $trans) = @_;
   $trans = '' if $mol eq $trans; # No Line == No Line
 
+  # strip leading and trailing spaces
+  $trans =~ s/\s+$//;
+  $trans =~ s/^\s+//;
+
   # fix up the transition so that we have commas for the spaces
   # on each end.
   $trans =~ s/\s*-\s*/-/;
-  $trans =~ s/\s+/,/g;
+  $trans =~ s/\s+/_/g;
 
   # molecule has no spaces and is uppercased
   $mol =~ s/\s+//g;
