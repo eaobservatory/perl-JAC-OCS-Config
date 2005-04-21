@@ -166,7 +166,7 @@ sub stringify {
     $xml .= '<map_id cm_id="'. $cm->{CM_ID} . 
       '" dcm_id="' . $cm->{DCM_ID} .
       '" receptor_id="' . $cm->{RECEPTOR} .
-      '" spw_id=' . $cm->{SPW_ID} ."\"/>\n";
+      '" spw_id="' . $cm->{SPW_ID} ."\"/>\n";
   }
 
   # tidy up
