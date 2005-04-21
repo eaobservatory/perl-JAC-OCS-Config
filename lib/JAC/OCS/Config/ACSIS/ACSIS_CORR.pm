@@ -125,6 +125,9 @@ sub stringify {
       '" bw_mode="' . $modes[$cm_id] . "\"/>\n";
   }
 
+  # Fudge
+  $xml .= '<rts_parms int_interval="50" timing_src="RTS_SOFT"/>' ."\n";
+
   # tidy up
   $xml .= "</ACSIS_corr>\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
