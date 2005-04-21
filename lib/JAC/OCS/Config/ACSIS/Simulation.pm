@@ -212,11 +212,13 @@ sub stringify {
   # clouds
   my @clouds = $self->clouds;
   for my $c (@clouds) {
+    $xml .= "<cloud>\n";
     for my $key (@CLOUD_KEYS) {
       if (exists $c->{$key}) {
 	$xml .= "<$key>". $c->{$key} ."</$key>\n";
       }
     }
+    $xml .= "</cloud>\n";
   }
 
   # boolean
@@ -320,7 +322,7 @@ http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
