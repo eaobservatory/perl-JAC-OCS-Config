@@ -591,6 +591,31 @@ sub getRootElementName {
   return( "OCS_CONFIG" );
 }
 
+=item B<outputdir>
+
+Default output directory for writing the ACSIS configuration. Currently
+a class method rather than an instance method.
+
+  $out = JAC::OCS::Config->outputdir();
+  JAC::OCS::Config->outputdir( $newdir );
+
+This is not to be confused with the translator default writing directory
+defined in C<OMP::Translator::ACSIS>, although the translator will probably
+set this value.
+
+=cut
+
+  {
+    my $outputdir = "/observe/ompodf";
+    sub outputdir {
+      my $class = shift;
+      if ( @_ ) {
+	$outputdir = shift;
+      }
+      return $outputdir;
+    }
+  }
+
 =back
 
 =head2 Queue Compatibility Wrappers
