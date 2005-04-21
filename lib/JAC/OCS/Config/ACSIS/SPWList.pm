@@ -118,6 +118,44 @@ sub data_fields {
   return %{$self->{DATA_FIELDS}};
 }
 
+=item B<subbands>
+
+Return all the non-hybridized spectral window objects. ie either the
+constituent subbands (but not the hybrid) or the main spectral window
+object that covers a single subband.
+
+  %subbands = $spwl->subbands;
+
+The keys are the spectral window IDs for each subband.
+
+=cut
+
+sub subbands {
+  my $self = shift;
+
+  my %subbands;
+
+  my %spw = $self->spectral_windows;
+
+  for my $id (keys %spw) {
+    my %sb = $spw{$id}->subbands;
+
+    if (keys %sb) {
+      # we have subbands
+      for my $sbid (keys %sb) {
+	$subbands{$sbid} = $sb{$sbid};
+      }
+
+    } else {
+      # this is non-hybrid
+      $subbands{$id} = $spw{$id};
+    }
+
+  }
+
+  return %subbands;
+}
+
 =item B<stringify>
 
 Create XML representation of object.
