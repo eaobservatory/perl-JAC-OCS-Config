@@ -21,6 +21,7 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
+use warnings::register;
 use XML::LibXML;
 
 use JAC::OCS::Config::Error qw| :try |;
@@ -129,6 +130,10 @@ The frequency settings for each LO2 (up to 4).
   @freqs = $if->lo2freqs();
   $if->lo2freqs( @freqs );
 
+The array is zero-indexed (so has a max index of 3) even though the LO2s
+are counted from 1. On stringification any missing/uneeded LO2 settings
+will be filled in from the first valie value.
+
 =cut
 
 sub lo2freqs {
@@ -171,7 +176,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<ACSIS_IF>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -185,11 +190,26 @@ sub stringify {
       '" bw_mode="' . $modes[$dcm_id] . "\"/>\n";
   }
 
-  # Loop over LO2
+  # We must have a reference LO2 to fill in missing values
   my @lo = $self->lo2freqs();
+
+  my $filler = 0.0;
+  for (@lo) {
+    if (defined $_ ) {
+      $filler = $_;
+      last;
+    }
+  }
+  warnings::warnif("No LO2 specified at all. Using 0.0")
+    if $filler == 0;
+
+  # Now Loop over LO2 for real
   for my $id (0..$#lo) {
-    next unless defined $lo[$id];
-    $xml .= '<lo2 id="' . $id . '" freq="' . $lo[$id] ."\"/>\n";
+    my $freq = (defined $lo[$id] ? $lo[$id] : $filler );
+
+    # off by one
+    my $lo2id = $id + 1;
+    $xml .= '<lo2 id="' . $lo2id . '" freq="' . $freq ."\"/>\n";
   }
 
   # lo3
@@ -216,7 +236,7 @@ sub stringify {
   $xml .= '<rts_parms int_interval="50" timing_src="RTS_SOFT"/>' ."\n";
 
   # tidy up
-  $xml .= "</ACSIS_IF>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
@@ -275,12 +295,12 @@ sub _process_dom {
 
   $self->bw_modes( @bwmodes );
 
-  # LO2 settings
+  # LO2 settings. Note that the array index starts at 0 not 1
   my @lo2 = find_children( $el, "lo2", min => 1, max => 4);
   my @lo2freq;
   for my $loel (@lo2) {
     my %attr = find_attr( $loel, "id", "freq");
-    $lo2freq[$attr{id}] = $attr{freq};
+    $lo2freq[$attr{id}-1] = $attr{freq};
   }
   $self->lo2freqs( @lo2freq );
 
