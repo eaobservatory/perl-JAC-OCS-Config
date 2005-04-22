@@ -179,7 +179,9 @@ sub stringify {
 
   my $tag = $self->tag;
   $tag = 'Base' if $tag eq 'BASE'; # special case
-  $xml .= "<BASE TYPE=\"$tag\">\n";
+
+  my $roottag = 'BASE';
+  $xml .= "<$roottag TYPE=\"$tag\">\n";
   $xml .= "  <!-- First define a target -->\n";
 
   my $c = $self->coords;
@@ -204,7 +206,7 @@ sub stringify {
     $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
   }
 
-  $xml .= "</BASE>\n";
+  $xml .= "</$roottag>\n";
 
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }

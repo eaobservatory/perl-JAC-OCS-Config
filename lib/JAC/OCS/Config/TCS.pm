@@ -459,11 +459,12 @@ sub stringify {
   # Should the <xml> and dtd prolog be included?
   # Should we create a stringified form directly or build a DOM
   # tree and stringify that?
+  my $roottag = 'TCS_CONFIG';
 
   my $xml = '';
 
   # First the base element
-  $xml .= '<TCS_CONFIG ';
+  $xml .= "<$roottag ";
 
   # telescope
   my $tel = $self->telescope;
@@ -480,7 +481,7 @@ sub stringify {
   $xml .= $self->_toString_secondary;
   $xml .= $self->_toString_rotator;
 
-  $xml .= "</TCS_CONFIG>\n";
+  $xml .= "</$roottag>\n";
 
   # Indent the xml
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
