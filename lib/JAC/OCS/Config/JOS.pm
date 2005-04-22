@@ -345,7 +345,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<JOS_CONFIG>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -364,8 +364,7 @@ sub stringify {
   $xml .= "/>\n";
   $xml .= "</recipe>\n";
 
-
-  $xml .= "</JOS_CONFIG>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

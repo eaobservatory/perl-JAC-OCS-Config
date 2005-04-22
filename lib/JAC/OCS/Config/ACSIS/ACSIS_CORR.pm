@@ -111,7 +111,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<ACSIS_corr>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -129,7 +129,7 @@ sub stringify {
   $xml .= '<rts_parms int_interval="50" timing_src="RTS_SOFT"/>' ."\n";
 
   # tidy up
-  $xml .= "</ACSIS_corr>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

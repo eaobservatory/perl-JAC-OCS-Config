@@ -114,7 +114,7 @@ sub stringify {
   my %args = @_;
 
   my $xml = '';
-  $xml .= "<cube_list>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -178,7 +178,7 @@ sub stringify {
     $xml .= "</cube>\n";
   }
 
-  $xml .= "</cube_list>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

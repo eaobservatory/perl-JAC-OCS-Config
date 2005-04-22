@@ -247,7 +247,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<INSTRUMENT NAME=\"".$self->name."\"\n";
+  $xml .= "<". $self->getRootElementName . " NAME=\"".$self->name."\"\n";
   $xml .= "            FOC_STATION=\"".$self->focal_station."\"\n";
   my @xy = $self->position;
   $xml .= "            X=\"".$xy[0]."\"\n";
@@ -293,7 +293,7 @@ sub stringify {
   }
 
 
-  $xml .= "</INSTRUMENT>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

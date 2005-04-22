@@ -174,7 +174,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<HEADER_CONFIG>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -244,7 +244,7 @@ sub stringify {
 
   }
 
-  $xml .= "</HEADER_CONFIG>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

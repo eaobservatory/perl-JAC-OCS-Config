@@ -248,7 +248,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<FRONTEND_CONFIG>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -283,7 +283,7 @@ sub stringify {
     $xml .= "<RECEPTOR_MASK RECEPTOR_ID=\"$r\" VALUE=\"$mask{$r}\"/>\n";
   }
 
-  $xml .= "</FRONTEND_CONFIG>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

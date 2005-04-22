@@ -252,7 +252,7 @@ sub stringify {
   my $xml = "";
 
   # motion
-  $xml .= "<SECONDARY ";
+  $xml .= "<". $self->getRootElementName ." ";
   my $mo = $self->motion;
   $xml .= "MOTION=\"$mo\"" if defined $mo;
   $xml .= ">\n";
@@ -302,7 +302,7 @@ sub stringify {
 
   }
 
-  $xml .= "</SECONDARY>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

@@ -144,7 +144,7 @@ sub stringify {
 
   my $xml = '';
 
-  $xml .= "<OBS_SUMMARY>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -161,7 +161,7 @@ sub stringify {
   $xml .= "<obs_comment>". $self->comment . "</obs_comment>"
     if $self->comment;
 
-  $xml .= "</OBS_SUMMARY>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

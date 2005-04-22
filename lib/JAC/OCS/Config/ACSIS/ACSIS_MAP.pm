@@ -155,8 +155,7 @@ sub stringify {
   my %args = @_;
 
   my $xml = '';
-
-  $xml .= "<ACSIS_map>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -170,7 +169,7 @@ sub stringify {
   }
 
   # tidy up
-  $xml .= "</ACSIS_map>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 

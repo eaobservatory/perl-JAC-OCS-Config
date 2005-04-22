@@ -240,7 +240,7 @@ sub stringify {
   my %args = @_;
   my $xml = "";
 
-  $xml .= "<obsArea>\n";
+  $xml .= "<". $self->getRootElementName . ">\n";
 
   # Version declaration
   $xml .= $self->_introductory_xml();
@@ -286,7 +286,7 @@ sub stringify {
     croak "Unrecognized obsArea mode '$mode'";
   }
 
-  $xml .= "</obsArea>\n";
+  $xml .= "</". $self->getRootElementName .">\n";
 
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
