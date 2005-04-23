@@ -242,7 +242,7 @@ sub acsis {
   my $self = shift;
   if (@_) { 
     my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("TCS must be a JAC::OCS::Config::ACSIS object")
+    throw JAC::OCS::Config::Error::BadArgs("ACSIS must be a JAC::OCS::Config::ACSIS object")
       unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::ACSIS");
     $self->{ACSIS_CONFIG} = $cfg;
   }
