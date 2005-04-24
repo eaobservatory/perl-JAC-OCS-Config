@@ -134,6 +134,8 @@ The array is zero-indexed (so has a max index of 3) even though the LO2s
 are counted from 1. On stringification any missing/uneeded LO2 settings
 will be filled in from the first valie value.
 
+Units are in Hz
+
 =cut
 
 sub lo2freqs {
@@ -217,6 +219,9 @@ sub stringify {
   # Now Loop over LO2 for real but we are forced to write out 4 LO2 settings
   for my $id (0..3) {
     my $freq = (defined $lo[$id] ? $lo[$id] : $filler );
+
+    # Correct to MHz
+    $freq /= 1E6;
 
     # off by one
     my $lo2id = $id + 1;
@@ -311,7 +316,8 @@ sub _process_dom {
   my @lo2freq;
   for my $loel (@lo2) {
     my %attr = find_attr( $loel, "id", "freq");
-    $lo2freq[$attr{id}-1] = $attr{freq};
+    # MHz to Hz internally
+    $lo2freq[$attr{id}-1] = $attr{freq} * 1E6;
   }
   $self->lo2freqs( @lo2freq );
 
