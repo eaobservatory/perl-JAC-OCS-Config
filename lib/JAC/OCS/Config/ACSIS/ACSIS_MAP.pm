@@ -27,6 +27,8 @@ use XML::LibXML;
 
 use JAC::OCS::Config::Error qw| :try |;
 
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
+
 use JAC::OCS::Config::XMLHelper qw(
                                    find_children
                                    find_attr
@@ -116,9 +118,7 @@ the tasks. This mapping is specified as an C<JCMT::ACSIS::HWMap> object.
 sub hw_map {
   my $self = shift;
   if (@_) {
-    my $hw = shift;
-    throw JAC::OCS::Config::Error::BadClass( "Hardware map must be JCMT::ACSIS::HWMap object") unless UNIVERSAL::isa($hw, "JCMT::ACSIS::HWMap");
-    $self->{HWMAP} = $hw;
+    $self->{HWMAP} = check_class_fatal( "JCMT::ACSIS::HWMap", shift);
   }
   return $self->{HWMAP};
 }

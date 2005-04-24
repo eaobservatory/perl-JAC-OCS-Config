@@ -45,7 +45,7 @@ use JAC::OCS::Config::Header;
 use JAC::OCS::Config::RTS;
 use JAC::OCS::Config::JOS;
 use JAC::OCS::Config::ACSIS;
-
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
@@ -168,11 +168,8 @@ Observation summary as an C<JAC::OCS::Config::ObsSummary> object.
 
 sub obs_summary {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("obssum must be a JAC::OCS::Config::ObsSummary object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::ObsSummary");
-    $self->{OBS_SUMMARY} = $cfg;
+  if (@_) {
+    $self->{OBS_SUMMARY} = check_class_fatal( "JAC::OCS::Config::ObsSummary",shift);
   }
   return $self->{OBS_SUMMARY};
 }
@@ -185,11 +182,8 @@ JOS configuration.
 
 sub jos {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("JOS must be a JAC::OCS::Config::JOS object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::JOS");
-    $self->{JOS_CONFIG} = $cfg;
+  if (@_) {
+    $self->{JOS_CONFIG} = check_class_fatal( "JAC::OCS::Config::JOS",shift);
   }
   return $self->{JOS_CONFIG};
 }
@@ -202,11 +196,8 @@ Header configuration.
 
 sub header {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Header must be a JAC::OCS::Config::Header object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Header");
-    $self->{HEADER_CONFIG} = $cfg;
+  if (@_) {
+    $self->{HEADER_CONFIG} = check_class_fatal( "JAC::OCS::Config::Header",shift);
   }
   return $self->{HEADER_CONFIG};
 }
@@ -220,11 +211,8 @@ TCS configuration.
 
 sub tcs {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("TCS must be a JAC::OCS::Config::TCS object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::TCS");
-    $self->{TCS_CONFIG} = $cfg;
+  if (@_) {
+    $self->{TCS_CONFIG} = check_class_fatal( "JAC::OCS::Config::TCS",shift);
   }
   return $self->{TCS_CONFIG};
 }
@@ -240,11 +228,8 @@ observation.
 
 sub acsis {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("ACSIS must be a JAC::OCS::Config::ACSIS object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::ACSIS");
-    $self->{ACSIS_CONFIG} = $cfg;
+  if (@_) {
+    $self->{ACSIS_CONFIG} = check_class_fatal( "JAC::OCS::Config::ACSIS",shift);
   }
   return $self->{ACSIS_CONFIG};
 }
@@ -257,11 +242,9 @@ Instrument configuration.
 
 sub instrument_setup {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Instrument setup must be a JAC::OCS::Config::Instrument object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Instrument");
-    $self->{INSTRUMENT_CONFIG} = $cfg;
+  if (@_) {
+    $self->{INSTRUMENT_CONFIG} = check_class_fatal( "JAC::OCS::Config::Instrument",
+						    shift);
   }
   return $self->{INSTRUMENT_CONFIG};
 }
@@ -274,11 +257,9 @@ Frontend configuration.
 
 sub frontend {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("Frontend must be a JAC::OCS::Config::Frontend object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::Frontend");
-    $self->{FRONTEND_CONFIG} = $cfg;
+  if (@_) {
+    $self->{FRONTEND_CONFIG} = check_class_fatal( "JAC::OCS::Config::Frontend",
+						  shift);
   }
   return $self->{FRONTEND_CONFIG};
 }
@@ -291,11 +272,8 @@ RTS configuration.
 
 sub rts {
   my $self = shift;
-  if (@_) { 
-    my $cfg = shift;
-    throw JAC::OCS::Config::Error::BadArgs("RTs must be a JAC::OCS::Config::RTS object")
-      unless UNIVERSAL::isa( $cfg, "JAC::OCS::Config::RTS");
-    $self->{RTS_CONFIG} = $cfg;
+  if (@_) {
+    $self->{RTS_CONFIG} = check_class_fatal( "JAC::OCS::Config::RTS",shift);
   }
   return $self->{RTS_CONFIG};
 }

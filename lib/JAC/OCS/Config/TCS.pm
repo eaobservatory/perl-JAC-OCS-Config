@@ -35,6 +35,7 @@ use Astro::Coords::Offset;
 use Data::Dumper;
 
 use JAC::OCS::Config::Error qw| :try |;
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw| find_children find_attr
 				    indent_xml_string
 				    |;
@@ -393,10 +394,7 @@ sub getObsArea {
 # internal routine that will not trigger regeneration of XML
 sub _setObsArea {
   my $self = shift;
-  my $obs = shift;
-  croak "Incorrect class for obsArea"
-    unless UNIVERSAL::isa($obs, "JAC::OCS::Config::TCS::obsArea");
-  $self->{OBSAREA} = $obs;
+  $self->{OBSAREA} = check_class_fatal( "JAC::OCS::Config::TCS::obsArea", shift);
 }
 
 =item B<getSecondary>
@@ -419,10 +417,7 @@ sub getSecondary {
 # internal routine that will not trigger regeneration of XML
 sub _setSecondary {
   my $self = shift;
-  my $sec = shift;
-  croak "Incorrect class for Secondary"
-    unless UNIVERSAL::isa($sec, "JAC::OCS::Config::TCS::Secondary");
-  $self->{SECONDARY} = $sec;
+  $self->{SECONDARY} = check_class_fatal( "JAC::OCS::Config::TCS::Secondary",shift);
 }
 
 =item B<tasks>

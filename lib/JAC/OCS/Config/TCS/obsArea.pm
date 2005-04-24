@@ -33,6 +33,7 @@ use Data::Dumper;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Helper qw/ check_class_fatal check_class /;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr 
 				    indent_xml_string
 				    /;
@@ -104,10 +105,7 @@ Can be undefined if no position angle has been specified.
 sub posang {
   my $self = shift;
   if (@_) {
-    my $arg = shift;
-    throw JAC::OCS::Config::Error::BadArgs( "Pos Angle must be an Astro::Coords::Angle object")
-      unless UNIVERSAL::isa($arg, "Astro::Coords::Angle");
-    $self->{POSANG} = $arg;
+    $self->{POSANG} = check_class_fatal( "Astro::Coords::Angle", shift);
   }
   return $self->{POSANG};
 }
@@ -135,12 +133,7 @@ overwriting previous entries.
 sub offsets {
   my $self = shift;
   if (@_) {
-    my @valid;
-    for my $off (@_) {
-      # verify each class
-      push(@valid, $off)
-	if UNIVERSAL::isa($off, "Astro::Coords::Offset");
-    }
+    my @valid = check_class( "Astro::Coords::Offset", @_ );
     warnings::warnif("No offsets passed validation.")
 	unless @valid;
     @{$self->{OFFSETS}} = @valid;
