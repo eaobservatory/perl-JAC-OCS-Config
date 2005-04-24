@@ -169,6 +169,14 @@ sub stringify {
     if ($c->grid_function ne 'TopHat') {
       $xml .= "<FWHM>". $c->fwhm . "</FWHM>\n";
     }
+
+    # optional position angle
+    my $pa = $c->position_angle();
+    if (defined $pa) {
+      $xml .= "<pos_ang>". $pa->degrees . "</pos_ang>\n";
+    }
+
+    # TCS coordinates
     $xml .= "<tcs_coord type=\"".$c->tcs_coord."\" />\n";
 
     # The gridder needs a non-zero value for smoothing radius 
@@ -292,6 +300,11 @@ sub _process_dom {
     # TCS coordinate system for regridding (AZEL or TRACKING)
     my $tcs_coord = find_attr_child( $c, "tcs_coord", "type");
 
+    # position angle (should probably be PA)
+    my $pa = get_pcdata( $c, "pos_ang" );
+    $pa = new Astro::Coords::Angle( $pa,
+				    units => 'deg') if defined $pa;
+
     # Gaussian FWHM
     my $fwhm = get_pcdata( $c, "FWHM");
 
@@ -320,6 +333,7 @@ sub _process_dom {
 					   truncation_radius => $trun_rad,
 					   spw_id => $spw,
 					   spw_interval => $ds_range,
+					   position_angle => $pa,
 					  );
   }
 

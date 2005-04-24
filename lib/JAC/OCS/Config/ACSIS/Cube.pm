@@ -58,6 +58,7 @@ sub new {
 		    Offset => [],
 		    NPixels => [],
 		    Projection => undef,
+		    PositionAngle => undef, # Angle
 		    GridFunction => undef,
 		    TCSCoords => undef,
 		    TruncationRadius => undef,
@@ -193,6 +194,20 @@ sub tcs_coord {
   my $self = shift;
   if (@_) { $self->{TCSCoords} = shift; }
   return $self->{TCSCoords};
+}
+
+=item B<position_angle>
+
+Position angle of the map, East of North.
+
+=cut
+
+sub position_angle {
+  my $self = shift;
+  if (@_) {
+    $self->{PositionAngle} = check_class_fatal( "Astro::Coords::Angle",shift);
+  }
+  return $self->{PositionAngle};
 }
 
 =item B<truncation_radius>
