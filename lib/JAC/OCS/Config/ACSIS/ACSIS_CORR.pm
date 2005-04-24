@@ -119,10 +119,21 @@ sub stringify {
   # loop over the cm_map
   my @modes = $self->bw_modes;
 
+  # FOR ACSIS WE ALWAYS NEED TO DEFINE 32 !!!
+  # define them all to the first value
+  my $dummy;
   for my $cm_id (0..$#modes) {
-    next unless defined $modes[$cm_id];
+    if (defined $modes[$cm_id]) {
+      $dummy = $modes[$cm_id];
+      last;
+    }
+  }
+  throw JAC::OCS::Config::Error::FatalError("No Correlator mode defined. Can not write XML\n") unless defined $dummy;
+
+  for my $cm_id (0..31) {
+    my $mode = (defined $modes[$cm_id] ? $modes[$cm_id] : $dummy );
     $xml .= '<cm id="'. $cm_id . 
-      '" bw_mode="' . $modes[$cm_id] . "\"/>\n";
+      '" bw_mode="' . $mode . "\"/>\n";
   }
 
   # Fudge
