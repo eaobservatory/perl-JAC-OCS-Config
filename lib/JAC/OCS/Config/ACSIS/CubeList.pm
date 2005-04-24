@@ -23,7 +23,7 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
-use XML::LibXML;
+use warnings::register;
 use Astro::Coords::Angle;
 
 use JAC::OCS::Config::Error qw| :try |;
@@ -170,10 +170,20 @@ sub stringify {
       $xml .= "<FWHM>". $c->fwhm . "</FWHM>\n";
     }
     $xml .= "<tcs_coord type=\"".$c->tcs_coord."\" />\n";
-    if ($c->grid_function ne 'TopHat') {
-      # Note that the name is still smoothing radius
-      $xml .= "<smoothing_rad>".$c->truncation_radius."</smoothing_rad>\n";
+
+    # The gridder needs a non-zero value for smoothing radius 
+    # even if it doesn't really use it....
+    my $rad = $c->truncation_radius;
+    if (!defined $rad || $rad == 0) {
+      $rad = sqrt( $pixsize[0]**2 + $pixsize[1]**2) / 2;
+      if ($c->grid_function ne 'TopHat') {
+	warnings::warnif("No smoothing radius specified. Defaulting to 1 pixel\n");
+      }
     }
+
+    # Note that the name is still smoothing radius
+    # even though that is a misnomer
+    $xml .= "<smoothing_rad>".$rad."</smoothing_rad>\n";
 
     $xml .= "</cube>\n";
   }
