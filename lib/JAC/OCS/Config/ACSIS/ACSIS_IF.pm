@@ -204,6 +204,7 @@ sub stringify {
   }
 
   # We must have a reference LO2 to fill in missing values
+  # If possible LO1 = LO3 and LO2 = LO4
   my @lo = $self->lo2freqs();
 
   my $filler = 0.0;
@@ -216,9 +217,19 @@ sub stringify {
   warnings::warnif("No LO2 specified at all. Using 0.0")
     if $filler == 0;
 
+  # Fill in gaps. We should preferentially use the LO two steps
+  # away
+  for my $id (0..3) {
+    if (!defined $lo[$id]) {
+      my $i = $id + ( $id < 2 ? 2 : -2 );
+      $lo[$id] = (defined $lo[$i] ? $lo[$i] : $filler);
+    }
+  }
+
   # Now Loop over LO2 for real but we are forced to write out 4 LO2 settings
   for my $id (0..3) {
-    my $freq = (defined $lo[$id] ? $lo[$id] : $filler );
+    # this should now always return a set LO
+    my $freq = $lo[$id];
 
     # Correct to MHz
     $freq /= 1E6;
