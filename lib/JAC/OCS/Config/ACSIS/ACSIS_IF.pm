@@ -184,10 +184,21 @@ sub stringify {
   # loop over the cm_map
   my @modes = $self->bw_modes;
 
+  # FOR ACSIS WE ALWAYS NEED TO DEFINE 32 !!!
+  # define them all to the first value
+  my $dummy;
   for my $dcm_id (0..$#modes) {
-    next unless defined $modes[$dcm_id];
+    if (defined $modes[$dcm_id]) {
+      $dummy = $modes[$dcm_id];
+      last;
+    }
+  }
+  throw JAC::OCS::Config::Error::FatalError("No Correlator mode defined. Can not write XML\n") unless defined $dummy;
+
+  for my $dcm_id (0..31) {
+    my $mode = (defined $modes[$dcm_id] ? $modes[$dcm_id] : $dummy );
     $xml .= '<dcm id="'. $dcm_id . 
-      '" bw_mode="' . $modes[$dcm_id] . "\"/>\n";
+      '" bw_mode="' .$mode . "\"/>\n";
   }
 
   # We must have a reference LO2 to fill in missing values
@@ -203,8 +214,8 @@ sub stringify {
   warnings::warnif("No LO2 specified at all. Using 0.0")
     if $filler == 0;
 
-  # Now Loop over LO2 for real
-  for my $id (0..$#lo) {
+  # Now Loop over LO2 for real but we are forced to write out 4 LO2 settings
+  for my $id (0..3) {
     my $freq = (defined $lo[$id] ? $lo[$id] : $filler );
 
     # off by one
