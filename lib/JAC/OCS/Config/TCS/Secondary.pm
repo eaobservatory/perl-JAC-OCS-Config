@@ -42,8 +42,10 @@ use XML::LibXML;
 use Data::Dumper;
 
 use Astro::Coords::Angle;
+use JCMT::SMU::Jiggle;
 
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata 
 				    indent_xml_string
 				    /;
@@ -129,25 +131,20 @@ sub motion {
 
 =item B<jiggle>
 
-Specification of the jiggle pattern. Recognized keys are SYSTEM,
-SCALE, NAME and PA. PA must be a C<Astro::Coords::Angle> object.
+Specification of the jiggle pattern as a C<JCMT::SMU::Jiggle>
+object.
 
-  %j = $obs->jiggle();
-  $obs->jiggle( %j );
+  $jig = $smu->jiggle;
+  $smu->jiggle( $jig );
 
 =cut
-
-# we do not have a jiggle object
 
 sub jiggle {
   my $self = shift;
   if (@_) {
-    my %args = @_;
-    for my $k (qw/ SYSTEM SCALE NAME PA /) {
-      $self->{JIGGLE}->{$k} = $args{$k};
-    }
+    $self->{JIGGLE} = check_class_fatal( "JCMT::SMU::Jiggle", shift);
   }
-  return %{ $self->{JIGGLE} };
+  return $self->{JIGGLE};
 }
 
 =item B<chop>
@@ -269,13 +266,14 @@ sub stringify {
     }
 
     if ($mode eq 'jiggle' || $mode eq 'jiggle_chop') {
-      my %j = $self->jiggle;
-      $xml .= "<JIGGLE NAME=\"$j{NAME}\"\n";
-      $xml .= "        SYSTEM=\"$j{SYSTEM}\"\n";
-      $xml .= "        SCALE=\"$j{SCALE}\"\n";
+      my $j = $self->jiggle;
+      throw JAC::OCS::Config::Error::FatalError("We have a jiggle configuration but no jiggle information!\n") unless defined $j;
+      $xml .= "<JIGGLE NAME=\"".$j->name ."\"\n";
+      $xml .= "        SYSTEM=\"". $j->system ."\"\n";
+      $xml .= "        SCALE=\"". $j->scale ."\"\n";
       $xml .= ">\n";
 
-      $xml .= pa_to_xml( $j{PA} );
+      $xml .= pa_to_xml( $j->posang );
       $xml .= "</JIGGLE>\n";
     }
 
@@ -396,7 +394,7 @@ sub _find_jiggle_chop {
 
     # jiggling
     my $jig = _find_jiggle_gen($jchop, min=>1, max => 1 );
-    $self->jiggle( %$jig );
+    $self->jiggle( $jig );
 
     # timing
     my $timing = find_children($jchop, "TIMING", min=>1, max=>1 );
@@ -453,7 +451,7 @@ default root node.
 sub _find_jiggle {
   my $self = shift;
   my $jig = _find_jiggle_gen($self->_rootnode, min=>0, max => 1 );
-  $self->jiggle( %$jig ) if defined $jig;
+  $self->jiggle( $jig ) if defined $jig;
   return;
 }
 
@@ -503,16 +501,16 @@ sub _find_chop_gen {
 =item B<_find_jiggle_gen>
 
 Generic routine to find JIGGLE elements as children and extract
-information. Return the chop information as a list of reference to
-hashes. No objects for JIGGLEs.
+information. Return the jiggle information as a list of reference to
+C<JCMT::SMU::Jiggle> objects.
 
- @chop = _find_jiggle_gen( $el );
+ @jig = _find_jiggle_gen( $el );
 
 The number of jiggles found can be verified if optional
 hash arguments are provided. An exception will be thrown if the
 number found is out of range. See also C<XMLHelper::find_children>.
 
- @chop = _find_jiggle_gen( $rootnode, min => 1, max => 4 );
+ @jig = _find_jiggle_gen( $rootnode, min => 1, max => 4 );
 
 In scalar context returns the first jiggle.
 
@@ -533,8 +531,15 @@ sub _find_jiggle_gen {
   for my $o (@matches) {
     my %jig = find_attr( $o, "SYSTEM", "SCALE", "NAME" );
     $jig{PA} = find_pa( $o, min => 1, max => 1);
-    push(@jiggles, \%jig);
+    my $j = new JCMT::SMU::Jiggle();
+    $j->name( $jig{NAME} );
+    $j->system( $jig{SYSTEM} );
+    $j->scale( $jig{SCALE} );
+    $j->posang( $jig{PA} );
+
+    push(@jiggles, $j);
   }
+
   return (wantarray ? @jiggles : $jiggles[0] );
 }
 
