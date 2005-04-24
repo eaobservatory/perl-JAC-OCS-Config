@@ -173,7 +173,10 @@ sub window {
 
 =item B<align_shift>
 
-Only used for non-hybrid spectral windows.
+Only used for non-hybrid spectral windows to indicate the correction
+required to align the subbands given the quantization in the LO2.
+
+Units are in Hz.
 
 =cut
 
