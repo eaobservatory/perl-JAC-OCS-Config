@@ -171,7 +171,7 @@ sub stringify {
     }
 
     # optional position angle
-    my $pa = $c->position_angle();
+    my $pa = $c->posang();
     if (defined $pa) {
       $xml .= "<pos_ang>". $pa->degrees . "</pos_ang>\n";
     }
@@ -333,7 +333,7 @@ sub _process_dom {
 					   truncation_radius => $trun_rad,
 					   spw_id => $spw,
 					   spw_interval => $ds_range,
-					   position_angle => $pa,
+					   posang => $pa,
 					  );
   }
 

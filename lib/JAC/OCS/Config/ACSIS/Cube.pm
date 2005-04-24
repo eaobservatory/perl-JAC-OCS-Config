@@ -196,13 +196,13 @@ sub tcs_coord {
   return $self->{TCSCoords};
 }
 
-=item B<position_angle>
+=item B<posang>
 
 Position angle of the map, East of North.
 
 =cut
 
-sub position_angle {
+sub posang {
   my $self = shift;
   if (@_) {
     $self->{PositionAngle} = check_class_fatal( "Astro::Coords::Angle",shift);
