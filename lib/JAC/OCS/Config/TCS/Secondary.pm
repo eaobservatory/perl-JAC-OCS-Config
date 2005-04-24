@@ -88,8 +88,8 @@ sub new {
   return $self->SUPER::new( @_,
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    CHOP => {},
-								    JIGGLE => {},
 								    TIMING => {},
+								    JIGGLE => undef,
 								   }
 			  );
 }
@@ -218,14 +218,14 @@ specifications in the object.
 sub smu_mode {
   my $self = shift;
   my %c = $self->chop;
-  my %j = $self->jiggle;
+  my $j = $self->jiggle;
 
   my $mode;
-  if (%c && %j) {
+  if (%c && $j) {
     $mode = "jiggle_chop";
   } elsif (%c) {
     $mode = "chop";
-  } elsif (%j) {
+  } elsif ($j) {
     $mode = "jiggle";
   } else {
     $mode = "none";
@@ -267,7 +267,7 @@ sub stringify {
 
     if ($mode eq 'jiggle' || $mode eq 'jiggle_chop') {
       my $j = $self->jiggle;
-      throw JAC::OCS::Config::Error::FatalError("We have a jiggle configuration but no jiggle information!\n") unless defined $j;
+      throw JAC::OCS::Config::Error::FatalError("We have a jiggle configuration ($mode) but no jiggle information!\n") unless defined $j;
       $xml .= "<JIGGLE NAME=\"".$j->name ."\"\n";
       $xml .= "        SYSTEM=\"". $j->system ."\"\n";
       $xml .= "        SCALE=\"". $j->scale ."\"\n";
