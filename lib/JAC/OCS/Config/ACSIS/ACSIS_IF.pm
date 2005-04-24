@@ -234,9 +234,7 @@ sub stringify {
     # Correct to MHz
     $freq /= 1E6;
 
-    # off by one
-    my $lo2id = $id + 1;
-    $xml .= '<lo2 id="' . $lo2id . '" freq="' . $freq ."\"/>\n";
+    $xml .= '<lo2 id="' . $id . '" freq="' . $freq ."\"/>\n";
   }
 
   # lo3
@@ -322,13 +320,13 @@ sub _process_dom {
 
   $self->bw_modes( @bwmodes );
 
-  # LO2 settings. Note that the array index starts at 0 not 1
+  # LO2 settings. All numbering starts at 0
   my @lo2 = find_children( $el, "lo2", min => 1, max => 4);
   my @lo2freq;
   for my $loel (@lo2) {
     my %attr = find_attr( $loel, "id", "freq");
     # MHz to Hz internally
-    $lo2freq[$attr{id}-1] = $attr{freq} * 1E6;
+    $lo2freq[$attr{id}] = $attr{freq} * 1E6;
   }
   $self->lo2freqs( @lo2freq );
 
