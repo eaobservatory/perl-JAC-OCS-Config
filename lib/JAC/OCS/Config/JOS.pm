@@ -49,6 +49,7 @@ our @PARAMS = (qw/
 		  JOS_MULT
 		  JOS_MIN
 		  ROWS_PER_REF
+                  POINTS_PER_REF 
 		  REFS_PER_CAL
 		  N_REFSAMPLES
 		  N_CALSAMPLES
@@ -244,6 +245,20 @@ sub rows_per_ref {
     $self->{ROWS_PER_REF} = shift;
   }
   return $self->{ROWS_PER_REF};
+}
+
+=item B<points_per_ref>
+
+The number of points in a grid to complete between reference observations.
+
+=cut
+
+sub points_per_ref {
+  my $self = shift;
+  if (@_) {
+    $self->{POINTS_PER_REF} = shift;
+  }
+  return $self->{POINTS_PER_REF};
 }
 
 =item B<refs_per_cal>
