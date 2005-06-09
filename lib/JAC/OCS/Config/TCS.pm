@@ -72,17 +72,29 @@ SpTelescopeObsComp element (the element used in the TOML XML dialect
 to represent a target in the JAC Observing Tool) or TCS_CONFIG element
 (JAC/JCMT configuration files).
 
+A telescope can be specified explicitly in the constructor if desired.
+This should only be relevant when parsing SpTelescopeObsComp XML.
+
+  $cfg = new JAC::OCS::Config::TCS( XML => $xml,
+                                    telescope => 'JCMT' );
+
 The method will die if no arguments are supplied.
 
 =cut
 
 sub new {
   my $self = shift;
+  my %args = @_;
+
+  # extract telescope
+  my $tel = $args{telescope};
+  delete $args{telescope};
 
   # Now call base class with all the supplied options +
   # extra initialiser
-  return $self->SUPER::new( @_, 
+  return $self->SUPER::new( %args,
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
+								    Telescope => $tel,
 								    TAGS => {},
 								    SLEW => {},
 								    ROTATOR => {},
@@ -662,13 +674,17 @@ sub _find_base_posns {
   throw JAC::OCS::Config::Error::XMLBadStructure("No base target position specified in TCS XML\n")
     unless @base;
 
+  # get the telescope name
+  my $tel = $self->telescope;
+
   # For each of these nodes we need to extract the target information
   # and the tag
   my %tags;
   for my $b (@base) {
 
     # Create the object from the dom.
-    my $base = new JAC::OCS::Config::TCS::BASE( DOM => $b );
+    my $base = new JAC::OCS::Config::TCS::BASE( DOM => $b,
+						telescope => $tel);
     my $tag = $base->tag;
     $tags{$tag} = $base;
 
