@@ -162,6 +162,8 @@ sub stringify {
 
   # loop over the cm_map
   for my $cm ($self->cm_map) {
+    # Sanity check in case we have empty hash
+    next unless keys %$cm;
     $xml .= '<map_id cm_id="'. $cm->{CM_ID} . 
       '" dcm_id="' . $cm->{DCM_ID} .
       '" receptor_id="' . $cm->{RECEPTOR} .
