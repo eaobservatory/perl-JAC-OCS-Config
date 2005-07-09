@@ -149,6 +149,16 @@ The content of this hash is not part of the public interface. Use the
 getCoords, getOffsets and getTrackingSystem methods for detailed
 information.
 
+All tags can be removed by supplying a single undef
+
+  $cfg->tags( undef );
+
+See C<clearAllCoords> for the public implementation/
+
+In scalar context returns the hash reference:
+
+  $ref = $cfg->tags;
+
 Currently, the values in the tags hash are C<JAC::OCS::Config::TCS::BASE>
 objects.
 
@@ -157,9 +167,12 @@ objects.
 sub tags {
   my $self = shift;
   if (@_) {
+    # undef is a special case to clear all tags
+    my @args = @_;
+    @args = () unless defined $args[0];
     %{ $self->{TAGS} } = @_;
   }
-  return %{ $self->{TAGS} };
+  return (wantarray ? %{ $self->{TAGS} } : $self->{TAGS} );
 }
 
 =item B<slew>
@@ -222,7 +235,7 @@ sub rotator {
 =item B<isBlank>
 
 Returns true if the object refers to a default position of 0h RA, 0 deg Dec
-and blank target name.
+and blank target name, or alternatively contains zero tags.
 
 =cut
 
@@ -432,6 +445,120 @@ sub _setSecondary {
   $self->{SECONDARY} = check_class_fatal( "JAC::OCS::Config::TCS::Secondary",shift);
 }
 
+=item B<setTarget>
+
+Specifies a new SCIENCE/BASE target.
+
+  $tcs->setTarget( $c );
+
+If a C<JAC::OCS::Config::TCS::BASE> object is supplied, this is stored
+directly. If an C<Astro::Coords> object is supplied, it will be stored
+in a C<JAC::OCS::Config::TCS::BASE> objects.
+
+Note that offsets can only be included (currently) if an
+C<JAC::OCS::Config::TCS::BASE> object is used.
+
+=cut
+
+sub setTarget {
+  my $self = shift;
+  $self->setCoords( "SCIENCE", shift );
+}
+
+=item B<setCoords>
+
+Set the coordinate to be associated with the specified tag.
+
+  $tcs->setCoords( "REFERENCE", $c );
+
+If a C<JAC::OCS::Config::TCS::BASE> object is supplied, this is stored
+directly. If an C<Astro::Coords> object is supplied, it will be stored
+in a C<JAC::OCS::Config::TCS::BASE> objects.
+
+Note that offsets can only be included (currently) if an
+C<JAC::OCS::Config::TCS::BASE> object is used.
+
+=cut
+
+sub setCoords {
+  my $self = shift;
+  my $tag = shift;
+  my $c = shift;
+
+  # look for matching key or synonym
+  my $syn = $self->_translate_tag_name( $tag );
+
+  # if we have a translated synonym that means we have an
+  # existing tag that we are overwriting. Use that if so, else
+  # this is a new tag.
+  $tag = $syn if defined $syn;
+
+  # check class
+  my $base;
+  if ($c->isa( "JAC::OCS::Config::TCS::BASE")) {
+    $base = $c;
+  } elsif ($c->isa( "Astro::Coords")) {
+    $base = new JAC::OCS::Config::BASE();
+    $base->coords( $c );
+    $base->tag( $tag );
+  } elsif ($c->can( "coords") && $c->can( "tag" )) {
+    $base = $c;
+  } else {
+    throw JAC::OCS::Config::Error::BadArgs("Supplied coordinate to setCoords is neither and Astro::Coords nor JAC::OCS::Config::TCS::BASE");
+  }
+
+  # store it
+  $self->tags->{$tag} = $base;
+
+}
+
+=item B<clearTarget>
+
+Removes the SCIENCE/BASE target.
+
+  $tcs->clearTarget();
+
+=cut
+
+sub clearTarget {
+  my $self = shift;
+  return $self->clearCoords( "SCIENCE" );
+}
+
+=item B<clearCoords>
+
+Clear the target associated with the specified tag.
+
+ $tcs->clearCoords( "REFERENCE" );
+
+Synonyms are supported.
+
+=cut
+
+sub clearCoords {
+  my $self = shift;
+  my $tag = shift;
+
+  # look for matching key or synonym
+  $tag = $self->_translate_tag_name( $tag );
+
+  delete($self->tags->{$tag}) if defined $tag;
+}
+
+=item B<clearAllCoords>
+
+Remove all coordinates associated with this object. No tags will be associated
+with this object.
+
+ $tcs->clearAllCoords;
+
+=cut
+
+sub clearAllCoords {
+  my $self = shift;
+  $self->tags( undef );
+}
+
 =item B<tasks>
 
 Name of the tasks that would be involved in reading this config.
@@ -626,7 +753,7 @@ sub _find_telescope {
 
 =item B<_find_slew>
 
-Find the slewing options (which must be present if this is a TCS_CONFIG).
+Find the slewing options.
 
 The object is updated if a SLEW is located.
 
@@ -636,8 +763,8 @@ sub _find_slew {
   my $self = shift;
   my $el = $self->_rootnode;
 
-  my $min = ($self->isConfig ? 1 : 0);
-  my $slew = find_children( $el, "SLEW", min => $min, max => 1);
+  # SLEW is now optional (it used to be mandatory for TCS_CONFIG)
+  my $slew = find_children( $el, "SLEW", min => 0, max => 1);
   if ($slew) {
     my %sopt = find_attr( $slew, "OPTION", "TRACK_TIME","CYCLE");
     $self->slew( %sopt );
