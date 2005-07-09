@@ -250,11 +250,6 @@ sub stringify {
 
 =back
 
-=head2 General Methods
-
-Need to add methods for locating items in the header
-and for adding items into the header. Similar to Astro::FITS::Header
-functionality.
 
 =head2 Class Methods
 
@@ -348,13 +343,13 @@ http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/011/headers.dtd.
 
 =head1 SEE ALSO
 
-L<Astro::FITS::Header>.
+L<JAC::OCS::Config>, L<Astro::FITS::Header>.
 
 =head1 AUTHOR
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
