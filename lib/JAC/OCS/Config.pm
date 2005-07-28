@@ -469,7 +469,7 @@ sub stringify {
 
   # Standard declaration plus DTD
   $xml .= '<?xml version="1.0" encoding="US-ASCII"?>' .
-    '<!DOCTYPE OCS_CONFIG  SYSTEM  "/JACdocs/JCMT/OCS//ICD/001/ocs.dtd">' .
+    '<!DOCTYPE OCS_CONFIG  SYSTEM  "/jac_sw/itsroot//ICD/001/ocs.dtd">' .
     "\n";
 
   $xml .= "<OCS_CONFIG>\n";
