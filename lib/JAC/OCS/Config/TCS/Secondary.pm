@@ -111,7 +111,7 @@ Always returns 'SMUTASK'.
 =cut
 
 sub tasks {
-  return ('SMUTASK');
+  return ('SMU');
 }
 
 =item B<motion>
