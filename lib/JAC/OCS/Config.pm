@@ -63,8 +63,8 @@ $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/obs_summary jos header tcs instrument_setup
-		  frontend rts acsis /;
+our @CONFIGS = qw/obs_summary jos header rts tcs instrument_setup
+		  frontend acsis /;
 
 
 =head1 METHODS
