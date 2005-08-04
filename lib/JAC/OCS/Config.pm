@@ -10,6 +10,7 @@ JAC::OCS::Config - Parse and write JCMT OCS Configuration XML
 
   $cfg = new JAC::OCS::Config( XML => $xml );
   $cfg = new JAC::OCS::Config( FILE => $filename );
+  $cfg = new JAC::OCS::Config( FILE => $filename, telescope => 'UKIRT' );
 
   $inst = $cfg->instrument;
   $proj = $cfg->projectid;
@@ -34,6 +35,8 @@ use warnings;
 use XML::LibXML;
 use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
+
+use Astro::WaveBand;
 
 use JAC::OCS::Config::Error;
 
@@ -86,18 +89,27 @@ The argument hash can refer to an XML string, an XML file or a DOM
 tree. If neither is supplied no object will be instantiated. If both
 C<XML> and C<File> keys exist, the C<XML> key takes priority.
 
+A telescope can be supplied directly to the constructor if it is
+known and if there is a chance that the telescope may not be specified
+in the TCS_CONFIG.
+
 Returns C<undef> if an object can not be constructed.
 
 =cut
 
 sub new {
   my $self = shift;
+  my %args = @_;
+
+  # extract telescope
+  my $tel = $args{telescope};
+  delete $args{telescope};
 
   # Now call base class with all the supplied options +
   # extra initialiser
-  return $self->SUPER::new( @_,
+  return $self->SUPER::new( %args,
                             $JAC::OCS::Config::CfgBase::INITKEY => {
-
+								    Telescope => $tel,
                                                                    }
                           );
 }
@@ -418,6 +430,185 @@ sub duration {
   return Time::Seconds->new(10);
 }
 
+=item B<telescope>
+
+Return the telescope name associated with this Config.
+This value is synchronized with that stored in the
+C<JCMT::OCS::Config::TCS> object (if present), overwriting
+the current value if specified.
+
+ $tel = $self->telescope;
+
+Returned as a string rather than an C<Astro::Telescope> object.
+The TCS_CONFIG value takes precedence if both are defined.
+
+=cut
+
+sub telescope {
+  my $self = shift;
+  if ( @_ ) {
+    my $tel = shift;
+    $self->{Telescope} = shift;
+    my $tcs = $self->tcs;
+    $tcs->telescope( $tel ) if defined $tcs;
+  }
+
+  # return the current value
+  my $tcs = $self->tcs;
+  my $tcstel;
+  $tcstel = $tcs->telescope if defined $tcs;
+  return $tcstel if defined $tcstel;
+  return $self->{Telescope};
+}
+
+
+=item B<projectid>
+
+The project ID associated with this configuration. If none is defined
+(e.g. if no HEADER_CONFIG available), then the method will return undef.
+
+  $projid = $cfg->projectid;
+
+This method does assume a specific FITS header defines the project ID.
+
+=cut
+
+sub projectid {
+  my $self = shift;
+  my $header = $self->header;
+
+  if (defined $header) {
+    my @items = $header->item( "PROJECTID" );
+    if (@items) {
+      return $items[0]->keyword;
+    }
+  }
+  return undef;
+}
+
+=item B<msbid>
+
+The MSB ID associated with this configuration. If none is defined
+(e.g. if no HEADER_CONFIG available), then the method will return undef.
+
+  $id = $cfg->msbid;
+
+This method does assume a specific FITS header defines the MSB ID.
+
+=cut
+
+sub msbid {
+  my $self = shift;
+  my $header = $self->header;
+
+  if (defined $header) {
+    my @items = $header->item( "MSBID" );
+    if (@items) {
+      return $items[0]->keyword;
+    }
+  }
+  return undef;
+}
+
+=item B<obsmode>
+
+Return a string summarizing the observing mode as defined by the
+ObsSummary class. If no observation summary is stored in the configuration,
+returns "UNKNOWN".
+
+=cut
+
+sub obsmode {
+  my $self = shift;
+  my $obssum = $self->obs_summary;
+  return "UNKNOWN" unless defined $obssum;
+
+  my $mode = join("_", 
+		  (defined $obssum->mapping_mode ? $obssum->mapping_mode
+		                                 : "unknown"),
+		  (defined $obssum->switching_mode ? $obssum->switching_mode
+		                                  : "unknown"),
+		  (defined $obssum->type ? $obssum->type : "unknown")
+		 );
+  return $mode;
+}
+
+=item B<waveband>
+
+Returns an C<Astro::WaveBand> object representing this configuration.
+
+  $wb = $cfg->waveband;
+
+=cut
+
+sub waveband {
+  my $self = shift;
+  my $fe = $self->frontend;
+  my $inst = $self->instrument;
+
+  if (defined $fe) {
+    my $rfreq = $fe->rest_frequency;
+    my $wb = new Astro::WaveBand( 
+				 Frequency => $rfreq,
+				 Instrument => $inst,
+				);
+
+    return $wb;
+  }
+  return undef;
+}
+
+=item B<verify>
+
+Attempts to verify that the configuration is complete and ready for
+sending to the sequencer. Throws an exception on failure.
+
+  $cfg->verify;
+
+The following checks are made:
+
+ - Does the config have a full target specification
+                  (JAC::OCS::Config::Error::MissingTarget)
+
+
+=cut
+
+sub verify {
+  my $self = shift;
+
+  # get the observing mode and make sure that we need a target
+  my $obs = $self->obsmode;
+
+  if ($obs =~ /(raster|jiggle|grid)/i) {
+
+    # Get the TCS object
+    my $tcs = $self->tcs;
+    if (defined $tcs) {
+
+      # Get the target information
+      my $c = $tcs->getTarget;
+      throw JAC::OCS::Config::Error::MissingTarget("No science target defined in configuration") unless defined $c;
+
+    } else {
+      throw JAC::OCS::Config::Error::FatalError( "No TCS definition available in this configuration");
+    }
+  }
+
+}
+
+=item B<fixup>
+
+Correct any run time problems with the configuration. Assumes the
+modifications are for the current time.
+
+  $cfg->fixup;
+
+=cut
+
+sub fixup {
+
+}
+
 =item B<stringify>
 
 Convert the Science Program object into XML.
@@ -547,15 +738,6 @@ sub _stringify_overload {
 
 =over 4
 
-=item B<telescope>
-
-Return the telescope name associated with this Config.
-Currently always returns "JCMT".
-
-=cut
-
-sub telescope { return "JCMT" }
-
 =item B<getRootElementName>
 
 Return the name of the _CONFIG element that should be the root
@@ -615,6 +797,25 @@ Simple wrapper around C<write_file>.
 sub write_entry {
   my $self = shift;
   return $self->write_file( @_ );
+}
+
+=item B<qsummary>
+
+Provide a simple one line summary suitable for display by the queue.
+Will not include the project ID or estimated duration.
+
+=cut
+
+sub qsummary {
+  my $self = shift;
+  my $obsmode = $self->obsmode;
+  my $instrument = $self->instrument;
+
+  my $str;
+
+  $obsmode =~ s/_/ /g;
+  $str = "$instrument $obsmode";
+  return $str;
 }
 
 =back
@@ -699,15 +900,24 @@ sub _process_dom {
 
   my $el = $self->_rootnode;
 
-  my $cfg = find_children( $el, "JOS_CONFIG", min => 0, max => 1);
+  my $cfg = find_children( $el, "OBS_SUMMARY", min => 0, max => 1);
+  $self->obs_summary( new JAC::OCS::Config::ObsSummary( DOM => $cfg) )
+    if $cfg;
+
+  $cfg = find_children( $el, "JOS_CONFIG", min => 0, max => 1);
   $self->jos( new JAC::OCS::Config::JOS( DOM => $cfg) )
     if $cfg;
 
   $cfg = find_children( $el, "HEADER_CONFIG", min => 0, max => 1);
   $self->header( new JAC::OCS::Config::Header( DOM => $cfg) ) if $cfg;
 
+  # We may have a telescope hint
+  my %hlp;
+  my $tel = $self->telescope;
+  $hlp{telescope} = $tel if defined $tel;
   $cfg = find_children( $el, "TCS_CONFIG", min => 0, max => 1);
-  $self->tcs( new JAC::OCS::Config::TCS( DOM => $cfg) ) if $cfg;
+  $self->tcs( new JAC::OCS::Config::TCS( DOM => $cfg,
+					 %hlp) ) if $cfg;
 
   $cfg = find_children( $el, "ACSIS_CONFIG", min => 0, max => 1);
   $self->acsis( new JAC::OCS::Config::ACSIS( DOM => $cfg) ) if $cfg;
