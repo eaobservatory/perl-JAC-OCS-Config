@@ -147,7 +147,7 @@ corresponding coordinate information.
 
 The content of this hash is not part of the public interface. Use the
 getCoords, getOffsets and getTrackingSystem methods for detailed
-information.
+information. See also the C<getAllTargetInfo> method.
 
 All tags can be removed by supplying a single undef
 
@@ -401,6 +401,56 @@ sub getTrackingSystem {
   return (defined $tag ? $tags{$tag}->tracking_system : undef );
 }
 
+=item B<getAllTargetInfo>
+
+Retrieves all the C<JAC::OCS::Config::TCS::BASE> objects associated
+with this TCS configuration. In list context the base positions are
+returned in a hash with keys matching the tag name.
+
+  %all = $tcs->getAllTargetInfo;
+
+In scalar context the positions are returned in a new lightweight
+C<JAC::OCS::Config::TCS> object containing just the telescope
+positions (and no secondary or observing area specification).
+
+  $minitcs = $tcs->getAllTargetInfo;
+
+=cut
+
+sub getAllTargetInfo {
+  my $self = shift;
+
+  if (wantarray) {
+    return $self->tags;
+  } else {
+    my $mtcs = $self->new();
+    $mtcs->tags( $self->tags );
+    return $mtcs;
+  }
+}
+
+=item B<setAllTargetInfo>
+
+Given either a TCS object or a hash with tag keys and
+C<JAC::OCS::Config::TCS::BASE> values, override all the coordinate
+information in this TCS object.
+
+  $tcs->setAllTargetInfo( %basepos );
+  $tcs->setAllTargetInfo( $tcs2 );
+
+=cut
+
+sub setAllTargetInfo {
+  my $self = shift;
+  if (scalar(@_) == 1) {
+    my $tcs = shift;
+    $self->tags( $tcs->tags );
+  } else {
+    $self->tags( @_ );
+  }
+  return;
+}
+
 =item B<getObsArea>
 
 Return the C<JAC::OCS::Config::TCS::obsArea> associated with this
@@ -475,8 +525,19 @@ If a C<JAC::OCS::Config::TCS::BASE> object is supplied, this is stored
 directly. If an C<Astro::Coords> object is supplied, it will be stored
 in a C<JAC::OCS::Config::TCS::BASE> objects.
 
+If defined the supplied tag overrides any tag stored in the BASE object itself.
+The TAG defaults to SCIENCE if none is defined.
+
+  $tcs->setCoords( undef, $base );
+
 Note that offsets can only be included (currently) if an
 C<JAC::OCS::Config::TCS::BASE> object is used.
+
+If a C<JAC::OCS::Config::TCS> object is given on its own (no tag), the
+current tags in this object are replaced by all the tags from the supplied
+object.
+
+  $tcs->setCoords( $tcs );
 
 =cut
 
@@ -485,27 +546,45 @@ sub setCoords {
   my $tag = shift;
   my $c = shift;
 
-  # look for matching key or synonym
-  my $syn = $self->_translate_tag_name( $tag );
+  # First check to see if our tag is actually a complete TCS object
+  if (UNIVERSAL::isa( $tag, __PACKAGE__) ) {
+    $self->setAllTargetInfo( $tag );
+    return;
+  }
 
-  # if we have a translated synonym that means we have an
-  # existing tag that we are overwriting. Use that if so, else
-  # this is a new tag.
-  $tag = $syn if defined $syn;
+  # if we have a defined tag, we need to get its synonym
+  if (defined $tag) {
+    # look for matching key or synonym
+    my $syn = $self->_translate_tag_name( $tag );
+
+    # if we have a translated synonym that means we have an
+    # existing tag that we are overwriting. Use that if so, else
+    # this is a new tag.
+    $tag = $syn if defined $syn;
+  }
 
   # check class
   my $base;
   if ($c->isa( "JAC::OCS::Config::TCS::BASE")) {
     $base = $c;
+
+    # if no tag was supplied, use the internal value
+    $tag = $base->tag if !defined $tag;
+
   } elsif ($c->isa( "Astro::Coords")) {
-    $base = new JAC::OCS::Config::BASE();
+    $base = new JAC::OCS::Config::TCS::BASE();
     $base->coords( $c );
-    $base->tag( $tag );
   } elsif ($c->can( "coords") && $c->can( "tag" )) {
     $base = $c;
   } else {
     throw JAC::OCS::Config::Error::BadArgs("Supplied coordinate to setCoords is neither and Astro::Coords nor JAC::OCS::Config::TCS::BASE");
   }
+
+  # default tag
+  $tag = $self->_translate_tag_name("SCIENCE",1) if !defined $tag;
+
+  # force tag consistency
+  $base->tag( $tag );
 
   # store it
   $self->tags->{$tag} = $base;
@@ -667,9 +746,20 @@ sub getRootElementName {
 
 Given a tag name, check to see whether a tag of that name exists. If
 it does, return it, if it doesn't look up the tag name in the synonyms
-table. If the synonym exists, return that. Else return undef.
+table. If the synonym exists, return that. Returns undef if the tag
+does not currently exist in the object.
 
  $tag = $cfg->_translate_tag_name( $tag );
+
+Alternatively, if the second (optional) argument is true, this method
+does not rely on an existing tag but can translate on the basis of known tags.
+In this case, "SCIENCE" would return "SCIENCE" even if no "SCIENCE" tag
+currently exists. A tag is known if it exists as either a keyword or value
+in the synonyms table. Returns undef if the tag is unknown. This option can
+be used to insert new tagged coordinates.
+
+ $tag = $cfg->_translate_tag_name( $tag, 1 );
+
 
 =cut
 
@@ -684,6 +774,7 @@ table. If the synonym exists, return that. Else return undef.
   sub _translate_tag_name {
     my $self = shift;
     my $tag = shift;
+    my $ignore_exists = shift;
 
     my %tags = $self->tags;
 
@@ -693,6 +784,17 @@ table. If the synonym exists, return that. Else return undef.
       # Synonym exists
       return $synonyms{$tag};
     } else {
+      if ($ignore_exists) {
+	# see if this tag would be valid in general even if it does not currently
+	# exist
+	for my $v ( values %synonyms ) {
+	  return $v if $tag eq $v;
+	}
+	for my $k (keys %synonyms) {
+	  return $synonyms{$k} if $tag eq $k;
+	}
+      }
+
       return undef;
     }
   }
