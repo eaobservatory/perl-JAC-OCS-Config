@@ -255,8 +255,15 @@ Instrument configuration.
 sub instrument_setup {
   my $self = shift;
   if (@_) {
+    my $inst = shift;
     $self->{INSTRUMENT_CONFIG} = check_class_fatal( "JAC::OCS::Config::Instrument",
-						    shift);
+						    $inst);
+    # if a frontend config exists, check to see if a name is defined
+    # if it is undef, set it
+    my $fe = $self->frontend;
+    if (defined $fe && !defined $fe->frontend) {
+      $fe->frontend( $inst->name );
+    }
   }
   return $self->{INSTRUMENT_CONFIG};
 }
@@ -270,8 +277,15 @@ Frontend configuration.
 sub frontend {
   my $self = shift;
   if (@_) {
+    my $fe = shift;
     $self->{FRONTEND_CONFIG} = check_class_fatal( "JAC::OCS::Config::Frontend",
-						  shift);
+						  $fe);
+    # if the frontend does not have a name but we do have an INSTRUMENT
+    # then use that name
+    # Does not verify that the receptors in INSTRUMENT are used in FRONTEND
+    if (!defined $fe->frontend && defined $self->instrument_setup) {
+      $fe->frontend( $self->instrument_setup->name );
+    }
   }
   return $self->{FRONTEND_CONFIG};
 }
