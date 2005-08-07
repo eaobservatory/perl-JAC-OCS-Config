@@ -99,6 +99,7 @@ Task or tasks that will be configured from this XML.
 sub tasks {
   my $self = shift;
   my $name = $self->frontend;
+  return () unless defined $name;
 
   # if we already named FE_XXX that is the task name
   if ($name =~ /^FE_/) {
