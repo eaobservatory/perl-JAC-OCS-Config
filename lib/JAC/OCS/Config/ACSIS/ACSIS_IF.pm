@@ -248,18 +248,6 @@ sub stringify {
     $xml .= '<quadrant id="' . $qid . '" subband_mode="' . $sbmode[$qid] ."\"/>\n";
   }
 
-  # Cass switch
-  $xml .= '<cass_sw_det input="0" rcvr="rxa3" rxout="0" nominal_pwr="-40"/>'. "\n";
-
-  # Nasmyth switch
-  $xml .= '<ns_sw_det input="0" rcvr="harp" rxout="0" nominal_pwr="-40"/>' . "\n";
-
-  # Bite
-  $xml .= '<bite_parms load_mode="OFF" line_mode="OFF"/>'."\n";
-
-  # RTS
-  $xml .= '<rts_parms int_interval="50" timing_src="RTS_SOFT"/>' ."\n";
-
   # tidy up
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
