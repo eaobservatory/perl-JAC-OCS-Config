@@ -20,8 +20,10 @@ C<OCS_CONFIG> root element).
 use strict;
 use warnings;
 use XML::LibXML;
+use File::Basename qw/ dirname /;
+use Cwd qw/ chdir cwd /;
 
-use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Error qw/ :try /;
 
 use vars qw/ $VERSION $INITKEY /;
 
@@ -332,13 +334,40 @@ constructor. Calls C<_import_xml_string>.
 
  $self->_import_xml_file( $filename );
 
+Entities are read from this file relative to the location of the file
+(as opposed to relative to the current working directory).
+
 =cut
 
 sub _import_xml_file {
   my $self = shift;
   my $file = shift;
+
+  # This method does not read the entities directly.
+  # They will be read by the parser but we have to make sure that
+  # we are in the correct directory to allow the parser to do a relative
+  # read
+
+  # read the file off disk
+  # we do not use the builtin file parser since we want to reduce the
+  # code that deals with validation parameters and DOM importing
   my $xml = $self->_read_xml_from_file( $file );
-  $self->_import_xml_string( $xml );
+
+  # We need to chdir to the path
+  my $cdinfo = $self->_cdtoxml( $file );
+
+  # Run this in a try block so we can chdir back again
+  my $E;
+  try {
+    $self->_import_xml_string( $xml );
+  } otherwise {
+    $E = shift;
+  };
+
+  # get back to the current directory before throwing the exception
+  $self->_cdfromxml( $cdinfo );
+  $E->throw if $E;
+
   $self->filename( $file );
 }
 
@@ -363,7 +392,23 @@ sub _import_xml_entity_file {
   my $wrapper = (shift || 'dummyWrapperElement');
   my $xml = $self->_read_xml_from_file( $file );
   $xml = "<$wrapper>\n$xml\n</$wrapper>\n";
-  $self->_import_xml_string( $xml );
+
+  # See _import_xml_file
+  # We need to chdir to the path
+  my $cdinfo = $self->_cdtoxml( $file );
+
+  # Run this in a try block so we can chdir back again
+  my $E;
+  try {
+    $self->_import_xml_string( $xml );
+  } otherwise {
+    $E = shift;
+  };
+
+  # get back to the current directory before throwing the exception
+  $self->_cdfromxml( $cdinfo );
+  $E->throw if $E;
+
   $self->filename( $file );
 }
 
@@ -492,6 +537,52 @@ sub _introductory_xml {
   $xml .= "-->\n";
 
   return $xml;
+}
+
+=item B<_cdtoxml>
+
+Change to the xml directory so that relative path entities can be read
+correctly.
+
+  $cdinfo = $cfg->_cdtoxml( $xmlfile );
+
+See also C<_cdfromxml> to get back again.
+Returns information that can be passed to C<_cdfromxml>.
+
+=cut
+
+sub _cdtoxml {
+  my $self = shift;
+  my $file = shift;
+
+  my $currdir = cwd;
+  my $dirname = dirname( $file );
+  my $status = chdir($dirname);
+  throw JAC::OCS::Config::Error::FatalError("Could not chdir to XML file location [$dirname]") unless $status;
+
+  return [ $currdir ];
+}
+
+=item B<_cdfromxml>
+
+Change directory back to the original location from the XML directory.
+Should be done after parsing the xml.
+
+  $cfg->_cdfromxml( $cdinfo );
+
+Takes as argument the return value from C<_cdtoxml>.
+
+=cut
+
+sub _cdfromxml {
+  my $self = shift;
+  my $cdinfo = shift;
+  my $currdir = $cdinfo->[0];
+
+  # get back to the current directory before throwing the exception
+  chdir($currdir) or throw JAC::OCS::Config::Error::FatalError("Could not chdir back to old working directory [$currdir]!");
+
+  return;
 }
 
 =back
