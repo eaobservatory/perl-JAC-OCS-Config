@@ -136,9 +136,6 @@ sub stringify {
       '" bw_mode="' . $mode . "\"/>\n";
   }
 
-  # Fudge
-  $xml .= '<rts_parms int_interval="50" timing_src="RTS_SOFT"/>' ."\n";
-
   # tidy up
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
