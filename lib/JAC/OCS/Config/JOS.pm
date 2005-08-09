@@ -49,11 +49,10 @@ our @PARAMS = (qw/
 		  JOS_MULT
 		  JOS_MIN
 		  ROWS_PER_REF
-                  POINTS_PER_REF 
+                  POINTS_PER_REF
 		  REFS_PER_CAL
 		  N_REFSAMPLES
 		  N_CALSAMPLES
-		  N_SKYREFSAMPLES
 		  FOCUS_STEPS
 		  FOCUS_STEP
 		  /);
@@ -277,9 +276,10 @@ sub refs_per_cal {
 
 =item B<n_refsamples>
 
-Number of samples to integrate for the first reference position.
+Number of samples to integrate for the reference position.
+
 The number of samples in subsequent reference observations is calculated
-by the JOS.
+by the JOS in some recipes (e.g. raster).
 
 =cut
 
@@ -303,21 +303,6 @@ sub n_calsamples {
     $self->{N_CALSAMPLES} = shift;
   }
   return $self->{N_CALSAMPLES};
-}
-
-=item B<n_skyrefsamples>
-
-Number of samples to use for a sky reference. Deprecated. Use N_REFSAMPLES
-instead.
-
-=cut
-
-sub n_skyrefsamples {
-  my $self = shift;
-  if (@_) {
-    $self->{N_SKYREFSAMPLES} = shift;
-  }
-  return $self->{N_SKYREFSAMPLES};
 }
 
 =item B<focus_steps>
