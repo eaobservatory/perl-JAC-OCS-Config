@@ -95,7 +95,8 @@ sub tasks {
   throw JAC::OCS::Config::Error::FatalError( "Can not determine task list without a hardware mapping\n") unless defined $hw;
 
   # first get all the CM_IDs from this configuration
-  my @cm_ids = map { $_->{CM_ID} } @cm;
+  # and remove undefs
+  my @cm_ids = grep { defined $_ } map { $_->{CM_ID} } @cm;
 
   # now look at the hardware map and get the task numbers
   my %ctask = map { $_, undef } $hw->bycmid( "CorrTask", @cm_ids);
