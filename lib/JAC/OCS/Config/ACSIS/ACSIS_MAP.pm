@@ -161,6 +161,24 @@ sub stringify {
   # Version declaration
   $xml .= $self->_introductory_xml();
 
+  # Map file information
+  my $hwmap = $self->hw_map;
+  if (defined $hwmap) {
+    my $rev = $hwmap->map_version;
+    my $date = $hwmap->map_date;
+    my $file = $hwmap->filename;
+
+    if (defined $rev || defined $date) {
+      $xml .= "<!--\nDerived from Hardware wiring file:\n";
+
+      $xml .= "$file\n" if defined $file;
+      $xml .= "Version: $rev\n" if defined $rev;
+      $xml .= "Last modified on ". gmtime($date) ." UT\n"
+	if defined $date;
+      $xml .= "-->\n";
+    }
+  }
+
   # loop over the cm_map
   for my $cm ($self->cm_map) {
     # Sanity check in case we have empty hash
