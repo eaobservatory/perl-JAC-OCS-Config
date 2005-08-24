@@ -53,8 +53,9 @@ our @PARAMS = (qw/
 		  REFS_PER_CAL
 		  N_REFSAMPLES
 		  N_CALSAMPLES
-		  FOCUS_STEPS
+		  NUM_FOCUS_STEPS
 		  FOCUS_STEP
+		  START_ROW
 		  /);
 
 =head1 METHODS
@@ -305,18 +306,18 @@ sub n_calsamples {
   return $self->{N_CALSAMPLES};
 }
 
-=item B<focus_steps>
+=item B<num_focus_steps>
 
 Number of smu positions to stop through for a focus observation.
 
 =cut
 
-sub focus_steps {
+sub num_focus_steps {
   my $self = shift;
   if (@_) {
-    $self->{FOCUS_STEPS} = shift;
+    $self->{NUM_FOCUS_STEPS} = shift;
   }
-  return $self->{FOCUS_STEPS};
+  return $self->{NUM_FOCUS_STEPS};
 }
 
 =item B<focus_step>
@@ -331,6 +332,20 @@ sub focus_step {
     $self->{FOCUS_STEP} = shift;
   }
   return $self->{FOCUS_STEP};
+}
+
+=item B<start_row>
+
+Initial row number for a raster recipe.
+
+=cut
+
+sub start_row {
+  my $self = shift;
+  if (@_) {
+    $self->{START_ROW} = shift;
+  }
+  return $self->{START_ROW};
 }
 
 =item B<stringify>
