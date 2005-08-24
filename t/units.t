@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 37;
+use Test::More tests => 40;
 use JAC::OCS::Config::ACSIS;
 BEGIN {
   use_ok( "JAC::OCS::Config::Units" );
