@@ -264,6 +264,8 @@ sub coords_to_xml {
       my %vflut = ('HEL' => 'HELIOCENTRIC',
 		   'LSRK' => 'LSR',
 		   'GEO' => 'GEOCENTRIC',
+                   'TOP' => 'TOPOCENTRIC',
+                   'BAR' => 'BARYCENTRIC'
 		   );
       # correct to LSRK
       if ( $vf eq 'LSRD') {
