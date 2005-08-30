@@ -258,7 +258,8 @@ sub coords_to_xml {
       }
 
       # Radial Velocity
-      # TCS requires different velocity frame names
+      # TCS requires different velocity frame names from those used
+      # in Astro::Coords
       my $rv = $c->rv;
       my $vf = $c->vframe;
       my %vflut = ('HEL' => 'HELIOCENTRIC',
