@@ -825,10 +825,18 @@ sub qsummary {
   my $obsmode = $self->obsmode;
   my $instrument = $self->instrument;
 
+  # target name
+  my $targ = 'NONE';
+  my $tcs = $self->tcs;
+  if (defined $tcs) {
+    my $c = $tcs->getTarget;
+    $targ = $c->name if (defined $c && defined $c->name);
+  }
+
   my $str;
 
   $obsmode =~ s/_/ /g;
-  $str = "$instrument $obsmode";
+  $str = sprintf("%-10s %-7s %s",$targ, $instrument,$obsmode);
   return $str;
 }
 
@@ -869,7 +877,8 @@ sub _task_map {
 
     my @tasks;
     if ($c eq 'jos') {
-      # JOS is currently a special case
+      # JOS is currently a special case because the JOS tasks() method
+      # returns all the tasks to be used not those required by the JOS
       @tasks = ('JOS');
     } else {
       @tasks = $object->tasks;
