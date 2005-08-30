@@ -404,7 +404,27 @@ sub write_file {
       $strargs{CONFIGS} = $invtmap->{$dir};
     }
 
-    print $fh $self->stringify( %strargs );
+    # horrible horrible hack because IFTASK gets flaky with large
+    # XML files KLUGE ALERT
+    my $has_written;
+    if ($dir eq 'IFTASK') {
+      my $this_acsis = $self->acsis();
+      if (defined $this_acsis) {
+	my $this_if = $this_acsis->acsis_if();
+	if (defined $this_if) {
+	  # we have an IF. Proceed.
+	  my $dummy = JAC::OCS::Config->new();
+	  my $acsis = JAC::OCS::Config::ACSIS->new();
+	  $dummy->acsis( $acsis );
+	  $acsis->acsis_if( $this_if );
+	  print $fh $dummy->stringify();
+	  $has_written = 1;
+	}
+      }
+    }
+
+    # stringify the object
+    print $fh $self->stringify( %strargs ) unless $has_written;
 
     close ($fh) or
       throw JAC::OCS::Config::Error::IOError("Error closing config output file $fullname: $!");
