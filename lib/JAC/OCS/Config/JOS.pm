@@ -55,6 +55,7 @@ our @PARAMS = (qw/
 		  N_CALSAMPLES
 		  NUM_FOCUS_STEPS
 		  FOCUS_STEP
+		  FOCUS_AXIS
 		  START_ROW
 		  /);
 
@@ -304,6 +305,20 @@ sub n_calsamples {
     $self->{N_CALSAMPLES} = shift;
   }
   return $self->{N_CALSAMPLES};
+}
+
+=item B<focus_axis>
+
+Focus axis to move (X, Y, Z)
+
+=cut
+
+sub focus_axis {
+  my $self = shift;
+  if (@_) {
+    $self->{FOCUS_AXIS} = uc(shift);
+  }
+  return $self->{FOCUS_AXIS};
 }
 
 =item B<num_focus_steps>
