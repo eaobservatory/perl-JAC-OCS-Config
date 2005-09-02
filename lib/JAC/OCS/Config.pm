@@ -408,18 +408,31 @@ sub write_file {
     # XML files KLUGE ALERT
     my $has_written;
     if ($dir eq 'IFTASK') {
+
+      # We will need a dummy Config and ACSIS object
+      my $dummy = JAC::OCS::Config->new();
+      my $acsis = JAC::OCS::Config::ACSIS->new();
+
+
+      # store the instrument information
+      $dummy->instrument_setup( $self->instrument_setup );
+
+      # store the ACSIS object
+      $dummy->acsis( $acsis );
+
+      # we need ACSIS_IF and ACSIS_MAP
       my $this_acsis = $self->acsis();
       if (defined $this_acsis) {
+
 	my $this_if = $this_acsis->acsis_if();
-	if (defined $this_if) {
-	  # we have an IF. Proceed.
-	  my $dummy = JAC::OCS::Config->new();
-	  my $acsis = JAC::OCS::Config::ACSIS->new();
-	  $dummy->acsis( $acsis );
-	  $acsis->acsis_if( $this_if );
-	  print $fh $dummy->stringify();
-	  $has_written = 1;
-	}
+	my $this_map = $this_acsis->acsis_map();
+
+	$acsis->acsis_if( $this_if ) if defined $this_if;
+	$acsis->acsis_map( $this_map ) if defined $this_map;
+
+	# write it
+	print $fh $dummy->stringify();
+	$has_written = 1;
       }
     }
 
