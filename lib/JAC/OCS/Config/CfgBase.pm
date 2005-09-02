@@ -301,9 +301,36 @@ sub stringify {
   # Get root note
   my $root = $self->_rootnode;
 
-  # Return text
-  return (defined $root ? $root->toString : "" );
+  # default empty string
+  my $string = "";
 
+  # insert a comment if we have a root node
+  if (defined $root) {
+    # Get comment string
+    my $comstring = $self->_introductory_xml();
+
+    # need to clean it up
+    $comstring =~ s/<!--//m;
+    $comstring =~ s/-->//m;
+
+    # Create comment node
+    my $com = XML::LibXML::Comment->new( $comstring );
+
+    # Get first child
+    my $fc = $root->firstChild;
+
+    # and insert the comment
+    $root->insertBefore( $com, $fc );
+
+    # and stringify the resultant node
+    $string = $root->toString;
+
+    # Remove the comment again
+    $com->unbindNode;
+
+  }
+
+  return $string;
 }
 
 # forward onto stringify method
