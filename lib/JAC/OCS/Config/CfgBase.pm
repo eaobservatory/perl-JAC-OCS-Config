@@ -142,6 +142,44 @@ sub filename {
   return $self->{FileName};
 }
 
+=item B<cfg_version>
+
+Version number associated with the configuration (not always defined).
+
+  $v = $cfg->cfg_version;
+
+Usually obtained from embedded CVS Revision tags. Read only.
+
+=cut
+
+sub cfg_version {
+  my $self = shift;
+  if (@_) {
+    $self->{CfgVersion} = shift;
+  }
+  return $self->{CfgVersion};
+}
+
+=item B<cfg_date>
+
+If the config XML has been read from a file, this is the modification
+date of the file as epoch seconds.
+
+  $date = $map->cfg_date();
+
+Read only.
+
+=cut
+
+sub cfg_date {
+  my $self = shift;
+  if (@_) {
+    $self->{CfgDate} = shift;
+  }
+  return $self->{CfgDate};
+}
+
+
 =item B<isDOMValid>
 
 Hash indicating whether any given element under the root _CONFIG
@@ -324,6 +362,11 @@ sub _read_xml_from_file {
   my $xml = <$fh>;
   close($fh) or
     throw JAC::OCS::Config::Error::IOError("Error closing XML file $file : $!");
+
+  # Look up the modification date on the file
+  my @stat = stat( $file );
+  $self->cfg_date( $stat[9] );
+
   return $xml;
 }
 
@@ -424,6 +467,12 @@ Called from the object constructor or from C<_import_xml_file>.
 sub _import_xml_string {
   my $self = shift;
   my $xml = shift;
+
+  # Look for a CVS Revision (the first hit)
+  # Multi-line match
+  if ($xml =~ /\$Revision: (\d+\.\d+) /m) {
+    $self->cfg_version( $1 );
+  }
 
   # create new parser
   my $parser = new XML::LibXML;
@@ -532,6 +581,18 @@ sub _introductory_xml {
       $xml .= "+ which inherits from class $b V". ${ $b."::VERSION" } ."\n";
     }
   }
+
+  # Filename and version number if available
+  my $cfg_v = $self->cfg_version;
+  my $cfg_d = $self->cfg_date;
+  my $file  = $self->filename;
+  if (defined $file) {
+    $xml .= "\n";
+    $xml .= "Configuration read from file '$file'\n";
+    $xml .= "+ configuration file last modified on " . gmtime($cfg_d) ." UT\n"
+      if defined $cfg_d;
+  }
+  $xml .= "+ CVS Revision of XML: $cfg_v\n" if defined $cfg_v;
 
   # close the comment
   $xml .= "-->\n";
