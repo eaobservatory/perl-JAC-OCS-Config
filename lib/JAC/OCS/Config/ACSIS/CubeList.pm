@@ -128,7 +128,7 @@ sub stringify {
 
     # Group centre (optional)
     my $gc = $c->group_centre();
-    if (defined $gc) {
+    if (defined $gc && $c->tcs_coord ne 'AZEL' ) {
       $xml .= "<group_centre>\n";
 
       # use simple format
