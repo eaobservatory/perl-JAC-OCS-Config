@@ -59,8 +59,10 @@ use JAC::OCS::Config::XMLHelper qw(
 # Bizarrely, inherit from a sub-class for DOM processing
 use base qw/ JAC::OCS::Config::CfgBase /;
 
-use vars qw/ $VERSION /;
+use vars qw/ $VERSION $DEBUG /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+
+$DEBUG = 0;
 
 # Overloading
 use overload '""' => "_stringify_overload";
@@ -388,7 +390,7 @@ sub write_file {
   for my $dir (File::Spec->curdir,@dirs) {
 
     my $fullname = File::Spec->catdir( $TRANS_DIR, $dir, $cname );
-    print "Writing config to $fullname\n";
+    print "Writing config to $fullname\n" if $DEBUG;
 
     # First time round, store the filename for later return
     $storename = $fullname unless defined $storename;
@@ -473,7 +475,7 @@ the possibility that a raster map may not use predictable scanning.
 =cut
 
 sub duration {
-  warn "Observation duration unknown\n";
+  warn "Observation duration unknown\n" if $^W;
   return Time::Seconds->new(10);
 }
 
