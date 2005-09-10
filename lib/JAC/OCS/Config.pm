@@ -59,10 +59,8 @@ use JAC::OCS::Config::XMLHelper qw(
 # Bizarrely, inherit from a sub-class for DOM processing
 use base qw/ JAC::OCS::Config::CfgBase /;
 
-use vars qw/ $VERSION $DEBUG /;
+use vars qw/ $VERSION /;
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
-
-$DEBUG = 0;
 
 # Overloading
 use overload '""' => "_stringify_overload";
@@ -398,7 +396,7 @@ sub write_file {
   for my $dir (File::Spec->curdir,@dirs) {
 
     my $fullname = File::Spec->catdir( $TRANS_DIR, $dir, $cname );
-    print "Writing config to $fullname\n" if $DEBUG;
+    print "Writing config to $fullname\n" if $self->verbose;
 
     # First time round, store the filename for later return
     $storename = $fullname unless defined $storename;
@@ -832,6 +830,44 @@ set this value.
       return $outputdir;
     }
   }
+
+=item B<debug>
+
+Enable or disable debug messages. Default is false (quiet).
+
+  $cfg->debug( 1 );
+
+=cut
+
+{
+  my $debug;
+  sub debug {
+    my $class = shift;
+    if (@_) {
+      $debug = shift;
+    }
+    return $debug;
+  }
+}
+
+=item B<verbose>
+
+Enable or disable verbose messages. Default is false (quiet).
+
+  $cfg->verbose( 1 );
+
+=cut
+
+{
+  my $verbose;
+  sub verbose {
+    my $class = shift;
+    if (@_) {
+      $verbose = shift;
+    }
+    return $verbose;
+  }
+}
 
 =back
 
