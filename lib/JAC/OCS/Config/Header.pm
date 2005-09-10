@@ -162,6 +162,37 @@ sub item {
 }
 
 
+=item B<set_ocscfg_filename>
+
+This method locates the special callback hint in the header
+XML (getOCSCFG) or the FITS header OCSCFG itself, and forces the
+value to be the supplied filename.
+
+  $hdr->set_ocscfg_filename( $filename );
+
+Usually called just before the file is written to disk.
+
+=cut
+
+sub set_ocscfg_filename {
+  my $self = shift;
+  my $filename = shift;
+  my $magic = 'OCSCFG';
+
+  # Looking either for keyword of OCSCFG or method getOCSFG
+  my @items = $self->item( sub { 
+			     ($_[0]->keyword eq $magic) ||
+			       (defined $_[0]->method &&
+				$_[0]->method eq "get$magic");
+			   } );
+
+  for my $i (@items) {
+    $i->value( $filename );
+    $i->source( undef ); # clear derived status
+  }
+
+}
+
 =item B<stringify>
 
 Create XML representation of object.

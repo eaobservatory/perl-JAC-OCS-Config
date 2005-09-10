@@ -384,6 +384,14 @@ sub write_file {
     "_".sprintf("%06d",$mic_sec) .
       ".xml";
 
+  # This name has to be associated with the relevant FITS header
+  # as it can only be set when we are creating the file.
+  my $header = $self->header;
+  if (defined $header) {
+    $header->set_ocscfg_filename( $cname );
+  }
+
+
   my $storename;
 
   # loop over the directories, making sure that current directory is included
