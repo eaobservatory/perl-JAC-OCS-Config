@@ -86,12 +86,25 @@ sub check_class_fatal {
 
     my $msg;
     if ($n_in == 1) {
-      $msg = "The input argument ";
+      my $first = $_[1];
+      my $first_txt = '';
+      if (defined $first) {
+	if (ref($first)) {
+	  $first_txt = ref($first);
+	} else {
+	  $first_txt = "<scalar:$first>";
+	}
+      } else {
+	$first_txt = '<undef>';
+      }
+      $msg = "The input argument ($first_txt) ";
+
     } else {
       $msg = "$lost out of $n_in arguments ";
     }
     $msg .= "to '$c[3]' not of class '$_[0]'";
 
+    Carp::cluck("here");
     throw JAC::OCS::Config::Error::BadClass( $msg );
   }
   return (wantarray ? @output : $output[0] );
