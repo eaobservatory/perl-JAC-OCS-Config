@@ -35,6 +35,9 @@ use JAC::OCS::Config::XMLHelper qw(
                                    indent_xml_string
                                   );
 
+# Hardware Map
+use JCMT::ACSIS::HWMap;
+
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
@@ -114,13 +117,23 @@ the tasks. This mapping is specified as an C<JCMT::ACSIS::HWMap> object.
   $hw = $map->hw_map;
   $map->hw_map( $hw );
 
+If no map is defined, a new JCMT::ACSIS::HWMap object will be
+created using a standard file.
+
 =cut
 
 sub hw_map {
   my $self = shift;
   if (@_) {
     $self->{HWMAP} = check_class_fatal( "JCMT::ACSIS::HWMap", shift);
+  } elsif (!defined $self->{HWMAP}) {
+    # Not elegant
+    require OMP::Config;
+    my $WIRE_DIR = OMP::Config->getData( 'acsis_translator.wiredir' );
+    my $path = File::Spec->catfile( $WIRE_DIR, 'acsis', 'cm_wire_file.txt');
+    $self->{HWMAP} = new JCMT::ACSIS::HWMap( File => $path );
   }
+
   return $self->{HWMAP};
 }
 
