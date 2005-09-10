@@ -253,10 +253,15 @@ sub _process_dom {
   for my $c (@cxml) {
     my $id = find_attr( $c, "id" );
 
-    # group centre may or may not exist
+    # TCS coordinate system for regridding (AZEL or TRACKING)
+    my $tcs_coord = find_attr_child( $c, "tcs_coord", "type");
+
+    # group centre may or may not exist (we can work this out
+    # from the tcs_coord.
     my $gcen = find_children( $c, "group_centre", max => 1);
     my $coords;
     if ($gcen) {
+
       # mandatory spherSystem
       # but we should use the TCS XML parser to decode this
       # and convert it to Astro::Coords object
@@ -297,9 +302,6 @@ sub _process_dom {
     # regridding function
     my $grid_function = find_attr_child( $c, "grid_function", "type");
 
-    # TCS coordinate system for regridding (AZEL or TRACKING)
-    my $tcs_coord = find_attr_child( $c, "tcs_coord", "type");
-
     # position angle (should probably be PA)
     my $pa = get_pcdata( $c, "pos_ang" );
     $pa = new Astro::Coords::Angle( $pa,
@@ -322,7 +324,8 @@ sub _process_dom {
 
     $cubes{$id} =
 	 new JAC::OCS::Config::ACSIS::Cube(
-					   group_centre => $coords,
+					   (defined $coords ? 
+					    (group_centre => $coords) : () ),
 					   pixsize => [$x_pix_size, $y_pix_size],
 					   offset => [$x_offset, $y_offset],
 					   npix => [$x_npix, $y_npix],
