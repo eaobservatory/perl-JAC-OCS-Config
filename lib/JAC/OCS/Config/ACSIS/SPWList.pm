@@ -322,7 +322,7 @@ sub _process_dom {
   # Now extract information from each spectral window
   for my $spw (@spwxml) {
     my $id = find_attr( $spw, "id" );
-    print "======================== ID $id ====================================\n";
+    #print "======================== ID $id ====================================\n";
 
     # Either have Subband list *OR*
     #  bandwidth mode + window + align_shift
