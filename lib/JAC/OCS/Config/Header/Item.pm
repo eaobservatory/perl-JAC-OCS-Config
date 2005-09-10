@@ -124,7 +124,7 @@ sub value {
 =item B<source>
 
 Type of external data source that should be queried for the value.
-Allowed values are "GLISH" and "DRAMA", "DERIVED", "SELF" and "TRANSLATOR".
+Allowed values are "GLISH" and "DRAMA", "DERIVED" and "SELF".
 
 =cut
 
