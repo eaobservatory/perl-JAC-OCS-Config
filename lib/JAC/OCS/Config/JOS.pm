@@ -57,6 +57,7 @@ our @PARAMS = (qw/
 		  FOCUS_STEP
 		  FOCUS_AXIS
 		  START_ROW
+                  ITER_PER_CAL
 		  /);
 
 =head1 METHODS
@@ -362,6 +363,23 @@ sub start_row {
   }
   return $self->{START_ROW};
 }
+
+
+=item B<start_row>
+
+Set ITER_PERCAL for freq_sw
+
+=cut
+
+sub iter_per_cal {
+  my $self = shift;
+  if (@_) {
+    $self->{ITER_PER_CAL} = shift;
+  }
+  return $self->{ITER_PER_CAL};
+}
+
+
 
 =item B<stringify>
 
