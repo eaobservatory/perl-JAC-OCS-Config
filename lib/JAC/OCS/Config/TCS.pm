@@ -894,14 +894,10 @@ sub _find_base_posns {
 
   # We should find all the BASE entries and parse them in turn.
   # Note that we have to look out for both BASE (the modern form)
-  # and "base" the old-style.
+  # and "base" the old-style. It is possible for there to be no BASE
+  # elements.
 
   my @base = $el->findnodes( './/BASE | .//base ');
-
-  # Throw an exception if we did not find anything since a base
-  # position is mandatory
-  throw JAC::OCS::Config::Error::XMLBadStructure("No base target position specified in TCS XML\n")
-    unless @base;
 
   # get the telescope name
   my $tel = $self->telescope;
