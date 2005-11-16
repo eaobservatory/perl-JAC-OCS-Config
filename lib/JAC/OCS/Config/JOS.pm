@@ -48,16 +48,14 @@ our @PARAMS = (qw/
 		  STEP_TIME
 		  JOS_MULT
 		  JOS_MIN
-		  ROWS_PER_REF
-                  POINTS_PER_REF
-		  REFS_PER_CAL
+		  STEPS_PER_REF
+		  STEPS_PER_CAL
 		  N_REFSAMPLES
 		  N_CALSAMPLES
 		  NUM_FOCUS_STEPS
 		  FOCUS_STEP
 		  FOCUS_AXIS
 		  START_ROW
-                  ITER_PER_CAL
 		  /);
 
 =head1 METHODS
@@ -209,7 +207,8 @@ sub step_time {
 
 =item B<jos_mult>
 
-Unknown.
+In a jiggle/chop recipe this parameter indicates the number of
+steps to integrate in a single nod position.
 
 =cut
 
@@ -235,46 +234,35 @@ sub jos_min {
   return $self->{JOS_MIN};
 }
 
-=item B<rows_per_ref>
+=item B<steps_per_ref>
 
-The number of raster rows to complete between reference observations.
+The number of steps that can occur between sky references. A sky ref
+must be obtained if this number of steps is exceeded (at the next
+convenient location in the recipe).
 
 =cut
 
-sub rows_per_ref {
+sub steps_per_ref {
   my $self = shift;
   if (@_) {
-    $self->{ROWS_PER_REF} = shift;
+    $self->{STEPS_PER_REF} = shift;
   }
-  return $self->{ROWS_PER_REF};
+  return $self->{STEPS_PER_REF};
 }
 
-=item B<points_per_ref>
+=item B<steps_per_cal>
 
-The number of points in a grid to complete between reference observations.
-
-=cut
-
-sub points_per_ref {
-  my $self = shift;
-  if (@_) {
-    $self->{POINTS_PER_REF} = shift;
-  }
-  return $self->{POINTS_PER_REF};
-}
-
-=item B<refs_per_cal>
-
-Number of sky references between each cal observation.
+The number of steps that are allowed to occur before a new CAL should
+be obtained.
 
 =cut
 
-sub refs_per_cal {
+sub steps_per_cal {
   my $self = shift;
   if (@_) {
-    $self->{REFS_PER_CAL} = shift;
+    $self->{STEPS_PER_CAL} = shift;
   }
-  return $self->{REFS_PER_CAL};
+  return $self->{STEPS_PER_CAL};
 }
 
 =item B<n_refsamples>
@@ -363,23 +351,6 @@ sub start_row {
   }
   return $self->{START_ROW};
 }
-
-
-=item B<start_row>
-
-Set ITER_PERCAL for freq_sw
-
-=cut
-
-sub iter_per_cal {
-  my $self = shift;
-  if (@_) {
-    $self->{ITER_PER_CAL} = shift;
-  }
-  return $self->{ITER_PER_CAL};
-}
-
-
 
 =item B<stringify>
 
