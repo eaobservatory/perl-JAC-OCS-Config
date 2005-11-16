@@ -221,7 +221,9 @@ sub stringify {
       # IF Coordinate
       my $ifcrd = $sw->if_coordinate;
       $xml .= "<if_coordinate>\n";
-      $xml .= "<if_ref_freq units=\"Hz\">".$ifcrd->if_freq."</if_ref_freq>\n";
+
+      # Gridder is stupid and will not read the units so wants GHz
+      $xml .= "<if_ref_freq units=\"GHz\">".($ifcrd->if_freq/1.0E9)."</if_ref_freq>\n";
       $xml .= "<if_ref_channel>".$ifcrd->ref_channel."</if_ref_channel>\n";
       $xml .= "<if_chan_width units=\"Hz\">".$ifcrd->channel_width."</if_chan_width>\n";
       $xml .= "<if_nchans>".$ifcrd->nchannels."</if_nchans>\n";
