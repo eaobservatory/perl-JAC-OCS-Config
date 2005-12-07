@@ -1136,6 +1136,9 @@ sub _toString_rotator {
 	for my $pa (@{$rot{PA}}) {
 	  $xml .= "  ". pa_to_xml( $pa );
 	}
+      } else {
+        # PA is mandatory so assume 0 deg
+        $xml .= "  ".pa_to_xml( new Astro::Coords::Angle( 0 ) );
       }
 
       $xml .= "</ROTATOR>\n";
