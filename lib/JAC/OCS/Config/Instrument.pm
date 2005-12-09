@@ -26,6 +26,7 @@ use Carp;
 use warnings;
 use XML::LibXML;
 use Astro::Coords::Angle;
+use Astro::Coords::Offset;
 
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Units;
@@ -101,12 +102,13 @@ a mask for the frontend) and each value is a reference to a hash containing
 the following information
 
  health -  ON, OFF, or UNSTABLE
- x      -  X coordinate (arcsec) of the pixel relative to the focal plane
- y      -  Y coordinate (arcsec) of the pixel relative to the focal plane
+ xypos  -  X coordinate (arcsec) of the pixel relative to the focal plane &
+           Y coordinate (arcsec) of the pixel relative to the focal plane
  pol_type - Polarisation type for this pixel (eg Linear)
  refpix -  ID of reference pixel for gain calibration
  sensitivity - Relative sensitivity of this pixel to the reference pixel
  angle  - polarization angle (Astro::Coords::Angle object)
+ band   - waveband associated with this receptor (A,B,C, or D)
 
 The reference pixel should refer to one of the pixels in this receptor
 hash.
@@ -119,6 +121,22 @@ sub receptors {
     %{$self->{RECEPTORS}} = @_;
   }
   return %{$self->{RECEPTORS}};
+}
+
+=item B<receptor>
+
+Retrieve information about a specific receptor. Hash keys match those
+described in the C<receptors> method.
+
+  %info = $inst->receptor( "H00" );
+
+=cut
+
+sub receptor {
+  my $self = shift;
+  my $recid = shift;
+  my %rec = $self->receptors;
+  return (exists $rec{$recid} ? %{ $rec{$recid} } : () );
 }
 
 =item B<name>
@@ -233,7 +251,61 @@ sub smu_offset {
   return @{$self->{SMU_OFF}};
 }
 
+=item B<receptor_offsets>
 
+Returns the array of receptor positions as a list of C<Astro::Coords::Offset>
+objects.
+
+  @off = $ins->receptor_offsets;
+
+Only includes positions of receptors that are turned on.
+
+=cut
+
+sub receptor_offsets {
+  my $self = shift;
+
+  # Receptor information
+  my %rec = $self->receptors;
+
+  my @offsets = map { new Astro::Coords::Offset( @{$_->{xypos}}, system => "FPLANE") } 
+    grep { $_->{health} ne 'OFF' } values %rec;
+
+  return @offsets;
+}
+
+=item B<receptor_ids>
+
+Returns the IDs of the receptors used in this instrument.
+
+ @ids = $ins->receptor_ids;
+
+=cut
+
+sub receptor_ids {
+  my $self = shift;
+  my %rec = $self->receptors;
+  return keys %rec;
+}
+
+=item B<working_receptor_ids>
+
+Returns the IDs of the working receptors present on this instrument.
+
+  @ids = $ins->working_receptor_ids;
+
+=cut
+
+sub working_receptors {
+  my $self = shift;
+
+  my %rec = $self->receptors;
+  my @working;
+  for my $r (keys %rec) {
+    push(@working, $r) if $rec{$r}->{health} ne "OFF";
+  }
+  return @working;
+}
 
 =item B<stringify>
 
@@ -295,6 +367,110 @@ sub stringify {
 
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
+}
+
+=back
+
+=head2 General Methods
+
+=over 4
+
+=item B<footprint_radius>
+
+Returns the effective centre position and radius of a circle that would
+encompass all receptors in the receiver.
+
+ $radius = $inst->footprint_radius;
+ ($xcen, $ycen, $radius) = $inst->footprint_radius;
+
+In scalar context returns just the radius. In list context returns the "centre"
+coordinate of the circle.
+
+Will not include disabled receptors.
+
+=cut
+
+sub footprint_diameter {
+  my $self = shift;
+
+  my @positions = $self->receptor_offsets;
+
+  # Get the max/min x and y coordinates
+  my ($maxx, $minx, $miny, $maxy);
+
+  my @xy = $positions[0]->offsets;
+  $maxx = $minx = $xy[0];
+  $maxy = $miny = $xy[1];
+
+  for my $p (@positions) {
+    @xy = $p->offsets;
+
+    $maxx = $xy[0] if $xy[0] > $maxx;
+    $maxy = $xy[1] if $xy[1] > $maxy;
+    $minx = $xy[0] if $xy[0] < $minx;
+    $miny = $xy[1] if $xy[1] < $miny;
+  }
+
+  # Find the centre of the circle
+  my $xcen = ( $maxx + $minx ) / 2;
+  my $ycen = ( $maxy + $miny ) / 2;
+
+  # radius
+  my $rad = sqrt( ($maxy - $ycen)**2 + ($maxx - $xcen)**2  );
+
+  if (wantarray) {
+    return ($xcen, $ycen, $rad);
+  } else {
+    return $rad;
+  }
+}
+
+=item B<reference_receptor>
+
+Retrieve the reference receptor.
+
+ $ref = $ins->reference_receptor;
+ @ref = $ins->reference_receptor;
+
+Receiver W will return multiple reference pixels since there is no way to indicate
+which waveband is required.
+
+In scalar context retrieves an arbitrary reference if more than one is available.
+
+=cut
+
+sub reference_receptor {
+  my $self = shift;
+  my %rec = $self->receptors;
+
+  # Working receptors only
+  my @working = $self->working_receptor_ids;
+
+  my %ref;
+  for my $r (@working) {
+    $ref{$r->{refpix}}++;
+  }
+
+  my @refs = keys %ref;
+  if (wantarray) {
+    return @refs;
+  } else {
+    return $refs[0];
+  }
+}
+
+=item B<contains_id>
+
+Returns true if the supplied receptor ID is available on this
+instrument. Otherwise false.
+
+=cut
+
+sub contains_id {
+  my $self = shift;
+  my $query = uc( shift );
+  my %rec = $self->receptors;
+  return ( exists $rec{$query} ? 1 : 0 );
 }
 
 =back
@@ -375,7 +551,7 @@ sub _process_dom {
 
   my %receptor;
   for my $r (@r) {
-    my %attr = find_attr( $r, "id","health","x","y","pol_type");
+    my %attr = find_attr( $r, "id","health","x","y","pol_type","band");
     my $child = find_children($r,"sensitivity",min=>1,max=>1);
     my %sens = find_attr($child, "reference","value");
     $child = find_children($r,"angle",min=>1,max=>1);
@@ -384,13 +560,14 @@ sub _process_dom {
     $receptor{$attr{id}} = {
 			    health => $attr{health},
 			    xypos => [
-				      $attr{x},$attr{y}
+				      $attr{x},$attr{"y"}
 				     ],
 			    pol_type => $attr{pol_type},
 			    refpix => $sens{reference},
 						     sensitivity => $sens{value},
 			    angle => new Astro::Coords::Angle($ang{value},
 							      units => $ang{units}),
+			    band => $attr{band},
 			   };
 
   }
