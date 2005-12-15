@@ -251,6 +251,24 @@ sub smu_offset {
   return @{$self->{SMU_OFF}};
 }
 
+=item B<receptor_offset>
+
+Returns the receptor position as an C<Astro::Coords::Offset> object.
+
+  $off = $ins->receptor_offset( "H01" );
+
+=cut
+
+sub receptor_offset {
+  my $self = shift;
+  my $receptor = uc(shift);
+  my %rec = $self->receptors;
+  throw JAC::OCS::Config::Error::FatalError("Supplied receptor '$receptor' does not exist in this instrument configuration")
+    unless exists $rec{$receptor};
+  return new Astro::Coords::Offset( @{$rec{$receptor}->{xypos}},
+				    system => 'FPLANE');
+}
+
 =item B<receptor_offsets>
 
 Returns the array of receptor positions as a list of C<Astro::Coords::Offset>
