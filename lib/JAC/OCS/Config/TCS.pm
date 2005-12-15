@@ -137,6 +137,19 @@ sub telescope {
   return $self->{Telescope};
 }
 
+=item B<aperture_name>
+
+Name instrument aperture (if any) associated with this observation.
+
+=cut
+
+sub aperture_name {
+  my $self = shift;
+  if (@_) { $self->{ApertureName} = shift; }
+  return $self->{ApertureName};
+}
+
+
 =item B<tags>
 
 Hash containing the tags used in the TCS configuration as keys and the
@@ -687,6 +700,10 @@ sub stringify {
   # Version declaration
   $xml .= $self->_introductory_xml();
 
+  # Aperture name
+  $xml .= "<INST_AP NAME=\"".$self->aperture_name."\" />\n"
+    if defined $self->aperture_name;
+
   # Now add the constituents in turn
   $xml .= $self->_toString_base;
   $xml .= $self->_toString_slew;
@@ -817,6 +834,9 @@ sub _process_dom {
   # Get the telescope name (if possible)
   $self->_find_telescope();
 
+  # instrument aperture name
+  $self->_find_instrument_aperture_name();
+
   # Look for BASE positions
   $self->_find_base_posns();
 
@@ -851,6 +871,22 @@ sub _find_telescope {
   my $tel = $el->getAttribute( "TELESCOPE" );
 
   $self->telescope( $tel ) if $tel;
+}
+
+=item B<_find_instrument_aperture_name>
+
+Find the instrument aperture name.
+
+=cut
+
+sub _find_instrument_aperture_name {
+  my $self = shift;
+  my $el = $self->_rootnode;
+  my $inst_ap = find_children( $el, "INST_AP", min => 0, max => 1 );
+  return unless defined $inst_ap;
+  my $name = $inst_ap->getAttribute( "NAME" );
+  $self->aperture_name( $name ) if defined $name;
+  return;
 }
 
 =item B<_find_slew>
