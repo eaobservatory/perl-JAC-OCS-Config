@@ -237,6 +237,21 @@ sub mask {
   return %{$self->{MASK}};
 }
 
+=item B<active_receptors>
+
+Returns the list of receptors that are active (ie not "OFF")
+
+ @active = $fe->active_receptors;
+
+=cut
+
+sub active_receptors {
+  my $self = shift;
+  my %mask = $self->mask;
+  my @good = grep { $mask{$_} ne 'OFF' } keys %mask;
+  return @good;
+}
+
 =item B<stringify>
 
 Create XML representation of object.
