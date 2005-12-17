@@ -314,7 +314,7 @@ Returns the IDs of the working receptors present on this instrument.
 
 =cut
 
-sub working_receptors {
+sub working_receptor_ids {
   my $self = shift;
 
   my %rec = $self->receptors;
