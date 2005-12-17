@@ -466,7 +466,7 @@ sub reference_receptor {
 
   my %ref;
   for my $r (@working) {
-    $ref{$r->{refpix}}++;
+    $ref{$rec{$r}->{refpix}}++;
   }
 
   my @refs = keys %ref;
