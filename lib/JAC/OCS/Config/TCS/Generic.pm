@@ -96,6 +96,10 @@ sub find_offsets {
     my %opt = find_attr( $o, "SYSTEM","TYPE");
     $opt{tracking_system} = $tracksys if defined $tracksys;
 
+    # TYPE is really "projection"
+    $opt{projection} = $opt{TYPE} if (exists $opt{TYPE} && defined $opt{TYPE});
+    delete $opt{projection};
+
     # Create the object
     push(@offsets, new Astro::Coords::Offset($xy{DC1}, $xy{DC2}, %opt ) );
   }
