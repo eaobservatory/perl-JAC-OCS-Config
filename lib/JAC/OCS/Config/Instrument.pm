@@ -45,6 +45,10 @@ use vars qw/ $VERSION /;
 
 $VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
 
+# Supported keys for POINTING_OFFSET element
+my @POINTING_MODEL = qw/ CA IE /;
+
+
 =head1 METHODS
 
 =head2 Constructor
@@ -74,6 +78,7 @@ sub new {
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    RECEPTORS=>{},
 								    XYPOS => [],
+								    POINTING_OFF => {},
 								    SMU_OFF => [],
 								   }
 			  );
@@ -232,6 +237,34 @@ sub position {
   return @{$self->{XYPOS}};
 }
 
+=item B<pointing>
+
+Hash containing the pointing model offsets (in arcsec) for this instrument.
+Recognized parameters are: CA, IE
+
+  %pnt = $ins->pointing;
+  $ins->pointing( %pnt );
+
+=cut
+
+sub pointing {
+  my $self = shift;
+  if (@_) {
+    my %in = @_;
+
+    my %local = map { $_, undef } @POINTING_MODEL;
+
+    # delete any unrecognized keys
+    for my $k (keys %in ) {
+      delete $in{$k} unless exists $local{$k};
+    }
+    %{ $self->{POINTING_OFF} } = %in;
+
+  }
+  return %{ $self->{POINTING_OFF} };
+}
+
+
 =item B<smu_offset>
 
 X, Y and Z offsets of the SMU when using this instrument.
@@ -359,6 +392,17 @@ sub stringify {
     ."\" />\n";
   my @smu = $self->smu_offset;
   $xml .= "<smu_offset X=\"$smu[0]\" Y=\"$smu[1]\" Z=\"$smu[2]\" />\n";
+
+  # pointing is optional
+  my %pointing_offset = $self->pointing;
+  if (keys %pointing_offset) {
+    $xml .= "<pointing_offset ";
+    for my $p (@POINTING_MODEL) {
+      my $val = (exists $pointing_offset{$p} ? $pointing_offset{$p} : 0.0 );
+      $xml .= "$p=\"$val\" ";
+    }
+    $xml .= "/>\n";
+  }
 
   my %rec = $self->receptors;
   for my $r (keys %rec) {
@@ -563,6 +607,12 @@ sub _process_dom {
   $child = find_children( $el, "smu_offset", min=>1,max=>1);
   my %smu = find_attr($child, "X","Y","Z");
   $self->smu_offset( @smu{"X","Y","Z"});
+
+  $child = find_children( $el, "pointing_offset", max=>1);
+  if (defined $child) {
+    my %pnt = find_attr( $child, @POINTING_MODEL );
+    $self->pointing( %pnt ) if keys %pnt;
+  }
 
   # now process the receptor info
   my @r = find_children( $el, "receptor", min => 1);
