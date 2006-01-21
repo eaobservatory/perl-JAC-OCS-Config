@@ -311,16 +311,33 @@ objects.
 
 Only includes positions of receptors that are turned on.
 
+If receptor names are specified as arguments, only those will be returned
+(if they are turned on).
+
+  @off = $ins->receptor_offsets( @receptor_names );
+
 =cut
 
 sub receptor_offsets {
   my $self = shift;
+  my @requested = @_;
 
   # Receptor information
   my %rec = $self->receptors;
 
+  # Create a hash copy that only has the receptors we are interested
+  my %requested;
+  if (@requested) {
+    for my $r (@requested) {
+      $requested{$r} = $rec{$r} if exists $rec{$r};
+    }
+  } else {
+    %requested = %rec;
+  }
+
+  # Now extract the information
   my @offsets = map { new Astro::Coords::Offset( @{$_->{xypos}}, system => "FPLANE") } 
-    grep { $_->{health} ne 'OFF' } values %rec;
+    grep { $_->{health} ne 'OFF' } values %requested;
 
   return @offsets;
 }
