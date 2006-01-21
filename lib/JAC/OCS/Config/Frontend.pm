@@ -225,7 +225,7 @@ Hash containing the state of each receptor for the configuration.
   %mask = $fe->mask;
   $fe->mask( %mask );
 
-Keys are the receptor IDs, values are "ON", "OFF" or "NEED".
+Keys are the receptor IDs, values are "ON", "ANY", "OFF" or "NEED".
 
 =cut
 
