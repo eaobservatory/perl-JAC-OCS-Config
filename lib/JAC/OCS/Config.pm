@@ -482,7 +482,7 @@ the possibility that a raster map may not use predictable scanning.
 
 sub duration {
   warn "Observation duration unknown\n" if $^W;
-  return Time::Seconds->new(10);
+  return Time::Seconds->new(1800);
 }
 
 =item B<telescope>
