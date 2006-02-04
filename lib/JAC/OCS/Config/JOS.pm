@@ -193,7 +193,7 @@ sub num_nod_sets {
 
 =item B<step_time>
 
-Step time (in ms)
+Step time (in sec)
 
 =cut
 
