@@ -467,9 +467,11 @@ coordinate of the circle.
 
 Will not include disabled receptors.
 
+Results are returned as Astro::Coord::Angle object.
+
 =cut
 
-sub footprint_diameter {
+sub footprint_radius {
   my $self = shift;
 
   my @positions = $self->receptor_offsets;
@@ -498,9 +500,9 @@ sub footprint_diameter {
   my $rad = sqrt( ($maxy - $ycen)**2 + ($maxx - $xcen)**2  );
 
   if (wantarray) {
-    return ($xcen, $ycen, $rad);
+    return map { new Astro::Coords::Angle($_, units => 'rad')} ($xcen, $ycen, $rad);
   } else {
-    return $rad;
+    return new Astro::Coords::Angle($rad, units => 'rad');
   }
 }
 
