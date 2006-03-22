@@ -44,6 +44,7 @@ use JAC::OCS::Config::ACSIS::InterfaceList;
 use JAC::OCS::Config::ACSIS::RedConfigList;
 
 use JAC::OCS::Config::ACSIS::GridderConfig;
+use JAC::OCS::Config::ACSIS::SWriterConfig;
 use JAC::OCS::Config::ACSIS::RTDConfig;
 
 use JAC::OCS::Config::ACSIS::ProcessLayout;
@@ -298,6 +299,23 @@ sub gridder_config {
   return $self->{GRIDDER_CONFIG};
 }
 
+=item B<swriter_config>
+
+JAC::OCS::Config::ACSIS::SWriterConfig object associated with this
+configuration.
+
+=cut
+
+sub gridder_config {
+  my $self = shift;
+  if (@_) {
+    $self->{SWRITER_CONFIG} = check_class_fatal("JAC::OCS::Config::ACSIS::SWriterConfig",
+					   shift
+					  );
+  }
+  return $self->{SWRITER_CONFIG};
+}
+
 =item B<rtd_config>
 
 JAC::OCS::Config::ACSIS::RTDConfig object associated with this
@@ -546,6 +564,10 @@ sub _process_dom {
   # gridder_config
   $o = new JAC::OCS::Config::ACSIS::GridderConfig( DOM => $el );
   $self->gridder_config( $o );
+
+  # swriter_config
+  $o = new JAC::OCS::Config::ACSIS::SWriterConfig( DOM => $el );
+  $self->swriter_config( $o );
 
   # rtd_config
   $o = new JAC::OCS::Config::ACSIS::RTDConfig( DOM => $el );
