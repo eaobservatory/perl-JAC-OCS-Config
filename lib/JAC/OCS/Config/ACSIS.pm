@@ -306,7 +306,7 @@ configuration.
 
 =cut
 
-sub gridder_config {
+sub swriter_config {
   my $self = shift;
   if (@_) {
     $self->{SWRITER_CONFIG} = check_class_fatal("JAC::OCS::Config::ACSIS::SWriterConfig",
@@ -443,6 +443,8 @@ sub stringify {
     if defined $self->red_config_list;
   $xml .= $self->gridder_config->stringify(NOINDENT=>0) ."\n"
     if defined $self->gridder_config;
+  $xml .= $self->swriter_config->stringify(NOINDENT=>0) ."\n"
+    if defined $self->swriter_config;
   $xml .= $self->rtd_config->stringify(NOINDENT=>0) ."\n"
     if defined $self->rtd_config;
   $xml .= $self->process_layout->stringify(NOINDENT=>0) ."\n"
