@@ -567,9 +567,13 @@ sub _process_dom {
   $o = new JAC::OCS::Config::ACSIS::GridderConfig( DOM => $el );
   $self->gridder_config( $o );
 
-  # swriter_config
-  $o = new JAC::OCS::Config::ACSIS::SWriterConfig( DOM => $el );
-  $self->swriter_config( $o );
+  # swriter_config [optional]
+  try {
+    $o = new JAC::OCS::Config::ACSIS::SWriterConfig( DOM => $el );
+    $self->swriter_config( $o );
+  } catch JAC::OCS::Config::Error::XMLConfigMissing with {
+    # can be ignored
+  };
 
   # rtd_config
   $o = new JAC::OCS::Config::ACSIS::RTDConfig( DOM => $el );
