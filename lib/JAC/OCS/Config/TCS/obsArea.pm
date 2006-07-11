@@ -184,6 +184,8 @@ Allowed keys for hash are VELOCITY, SYSTEM, DY, REVERSAL and TYPE.
 Also, PA must be a reference to an array of C<Astro::Coords::Angle>
 objects.
 
+REVERSAL should be a boolean rather than a "YES" or "NO".
+
 =cut
 
 # we do not have a scan specification object
@@ -197,6 +199,38 @@ sub scan {
     }
   }
   return %{ $self->{SCAN} };
+}
+
+=item B<scan_pattern>
+
+Return the name of the scan pattern.
+
+  $name = $oa->scan_pattern();
+
+Returns undef if the oberving area is not a scan.
+
+Recognized patterns are:
+
+  RASTER         (normal raster with scan reversal false)
+  BOUSTROPHEDON  (raster with scan reversal true)
+
+=cut
+
+sub scan_pattern {
+  my $self = shift;
+
+  if ( $self->maparea eq 'area' ) {
+    my %scan = $self->scan;
+    # Absence of REVERSAL means "YES"
+    my $rev = $scan{REVERSAL};
+    if (!defined $rev || $rev ) {
+      return "BOUSTROPHEDON";
+    } else {
+      return "RASTER";
+    }
+  } else {
+    return undef;
+  }
 }
 
 =item B<mode>
@@ -264,7 +298,8 @@ sub stringify {
     $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
     $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n" if defined $scan{SYSTEM};
     $xml .= "      DY=\"$scan{DY}\"\n";
-    $xml .= "      REVERSAL=\"$scan{REVERSAL}\"\n" if defined $scan{REVERSAL};
+    $xml .= "      REVERSAL=\"".
+      ($scan{REVERSAL} ? "YES" : "NO" )."\"\n" if defined $scan{REVERSAL};
     $xml .= "      TYPE=\"$scan{TYPE}\"" if defined $scan{TYPE};
     $xml .= " >\n";
 
