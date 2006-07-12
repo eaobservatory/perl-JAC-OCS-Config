@@ -219,7 +219,7 @@ Recognized patterns are:
 sub scan_pattern {
   my $self = shift;
 
-  if ( $self->maparea eq 'area' ) {
+  if ( $self->mode eq 'area' ) {
     my %scan = $self->scan;
     # Absence of REVERSAL means "YES"
     my $rev = $scan{REVERSAL};
