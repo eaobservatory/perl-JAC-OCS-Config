@@ -146,7 +146,7 @@ sub receptor {
 
 =item B<name>
 
-Name of the instrument.
+Generic name of the instrument. (e.g. FE_A)
 
 =cut
 
@@ -156,6 +156,20 @@ sub name {
     $self->{NAME} = shift;
   }
   return $self->{NAME};
+}
+
+=item B<serial>
+
+Serial name of the instrument. (e.g. RxA3)
+
+=cut
+
+sub serial {
+  my $self = shift;
+  if (@_) {
+    $self->{SERIAL} = shift;
+  }
+  return $self->{SERIAL};
 }
 
 =item B<bandwidth>
@@ -388,6 +402,7 @@ sub stringify {
   my $xml = '';
 
   $xml .= "<". $self->getRootElementName . " NAME=\"".$self->name."\"\n";
+  $xml .= "            SERIAL=\"".$self->serial."\"\n" if $self->serial;
   $xml .= "            FOC_STATION=\"".$self->focal_station."\"\n";
   my @xy = $self->position;
   $xml .= "            X=\"".$xy[0]."\"\n";
@@ -598,9 +613,10 @@ sub _process_dom {
   # Find all the header items
   my $el = $self->_rootnode;
 
-  my %attr = find_attr( $el, "NAME","FOC_STATION","X","Y","WAVELENGTH");
+  my %attr = find_attr( $el, "NAME","SERIAL","FOC_STATION","X","Y","WAVELENGTH");
 
   $self->name($attr{NAME});
+  $self->serial($attr{SERIAL});
   $self->focal_station( $attr{FOC_STATION});
   $self->position( $attr{X}, $attr{Y});
   $self->wavelength( $attr{WAVELENGTH} );
