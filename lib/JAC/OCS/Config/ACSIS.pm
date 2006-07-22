@@ -118,6 +118,22 @@ sub tasks {
   return ('CONTROLLER', @corrtasks, 'IFTASK');
 }
 
+=item B<be_deg_factor>
+
+(Optional) Backend degradation factor.
+
+Defaults to 1.23 (ACSIS specific number).
+
+=cut
+
+sub be_deg_factor {
+  my $self = shift;
+  if (@_) {
+    $self->{BE_DEG_FACTOR} = shift;
+  }
+  return (defined $self->{BE_DEG_FACTOR} ? $self->{BE_DEG_FACTOR} : 1.23);
+}
+
 =item B<red_obs_mode>
 
 (Optional) String specifying the observing mode.
@@ -431,6 +447,8 @@ sub stringify {
     if defined $self->acsis_corr;
   $xml .= $self->acsis_map->stringify(NOINDENT=>0)  ."\n"
     if defined $self->acsis_map;
+
+  $xml .= "<be_deg_factor>". $self->be_deg_factor . "</be_deg_factor>\n";
 
   $xml .= "<red_obs_mode>". $self->red_obs_mode . "</red_obs_mode>\n"
     if defined $self->red_obs_mode;
