@@ -9,7 +9,7 @@ JAC::OCS::Config::Interval - Numeric intervals for OCS Configs
   use JAC::OCS::Config::Interval;
 
   $i = new JAC::OCS::Config::Interval(Min => -4, Max => 20, units => 'pixels');
-  $i = new OMP::Range( Min => 0 );
+  $i = new JAC::OCS::Config::Interval( Min => 0 );
   $i->units("pixels");
 
   print "$r";
