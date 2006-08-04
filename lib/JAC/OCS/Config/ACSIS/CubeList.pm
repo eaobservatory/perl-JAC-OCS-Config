@@ -183,9 +183,9 @@ sub stringify {
     # even if it doesn't really use it....
     my $rad = $c->truncation_radius;
     if (!defined $rad || $rad == 0) {
-      $rad = sqrt( $pixsize[0]**2 + $pixsize[1]**2) / 2;
+      $rad = sqrt( $pixsize[0]->arcsec**2 + $pixsize[1]->arcsec**2) / 2;
       if ($c->grid_function ne 'TopHat') {
-	warnings::warnif("No smoothing radius specified. Defaulting to 1 pixel\n");
+	warnings::warnif("No smoothing radius specified. Defaulting to 1 pixel (=$rad arcsec)\n");
       }
     }
 
@@ -310,11 +310,11 @@ sub _process_dom {
     # Gaussian FWHM
     my $fwhm = get_pcdata( $c, "FWHM");
 
-    # Smoothing radius (in arcsec) [old]
-    my $smoothing_rad = get_pcdata( $c, "smoothing_rad" );
-
-    # Truncation radius (in arcsec)
-    my $trun_rad = get_pcdata( $c, "truncation_rad" );
+    # Smoothing radius (in arcsec) (need to allow truncation_rad or smoothing_rad)
+    my $trun_rad = get_pcdata( $c, "smoothing_rad" );
+    if (!defined $trun_rad) {
+      $trun_rad = get_pcdata( $c, "truncation_rad" );
+    }
 
     # data source
     my $dsrc = find_children( $c, "data_source", min => 1, max => 1);
