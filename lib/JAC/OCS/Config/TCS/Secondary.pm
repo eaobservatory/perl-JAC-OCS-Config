@@ -38,6 +38,7 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
+use warnings::register;
 use XML::LibXML;
 use Data::Dumper;
 
@@ -47,7 +48,7 @@ use JCMT::SMU::Jiggle;
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata 
-				    indent_xml_string
+				    get_this_pcdata indent_xml_string
 				    /;
 use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets pa_to_xml /;
 
@@ -290,9 +291,12 @@ sub stringify {
       $xml .= "<TIMING>\n";
       if (exists $t{CHOPS_PER_JIG} && defined $t{CHOPS_PER_JIG}) {
 	$xml .= "<CHOPS_PER_JIG>$t{CHOPS_PER_JIG}</CHOPS_PER_JIG>\n";
-      } else {
+      } elsif (exists $t{N_JIGS_ON} && defined $t{N_JIGS_ON} &&
+	       exists $t{N_CYC_OFF} && defined $t{N_CYC_OFF}) {
 	$xml .= "<JIGS_PER_CHOP N_JIGS_ON=\"$t{N_JIGS_ON}\"\n";
 	$xml .= "               N_CYC_OFF=\"$t{N_CYC_OFF}\" />\n";
+      } else {
+	warnings::warnif( "No timing information for SMU\n" );
       }
       $xml .= "</TIMING>\n";
       $xml .= "</JIGGLE_CHOP>\n";
@@ -403,7 +407,8 @@ sub _find_jiggle_chop {
     my %timing;
     if ($cpj) {
       # just get the PCDATA
-      $timing{CHOPS_PER_JIG} = get_pcdata($cpj, "CHOPS_PER_JIG");
+      $timing{CHOPS_PER_JIG} = get_this_pcdata($cpj);
+      throw JAC::OCS::Config::Error::XMLBadStructure( "Timing indicates CHOPS_PER_JIG but no content available") unless defined $timing{CHOPS_PER_JIG};
     } elsif ($jpc) {
       # Attributes
       my %jpc = find_attr( $jpc, "N_CYC_OFF", "N_JIGS_ON");
