@@ -246,6 +246,21 @@ sub base {
   return $self->{BASE};
 }
 
+=item B<mult>
+
+Constant multiplier to apply to the result. For example, this can be used
+to convert radians to degrees.
+
+=cut
+
+sub mult {
+  my $self = shift;
+  if (@_) {
+    $self->{MULT} = shift;
+  }
+  return $self->{MULT};
+}
+
 
 =back
 

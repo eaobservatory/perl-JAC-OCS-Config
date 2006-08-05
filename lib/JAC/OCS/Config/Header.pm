@@ -225,7 +225,7 @@ sub stringify {
       $xml .= ">\n";
       if ($i->source eq 'DRAMA') {
 	$xml .= "<DRAMA_MONITOR ";
-	@attr = qw/ TASK PARAM EVENT /;
+	@attr = qw/ TASK PARAM EVENT MULT /;
 
 	# task and param are mandatory
 	if (!defined $i->task || !defined $i->param) {
@@ -336,7 +336,7 @@ sub _process_dom {
 
     my %mon;
     if (@drama) {
-      %mon = find_attr( $drama[0], "TASK", "PARAM", "EVENT");
+      %mon = find_attr( $drama[0], "TASK", "PARAM", "EVENT", "MULT");
       $mon{SOURCE} = "DRAMA";
     } elsif (@glish) {
       %mon = find_attr( $glish[0], "TASK", "PARAM", "EVENT");
