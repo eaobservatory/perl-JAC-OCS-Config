@@ -35,6 +35,7 @@ use warnings;
 use XML::LibXML;
 use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
+use POSIX qw/ ceil /;
 
 use Astro::WaveBand;
 
@@ -481,8 +482,168 @@ the possibility that a raster map may not use predictable scanning.
 =cut
 
 sub duration {
+  my $self = shift;
   warn "Observation duration unknown\n" if $^W;
   return Time::Seconds->new(1800);
+
+  # Get the JOS information
+  my $jos = $self->jos;
+  throw JAC::OCS::Config::Error::FatalError( "Unable to determine duration since there is no JOS configuration available") unless defined $jos;
+
+  # Get observation summary
+  my $obssum = $self->obs_summary;
+  throw JAC::OCS::Config::Error::FatalError( "Unable to determine duration since there is no observation summary available") unless defined $obssum;
+
+  # Need the TCS configuration
+  my $tcs = $self->tcs;
+  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no telescope configuration") unless defined $tcs;
+
+  # Need the observing area (either for the number of offset positions or the
+  # map area
+  my $oa = $tcs->getObsArea;
+  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
+
+
+  # Worry about SCUBA-2 at some point...
+  my $map_mode = lc($obssum->mapping_mode);
+  my $sw_mode  = lc($obssum->switching_mode);
+
+  # Basic step time
+  my $step = $jos->step_time;
+
+  # This will be the number of steps per cycle to complete the observation
+  my $nsteps = 0;
+
+  # Number of times we go to a reference
+  my $nrefs = 0;
+
+  # Number of steps spent on reference
+  my $nsteps_ref = 0;
+
+  # Number of telescope nods (A->B or B->A)
+  my $nnods = 0;
+
+  # Number of SMU positions during the observations
+  my $nsmu = 1;
+
+  # Each mode needs a different calculation
+  if ($map_mode eq 'raster') {
+
+    # consistency check
+    my $mode = $oa->mode;
+    throw JAC::OCS::Config::Error::FatalError("Inconsistency in configuration. Raster requested but obsArea does not specify a map area (mode='$mode' not 'area')") unless $mode =~ /area/i;
+
+    # Need to work out the number of samples in the map
+
+    # Area of map
+    my %mapdims = $oa->maparea();
+    my $maparea = $mapdims{HEIGHT} * $mapdims{WIDTH};
+
+    # Area of each "sample point"
+    my %scan = $oa->scan;
+    my $dx = $scan{VELOCITY} * $step;
+    my $dy = $scan{DY};
+    my $samparea = $dx * $dy;
+
+    # Number of sample points
+    $nsteps = $maparea / $samparea;
+
+    # We are pessimistic here so round up.
+    $nrefs = ceil( $nsteps / $jos->steps_per_ref );
+
+    # Convert to number of reference steps
+    $nsteps_ref = ceil($nrefs * $jos->n_refsamples);
+
+  } elsif ($map_mode eq 'jiggle') {
+
+    
+
+  } elsif ($map_mode eq 'grid') {
+
+    # consistency check
+    my $mode = $oa->mode;
+    throw JAC::OCS::Config::Error::FatalError("Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')") unless $mode =~ /offsets/i;
+
+    # Number of on is simply the number of offsets
+    my @offsets = $oa->offsets;
+    my $noffsets = scalar(@offsets);
+
+    # Number of steps on source = JOS_MIN
+    # * the number of positions
+    $nsteps = $jos->jos_min * $noffsets;
+
+    # Number of refs is the number of ons
+    $nrefs = scalar(@offsets);
+
+    # Length of each ref is same as on
+    $nsteps_ref = $jos->jos_min;
+
+  } else {
+    throw JAC::OCS::Config::Error::FatalError("Unrecognized mapping mode for duration calculation: $map_mode");
+  }
+
+  # Total number of steps on+off in single cycle and smu position
+  my $npercyc = $nsteps + ( $nrefs * $nsteps_ref ) + ( $nnods * $nsteps_ref );
+
+  # if we are focus, multiply all this by the number of focus steps
+  # This induces overhead
+  if ($obssum->type =~ /^focus/i) {
+    $nsmu = $jos->num_focus_steps;
+  }
+
+  # Get the number of cycles
+  my $num_cycles = ($jos->num_cycles || 1);
+
+  # Total number of steps in entire observation
+  my $ntot = $npercyc * $num_cycles * $nsmu;
+
+  # Approximate number of cals - needs the total number of steps
+  my $ncals = $ntot / $jos->steps_per_cal;
+  my $nsteps_cal = $ncals * ($jos->n_calsamples || 0);
+
+  # Overheads
+  #  - observation start and end overhead
+  my $obs_overhead = 30.0;
+  #  - time per telescope move to reference (there and back)
+  my $tel_ref_overhead = 6.0; # seconds
+  #  - time per telescope move to NOD
+  my $tel_nod_overhead = 2.0;
+  #  - time per SMU move
+  my $smu_overhead = 2.0;
+  #  - time per cal move
+  my $cal_overhead = 2.0;
+  #  - overhead when SETUP_SEQUENCE (need to work out how often setup_sequence runs)
+  #    That number is time dependent for rasters.
+  my $seq_overhead = 0.0;
+
+  # Time per cycle, including overheads
+  # Convert to an actual time
+  my $duration = ( $npercyc * $step )  # on+off time
+    + ( $nrefs * $tel_ref_overhead )   # number of refs
+      + ( $nnods * $tel_nod_overhead); # number of nods
+
+  # Multiply by the number of cycles
+  $duration *= $num_cycles;
+  $duration += ( $num_cycles * $seq_overhead );
+
+  # Take into account SMU moves (assumes NUM_CYCLES is inside SMU loop)
+  # but in general the FOCUS recipe forces NUM_CYCLES = 1
+  $duration *= $nsmu;
+  $duration += ( $nsmu - 1 ) * $smu_overhead;
+
+  # Take into account cal overhead
+  if ($nsteps_cal > 0) {
+    $duration += ( $nsteps_cal * $step ) + ( $ncals * $cal_overhead );
+  }
+
+  # General start up / shutdown overhead
+  # probably should include average slew time
+  $duration += $obs_overhead;
+
+  print "\tEstimated Duration: $duration sec\n";
+
+  # The answer!
+  return Time::Seconds->new( $duration );
 }
 
 =item B<telescope>
@@ -818,10 +979,12 @@ This is not to be confused with the translator default writing directory
 defined in C<OMP::Translator::ACSIS>, although the translator will probably
 set this value.
 
+Should use a configuration file for this.
+
 =cut
 
   {
-    my $outputdir = "/observe/ompodf";
+    my $outputdir = "/jcmtdata/orac_data/ocsconfigs";
     sub outputdir {
       my $class = shift;
       if ( @_ ) {
