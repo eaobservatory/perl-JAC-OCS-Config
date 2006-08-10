@@ -7,9 +7,9 @@ ocsconfig - Describe or manipulate an OCS configuration
 =head1 SYNOPSIS
 
   ocsconfig --help
-  ocsconfig --summary  config.xml
-  cat config.xml | ocsconfig --summary
+  cat config.xml | ocsconfig --target=URANUS | less
 
+  ocsconfig config.xml
   cat config.xml | ocsconfig --outdir=/tmp/
   cat config.xml | ocsconfig > new.xml
   ocsconfig --outdir /tmp config.xml
@@ -42,7 +42,10 @@ Version of this software.
 =item B<--outdir=dir>
 
 The output directory to write the configuration. If no argument is given
-the configuration will be parsed and then sent to standard output (which will simply test the parser).
+the standard OCS output directory will be used unless standard output
+is attached to a stream in which case the configuration will be sent to
+STDOUT. This latter ability allows the modified config to be redirected
+to a file directly or piped to another command.
 
 =item B<--valid>
 
@@ -151,9 +154,7 @@ if ($target) {
 
     # find the target name - use a pattern match for case insensitivity
     my $pattern = quotemeta($target);
-    my @targets = $cat->filter_by_cb( sub { 
-	print "Testing ".$_[0]->id." against $pattern<<<\n";
-	$_[0]->id =~ /^$pattern$/i;} );
+    my @targets = $cat->filter_by_cb( sub { $_[0]->id =~ /^$pattern$/i;} );
 
     die "Unable to locate target '$target' in catalogue\n" unless @targets;
 
@@ -174,13 +175,13 @@ if ($target) {
 
 }
 
-# if we have an output dir we write to it, else we use standard out
-
-if ($outdir) {
+# Is something attached to STDOUT? Then just write it out
+if (!-t STDOUT) {
+    print $cfg;
+} else {
+    # write configuration
     my $file = $cfg->write_entry( $outdir );
     print STDERR "Configuration written to $file\n";
-} else {
-    print $cfg;
 }
 
 =head1 AUTHOR
