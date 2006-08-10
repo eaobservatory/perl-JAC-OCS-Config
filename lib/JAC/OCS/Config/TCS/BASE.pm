@@ -146,14 +146,17 @@ This methods returns those as an C<Astro::Coords::Offset> object. In the
 future this functionality may be embedded in the C<Astro::Coords> object
 itself.
 
+An undef argument can be used to clear the offset.
+
 =cut
 
 sub offset {
   my $self = shift;
   if (@_) {
+    # undef if allowed
     my $arg = shift;
     throw JAC::OCS::Config::Error::FatalError("Offset object is not of correct class")
-      unless $arg->isa( "Astro::Coords::Offset" );
+      if (defined $arg && !$arg->isa( "Astro::Coords::Offset" ));
     $self->{Offset} = $arg;
   }
   return $self->{Offset};
