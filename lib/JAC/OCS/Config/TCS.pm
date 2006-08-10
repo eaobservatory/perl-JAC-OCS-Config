@@ -516,7 +516,7 @@ Specifies a new SCIENCE/BASE target.
 
 If a C<JAC::OCS::Config::TCS::BASE> object is supplied, this is stored
 directly. If an C<Astro::Coords> object is supplied, it will be stored
-in a C<JAC::OCS::Config::TCS::BASE> objects.
+in a C<JAC::OCS::Config::TCS::BASE> objects first (and offsets will be lost).
 
 Note that offsets can only be included (currently) if an
 C<JAC::OCS::Config::TCS::BASE> object is used.
@@ -527,6 +527,64 @@ sub setTarget {
   my $self = shift;
   $self->setCoords( "SCIENCE", shift );
 }
+
+=item B<setTargetAll>
+
+Given the supplied C<Astro::Coords> object modify all target positions
+to use this position whilst retaining offsets. Only those associated
+positions that are the same as the SCIENCE position (modulo offsets) are
+modified (so an absolute REFERENCE that differs from SCIENCE will not
+be changed).
+
+  @unmodified = $tcs->setTargetAll( $coords );
+
+In list context returns all the tags that were not modified.
+
+OFFSET information in SCIENCE tag will be removed.
+
+=cut
+
+sub setTargetAll {
+  my $self = shift;
+  my $ncoord = shift;
+
+  throw JAC::OCS::Config::Error::FatalError("Please supply a coordinate")
+    if !defined $ncoord;
+  throw JAC::OCS::Config::Error::FatalError("Arg must be Astro::Coords object")
+    if !$ncoord->isa("Astro::Coords");
+
+  my %tags = $self->getAllTargetInfo();
+
+  # Get the SCIENCE position first
+  my $science =  $tags{$self->_translate_tag_name( "SCIENCE" )};
+  throw JAC::OCS::Config::Error::FatalError("setTargetAll requires a SCIENCE/BASE tag")
+    unless defined $science;
+
+  # remove offsets
+  $science->offset( undef );
+
+  # compare with science position
+  my $scoord = $science->coords;
+
+  # now loop over all tags
+  for my $t (keys %tags) {
+    my $base = $tags{$t};
+    my $bcoord = $base->coords;
+
+    # compare with science
+    my $distance = $bcoord->distance( $scoord );
+    if (defined $distance && $distance->arcsec < 5 ) {
+      # can replace
+      $base->coords( $ncoord );
+      delete $tags{$t};
+    }
+  }
+
+  # %tags will now only contain tags that were not the same as SCIENCE.
+  # ie those that were not modified
+  return keys %tags;
+}
+
 
 =item B<setCoords>
 
@@ -556,6 +614,10 @@ object.
 
 sub setCoords {
   my $self = shift;
+  if (@_ != 2) {
+    throw JAC::OCS::Config::Error::FatalError('Usage: $cfg->setCoords(TAG,OBJ)');
+  }
+  
   my $tag = shift;
   my $c = shift;
 
