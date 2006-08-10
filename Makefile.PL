@@ -4,6 +4,7 @@ use strict;
 WriteMakefile( 
                'NAME'           => 'JAC::OCS::Config',
                'VERSION'        => '0.01',
+               'EXE_FILES' => [ qw/ ocsconfig / ],
                'PREREQ_PM'      => {
                                     'Test::More' => 0,
                                     'XML::LibXML' => 0,

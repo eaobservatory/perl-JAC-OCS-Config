@@ -1,0 +1,209 @@
+#!/usr/local/perl-5.8/bin/perl    -*- perl -*-
+
+=head1 NAME
+
+ocsconfig - Describe or manipulate an OCS configuration
+
+=head1 SYNOPSIS
+
+  ocsconfig --help
+  ocsconfig --summary  config.xml
+  cat config.xml | ocsconfig --summary
+
+  cat config.xml | ocsconfig --outdir=/tmp/
+  cat config.xml | ocsconfig > new.xml
+  ocsconfig --outdir /tmp config.xml
+
+=head1 DESCRIPTION
+
+This command allows an OCS configuration to be examined or rewritten.
+If a configuration is rewritten in a different location it will be
+farmed out into the correct subdirectories if they are present.
+
+=head1 ARGUMENTS
+
+The configuration file to be read is either specified as the last
+command line argument or via standard input on a pipe.
+
+=over 4
+
+=item B<-help>
+
+A help message.
+
+=item B<-man>
+
+This manual page.
+
+=item B<-version>
+
+Version of this software.
+
+=item B<--outdir=dir>
+
+The output directory to write the configuration. If no argument is given
+the configuration will be parsed and then sent to standard output (which will simply test the parser).
+
+=item B<--valid>
+
+Enable XML validation when the file is read. Is equivalent to running xmllint.
+When used, the configuration is not sent to standard output.
+
+=item B<--target=name>
+
+Modifies the configuration picking up new target coordinates from the
+JCMT pointing catalogue.
+
+=back
+
+=cut
+
+use strict;
+use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
+
+use JAC::OCS::Config;
+
+# Need OMP path for some things
+# Global OMP location
+use constant OMPLIB => "/jac_sw/omp/msbserver";
+use lib OMPLIB;
+use File::Spec;
+
+use Astro::Catalog;   # for catalogue parsing
+
+# Set the configuration directory, unless we have an override
+# from the environment
+$ENV{'OMP_CFG_DIR'} = File::Spec->catdir( OMPLIB, "cfg" )
+    unless exists $ENV{'OMP_CFG_DIR'};
+
+
+# Options
+my ($help, $man, $valid, $version, $outdir, $target);
+my $status = GetOptions("help" => \$help,
+                        "man" => \$man,
+			"version" => \$version,
+			"valid" => \$valid,
+			"outdir=s" => \$outdir,
+			"target=s" => \$target,
+                       );
+
+pod2usage(1) if !$status;
+
+pod2usage(1) if $help;
+pod2usage(-exitstatus => 0, -verbose => 2) if $man;
+
+if ($version) {
+  my $id = '$Id$ ';
+  print "ocsconfig - OCS config manipulator\n";
+  print " CVS revision: $id\n";
+  exit;
+}
+
+
+# The configuration is either on the command line or stdin
+
+my $xml;
+{
+    # Can not let this localization propoagate to other classes
+    # since this affects the srccatalog parsing
+    local $/ = undef;
+  
+  if (@ARGV) {
+      my $file = shift(@ARGV);
+      open( my $fh, "< $file") or die "Error reading input config from file $file: $!";
+      $xml = <$fh>;
+  } else {
+      # Stdin should be readable
+      my $rin = '';
+      vec($rin,fileno(STDIN),1) = 1;
+      my $nfound = select($rin,undef,undef,0.1);
+
+      if ($nfound) {
+	  $xml = <>;
+      } else {
+	  die "No filename specified for configuration and nothing appearing from pipe on STDIN\n";
+      }
+  }
+
+}
+
+# see if we got anything
+die "Must supply either a file name on the command line or config via stdin\n"
+    if !$xml;
+
+# Convert to an object
+my $cfg = new JAC::OCS::Config( XML => $xml, validation => $valid );
+
+# validation has either failed or worked. so just exit now.
+exit if $valid;
+
+die "Unable to create config object\n" unless defined $cfg;
+
+# perform any modifications here
+
+if ($target) {
+    # need a catalogue - assume default. can provide explicit path
+    # if need to.
+    my $cat = new Astro::Catalog( Format => 'JCMT' );
+
+    # find the target name - use a pattern match for case insensitivity
+    my $pattern = quotemeta($target);
+    my @targets = $cat->filter_by_cb( sub { 
+	print "Testing ".$_[0]->id." against $pattern<<<\n";
+	$_[0]->id =~ /^$pattern$/i;} );
+
+    die "Unable to locate target '$target' in catalogue\n" unless @targets;
+
+    # pick the first target
+    my $match = shift(@targets);
+
+    # now modify the TCS config if it exists
+    my $tcs = $cfg->tcs;
+
+    die "Request to modify target in TCS_CONFIG but no TCS_CONFIG is present\n"
+	unless defined $tcs;
+
+    # override all target information
+    my @unmod = $tcs->setTargetAll( $match->coords );
+    if (@unmod) {
+	die "Attempted to modify target but some tags were not offsets from the old SCIENCE position\n";
+    }
+
+}
+
+# if we have an output dir we write to it, else we use standard out
+
+if ($outdir) {
+    my $file = $cfg->write_entry( $outdir );
+    print STDERR "Configuration written to $file\n";
+} else {
+    print $cfg;
+}
+
+=head1 AUTHOR
+
+Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
+
+=head1 COPYRIGHT
+
+Copyright (C) 2006 Particle Physics and Astronomy Research Council.
+All Rights Reserved.
+
+This program is free software; you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation; either version 2 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful,but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with
+this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+Place,Suite 330, Boston, MA  02111-1307, USA
+
+=cut
+
