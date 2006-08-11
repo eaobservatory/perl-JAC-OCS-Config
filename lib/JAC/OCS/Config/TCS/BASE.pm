@@ -94,6 +94,57 @@ sub new {
 			  );
 }
 
+=item B<from_coord>
+
+Construct a C<JAC::OCS::Config::TCS::BASE> object from either an
+C<Astro::Coords> object or if the argument is already a
+C<JAC::OCS::Config::TCS::BASE> object return it.
+
+ $base = JAC::OCS::Config::TCS::BASE->from_coord( $object, $tag );
+
+This allows code that is using coordinates to always assume a BASE
+object. The second argument is the tag name to use only in the event that
+an C<Astro::Coords> object is supplied. It is ignored is a BASE is given.
+"SCIENCE" is used if a tag is required and was not supplied.
+
+Returns C<undef> if given undef, and throws an exception if the argument
+is not recognized.
+
+=cut
+
+sub from_coord {
+  my $class = shift;
+  my $object = shift;
+  return undef unless defined $object;
+  my $tag = shift;
+
+  # see if we are blessed
+  throw JAC::OCS::Config::Error::BadArgs("from_coord called with unblessed argument")
+    unless blessed($object);
+
+  # if it is of this class just return it
+  return $object if $object->isa( $class );
+
+  # is it a Astro::Coords?
+  $tag = (defined $tag ? "SCIENCE" : $tag);
+  my $base;
+  if ($object->isa("Astro::Coords")) {
+    # create a new BASE object
+    $base = $class->new();
+    $base->coords( $object );
+    # set the tag
+    $base->tag( $tag );
+  } elsif ($object->can( "coords") && $object->can( "tag" )) {
+    # special case an object that acts like a BASE. This code was
+    # used in TCS.pm but can not remember the significance.
+    $base = $object;
+  } else {
+    throw JAC::OCS::Config::Error::BadArgs("Supplied coordinate to from_coord() is neither and Astro::Coords nor JAC::OCS::Config::TCS::BASE");
+  }
+
+  return $base;
+}
+
 =back
 
 =head2 Accessor Methods

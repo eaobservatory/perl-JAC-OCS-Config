@@ -168,7 +168,7 @@ if ($target) {
 	unless defined $tcs;
 
     # override all target information
-    my @unmod = $tcs->setTargetAll( $match->coords );
+    my @unmod = $tcs->setTargetSync( $match->coords );
     if (@unmod) {
 	die "Attempted to modify target but some tags were not offsets from the old SCIENCE position\n";
     }

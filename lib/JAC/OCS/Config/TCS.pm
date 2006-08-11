@@ -29,6 +29,7 @@ use strict;
 use Carp;
 use warnings;
 use XML::LibXML;
+use Scalar::Util qw/ blessed /;
 use Astro::SLA;
 use Astro::Coords;
 use Astro::Coords::Offset;
@@ -100,6 +101,55 @@ sub new {
 								    ROTATOR => {},
 								   }
 			  );
+}
+
+=item B<from_coord>
+
+Construct a C<JAC::OCS::Config::TCS> object from the supplied argument
+which may be one of C<Astro::Coords>, C<JAC::OCS::Config::TCS::BASE>
+or C<JAC::OCS::Config::TCS> object. This simplifies methods that can
+handle all types for coordinate extraction. If a TCS object is
+supplied it is returned unchanged. BASE objects will be stored
+directly under the internal tag (or "SCIENCE" if none defined) and
+Astro::Coords objects will be associated with SCIENCE tag.
+
+  $tcs = JAC::OCS::Config::TCS->from_coord( $object );
+
+If a telescope name is present in the Astro::Coords object it will
+be set in any newly created TCS object.
+
+=cut
+
+sub from_coord {
+  my $class = shift;
+  my $object = shift;
+  return undef unless defined $object;
+
+  throw JAC::OCS::Config::Error::BadArgs("from_coord called with unblessed argument")
+    unless blessed($object);
+
+  # if it is of this class just return it
+  return $object if $object->isa( $class );
+
+  # otherwise punt to JAC::OCS::Config::TCS::BASE
+  # Use a default tag of "SCIENCE" (without translation since we will
+  # be creating an empty TCS object)
+  my $base = JAC::OCS::Config::TCS::BASE->from_coord( $object, "SCIENCE" );
+  return undef unless defined $base; # should not happen
+
+  # now that we have a BASE, create a new TCS object for it
+  my $tcs = $class->new();
+
+  # attach the base object
+  $tcs->tags( $base->tag => $base );
+
+  # set a telescope name if one is available
+  my $c = $base->coords;
+  my $tel = $c->telescope;
+  $tcs->telescope( $tel->name ) if (defined $tel && defined $tel->name);
+
+  # and we are done
+  return $tcs;
 }
 
 =back
@@ -528,42 +578,74 @@ sub setTarget {
   $self->setCoords( "SCIENCE", shift );
 }
 
-=item B<setTargetAll>
+=item B<setTargetSync>
 
-Given the supplied C<Astro::Coords> object modify all target positions
-to use this position whilst retaining offsets. Only those associated
-positions that are the same as the SCIENCE position (modulo offsets) are
-modified (so an absolute REFERENCE that differs from SCIENCE will not
-be changed).
+Synchronize the targets in this object with those supplied. The bahaviour
+varies depending on the contents of the argument:
 
-  @unmodified = $tcs->setTargetAll( $coords );
+ - if an Astro::Coords or JAC::OCS::Config::TCS::BASE object is given
+   the SCIENCE position will be modified to this position (including
+   offsets if a BASE and removing previous offsets if an Astro::Coords)
+   and all tags that matched the original science 
+   position will be modified to the new SCIENCE position, retaining
+   offsets.
 
-In list context returns all the tags that were not modified.
+ - if a TCS object is given its contents will fully overwrite the
+   target contents (see the setCoords method) unless it consists
+   of solely a SCIENCE position. If it is just a SCIENCE position
+   that position will be extracted and the above behaviour for
+   BASE object above will occur.
 
-OFFSET information in SCIENCE tag will be removed.
+In list context returns all tags that were not modified. This will
+occur if an absolute REFERENCE position has been used (for example).
+
+  @unmodified = $tcs->setTargetSync( $object );
 
 =cut
 
-sub setTargetAll {
+sub setTargetSync {
   my $self = shift;
-  my $ncoord = shift;
+  my $new = shift;
 
   throw JAC::OCS::Config::Error::FatalError("Please supply a coordinate")
-    if !defined $ncoord;
-  throw JAC::OCS::Config::Error::FatalError("Arg must be Astro::Coords object")
-    if !$ncoord->isa("Astro::Coords");
+    if !defined $new;
+  throw JAC::OCS::Config::Error::FatalError("Argument to setTargetSync() must be blessed")
+    if !blessed($new);
 
+  # first see if we have to see if we are a TCS
+  if ( $new->isa( $self ) ) {
+    my @tags = $new->getTags;
+    if (@tags > 1) {
+      # overwrite all because we have multiple tags
+      $self->setCoords( $new );
+      # nothing unmodified so have empty list
+      return ();
+    }
+
+    # only have one so change $ncoord to be the only BASE position
+    # Do not check to make sure it is SCIENCE
+    $new = $new->getCoords( $tags[0] );
+  }
+
+  # Ensure that we have a base position with the correct SCIENCE tag
+  my $deftag = $self->_translate_tag_name( "SCIENCE", 1);
+  $new = JAC::OCS::Config::TCS::BASE->from_coord( $new, $deftag );
+  throw JAC::OCS::Config::Error::FatalError("Error converting supplied argument to BASE object")
+    unless defined $new;
+
+  # Get all the available BASE positions
   my %tags = $self->getAllTargetInfo();
 
-  # Get the SCIENCE position first
-  my $science =  $tags{$self->_translate_tag_name( "SCIENCE" )};
-  throw JAC::OCS::Config::Error::FatalError("setTargetAll requires a SCIENCE/BASE tag")
-    unless defined $science;
+  # Get the SCIENCE position first (which is mandatory)
+  my $scitag = $self->_translate_tag_name( "SCIENCE" );
+  throw JAC::OCS::Config::Error::FatalError("setTargetSync requires a SCIENCE/BASE tag")
+    unless defined $scitag;
+  my $science =  $tags{$scitag};
 
-  # remove offsets
-  $science->offset( undef );
+  # get the new coordinates
+  my $ncoord = $new->coords;
 
-  # compare with science position
+  # Get the actual science position for comparison
   my $scoord = $science->coords;
 
   # now loop over all tags
@@ -579,6 +661,9 @@ sub setTargetAll {
       delete $tags{$t};
     }
   }
+
+  # force this BASE position to be the actual one
+  $self->setTarget( $new );
 
   # %tags will now only contain tags that were not the same as SCIENCE.
   # ie those that were not modified
@@ -614,17 +699,18 @@ object.
 
 sub setCoords {
   my $self = shift;
-  if (@_ != 2) {
-    throw JAC::OCS::Config::Error::FatalError('Usage: $cfg->setCoords(TAG,OBJ)');
-  }
-  
   my $tag = shift;
   my $c = shift;
 
   # First check to see if our tag is actually a complete TCS object
-  if (UNIVERSAL::isa( $tag, __PACKAGE__) ) {
+  if (UNIVERSAL::isa( $tag, $self) ) {
     $self->setAllTargetInfo( $tag );
     return;
+  }
+
+  # now can check to see if we have coordinates
+  if (!defined $c) {
+    throw JAC::OCS::Config::Error::FatalError('Usage: $cfg->setCoords(TAG,OBJ)');
   }
 
   # if we have a defined tag, we need to get its synonym
@@ -638,25 +724,14 @@ sub setCoords {
     $tag = $syn if defined $syn;
   }
 
-  # check class
-  my $base;
-  if ($c->isa( "JAC::OCS::Config::TCS::BASE")) {
-    $base = $c;
+  # default tag is SCIENCE (or equivalent)
+  my $deftag = $self->_translate_tag_name("SCIENCE",1);
 
-    # if no tag was supplied, use the internal value
-    $tag = $base->tag if !defined $tag;
+  # Make sure we have a base (with default tag - unused if this is a BASE already)
+  my $base = JAC::OCS::Config::TCS::BASE->from_coord( $c, $deftag );
 
-  } elsif ($c->isa( "Astro::Coords")) {
-    $base = new JAC::OCS::Config::TCS::BASE();
-    $base->coords( $c );
-  } elsif ($c->can( "coords") && $c->can( "tag" )) {
-    $base = $c;
-  } else {
-    throw JAC::OCS::Config::Error::BadArgs("Supplied coordinate to setCoords is neither and Astro::Coords nor JAC::OCS::Config::TCS::BASE");
-  }
-
-  # default tag
-  $tag = $self->_translate_tag_name("SCIENCE",1) if !defined $tag;
+  # get the tag from it if we did not have one explicitly
+  $tag = $base->tag if !defined $tag;
 
   # force tag consistency
   $base->tag( $tag );
@@ -838,7 +913,6 @@ in the synonyms table. Returns undef if the tag is unknown. This option can
 be used to insert new tagged coordinates.
 
  $tag = $cfg->_translate_tag_name( $tag, 1 );
-
 
 =cut
 
