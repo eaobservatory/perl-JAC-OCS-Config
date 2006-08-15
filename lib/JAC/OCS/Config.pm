@@ -1073,6 +1073,8 @@ sub qsummary {
   if (defined $tcs) {
     my $c = $tcs->getTarget;
     $targ = $c->name if (defined $c && defined $c->name);
+    $targ =~ s/\s+$//;
+    $targ = "EMPTY" if !$targ; # empty string test
   }
 
   my $str;
