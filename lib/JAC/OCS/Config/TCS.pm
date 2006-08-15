@@ -591,10 +591,18 @@ varies depending on the contents of the argument:
    offsets.
 
  - if a TCS object is given its contents will fully overwrite the
-   target contents (see the setCoords method) unless it consists
+   target contents (see the setCoords method) unless the new object consists
    of solely a SCIENCE position. If it is just a SCIENCE position
    that position will be extracted and the above behaviour for
    BASE object above will occur.
+
+ - If no SCIENCE position is currently set in this object then the supplied
+   position will become the position and all others will be forced
+   to use this position. If this results in multiple tags with identical
+   positions and no offsets, an error will occur (since the intention was
+   probably to replace the position in REFERENCE but retain offsets). This
+   version will result in an empty list being returned since all positions
+   are modified.
 
 In list context returns all tags that were not modified. This will
 occur if an absolute REFERENCE position has been used (for example).
@@ -613,7 +621,7 @@ sub setTargetSync {
     if !blessed($new);
 
   # first see if we have to see if we are a TCS
-  if ( $new->isa( $self ) ) {
+  if ( $new->isa( ref($self) ) ) {
     my @tags = $new->getTags;
     if (@tags > 1) {
       # overwrite all because we have multiple tags
@@ -636,29 +644,52 @@ sub setTargetSync {
   # Get all the available BASE positions
   my %tags = $self->getAllTargetInfo();
 
-  # Get the SCIENCE position first (which is mandatory)
-  my $scitag = $self->_translate_tag_name( "SCIENCE" );
-  throw JAC::OCS::Config::Error::FatalError("setTargetSync requires a SCIENCE/BASE tag")
-    unless defined $scitag;
-  my $science =  $tags{$scitag};
+  # Get the SCIENCE position first (which is mandatory unless no tags exist)
+  if (keys %tags) {
+    my $scitag = $self->_translate_tag_name( "SCIENCE" );
 
-  # get the new coordinates
-  my $ncoord = $new->coords;
+    # we are allowed to run without a science - that simply removes
+    # all the tests for nearness. We do test for OFFSETs though.
 
-  # Get the actual science position for comparison
-  my $scoord = $science->coords;
+    my $science;
+    $science =  $tags{$scitag} if defined $scitag;
+  
+    # get the new coordinates
+    my $ncoord = $new->coords;
 
-  # now loop over all tags
-  for my $t (keys %tags) {
-    my $base = $tags{$t};
-    my $bcoord = $base->coords;
+    # Get the actual science position for comparison
+    my $scoord;
+    $scoord = $science->coords if defined $science;
 
-    # compare with science
-    my $distance = $bcoord->distance( $scoord );
-    if (defined $distance && $distance->arcsec < 5 ) {
-      # can replace
-      $base->coords( $ncoord );
-      delete $tags{$t};
+    # now loop over all tags
+    for my $t (keys %tags) {
+      my $base = $tags{$t};
+      my $bcoord = $base->coords;
+
+      # compare with science (if set)
+      my $modify;
+      if (defined $scoord) {
+	# compare with the current position and modify
+	# if they are within an arcsec
+	my $distance = $bcoord->distance( $scoord );
+	$modify = ( defined $distance && $distance->arcsec < 1 );
+      } else {
+	# modify since we do not have a science to compare with
+	# but do need to check for OFFSETS
+	$modify = 1;
+
+	my $off = $base->offset;
+	throw JAC::OCS::Config::Error::FatalError("Can not sync target positions if no SCIENCE/BASE is available and tag ".
+						  $base->tag
+						  ." does not contain offsets")
+	  if ( !defined $off || ($off->xoffset == 0 && $off->yoffset == 0));
+
+      }
+      if ($modify) {
+	# can replace
+	$base->coords( $ncoord );
+	delete $tags{$t};
+      }
     }
   }
 
@@ -703,7 +734,7 @@ sub setCoords {
   my $c = shift;
 
   # First check to see if our tag is actually a complete TCS object
-  if (UNIVERSAL::isa( $tag, $self) ) {
+  if (UNIVERSAL::isa( $tag, __PACKAGE__) ) {
     $self->setAllTargetInfo( $tag );
     return;
   }
