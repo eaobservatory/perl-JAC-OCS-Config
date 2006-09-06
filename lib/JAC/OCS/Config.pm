@@ -484,7 +484,7 @@ the possibility that a raster map may not use predictable scanning.
 sub duration {
   my $self = shift;
   warn "Observation duration unknown\n" if $^W;
-  return Time::Seconds->new(1800);
+  return Time::Seconds->new(60);
 
   # Get the JOS information
   my $jos = $self->jos;
