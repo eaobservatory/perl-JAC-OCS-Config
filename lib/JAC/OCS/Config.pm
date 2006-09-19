@@ -694,9 +694,9 @@ sub projectid {
   my $header = $self->header;
 
   if (defined $header) {
-    my @items = $header->item( "PROJECTID" );
+    my @items = $header->item( "PROJECT" );
     if (@items) {
-      return $items[0]->keyword;
+      return $items[0]->value;
     }
   }
   return undef;
@@ -720,7 +720,7 @@ sub msbid {
   if (defined $header) {
     my @items = $header->item( "MSBID" );
     if (@items) {
-      return $items[0]->keyword;
+      return $items[0]->value;
     }
   }
   return undef;
