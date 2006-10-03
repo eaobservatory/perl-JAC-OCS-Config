@@ -131,7 +131,8 @@ Allowed values are "GLISH" and "DRAMA", "DERIVED" and "SELF".
 sub source {
   my $self = shift;
   if (@_) {
-    $self->{SOURCE} = uc(shift);
+    my $value = shift;
+    $self->{SOURCE} = (defined $value ? uc($value) : $value);
   }
   return $self->{SOURCE};
 }
@@ -261,6 +262,21 @@ sub mult {
   return $self->{MULT};
 }
 
+=item B<undefine>
+
+Force the header item to refer to an undefined entry. This removes all
+derived components and sets the value to the empty string.
+
+  $item->undefine;
+
+=cut
+
+sub undefine {
+  my $self = shift;
+  # can effectively do this by simply removing the SOURCE value
+  $self->source( undef );
+  $self->value( "" );
+}
 
 =back
 
@@ -274,7 +290,7 @@ L<Astro::FITS::Header::Item>.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright 2004-2006 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
