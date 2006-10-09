@@ -95,6 +95,23 @@ sub new {
 
 =over 4
 
+=item B<requires_full_config>
+
+Returns the name of any tasks that require access to the full OCS configuration
+even if not all tasks are required by the subsystem.
+
+  @tasks = $cfg->requires_full_config();
+
+Returns "CONTROLLER".
+
+=cut
+
+sub requires_full_config {
+  my $self = shift;
+  # CONTROLLER always requires full configuration
+  return ( "CONTROLLER" );
+}
+
 =item B<tasks>
 
 OCS tasks that will be involved in the observation.

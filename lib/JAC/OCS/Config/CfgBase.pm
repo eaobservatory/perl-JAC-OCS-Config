@@ -338,6 +338,24 @@ sub _stringify_overload {
   return $_[0]->stringify();
 }
 
+=item B<requires_full_config>
+
+Returns the name of any tasks that require access to the full OCS configuration
+even if not all tasks are required by the subsystem.
+
+  @tasks = $cfg->requires_full_config();
+
+
+Always returns empty list in the base class.
+
+=cut
+
+sub requires_full_config {
+  my $self = shift;
+  # Base class always returns false
+  return ();
+}
+
 =back
 
 =head2 Class Methods

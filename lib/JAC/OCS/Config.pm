@@ -366,6 +366,9 @@ sub write_file {
   # configurations
   my ($tmap, $invtmap) = $self->_task_map();
 
+  # and which directories require full configurations regardless (as hash for easy access)
+  my %full_configs = map { $_, undef } $self->requires_full_config;
+
   # loop over the directories, storing those that have a corresponding
   # key in the inverse task map
   @dirs = grep { exists $invtmap->{$_} } @dirs;;
@@ -406,10 +409,10 @@ sub write_file {
     open my $fh, "> $fullname" or
       throw JAC::OCS::Config::Error::IOError("Error opening config output file $fullname: $!");
 
-    # Now we use the inverse map to select specific configurations for
+    # Now we use the inverse map and full config list to select specific configurations for
     # this directory
     my %strargs;
-    if ($dir ne File::Spec->curdir && exists $invtmap->{$dir}) {
+    if ($dir ne File::Spec->curdir && exists $invtmap->{$dir} && !exists $full_configs{$dir}) {
       $strargs{CONFIGS} = $invtmap->{$dir};
     }
 
@@ -948,6 +951,31 @@ sub _stringify_overload {
   return $_[0]->stringify();
 }
 
+=item B<requires_full_config>
+
+Returns all tasks that require access to the full OCS config even if that task does not
+directly interact with all subsystems.
+
+  @tasks = $cfg->requires_full_config;
+
+Asks each of the configurations if they have any tasks requiring full configurations.
+
+=cut
+
+sub requires_full_config {
+  my $self = shift;
+  my @full;
+  for my $c (@CONFIGS) {
+    # get the corresponding object
+    next unless $self->can( $c );
+    my $object = $self->$c;
+    next unless defined $object;
+    next unless $object->can( 'requires_full_config' );
+    push(@full, $object->requires_full_config);
+  }
+  return @full;
+}
+
 =back
 
 =head2 Class Methods
@@ -1149,7 +1177,6 @@ sub _task_map {
 
   return (\%map, \%inverse);
 }
-
 
 =item B<_process_dom>
 
