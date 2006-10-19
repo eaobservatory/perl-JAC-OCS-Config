@@ -173,6 +173,25 @@ if ($target) {
 	die "Attempted to modify target but some tags were not offsets from the old SCIENCE position\n";
     }
 
+    # we need to change the group_centre of the output cube accordingly
+    my $acsis = $cfg->acsis;
+    if (defined $acsis) {
+      my $clist = $acsis->cube_list;
+      if (defined $clist) {
+	# delete the group centre unless equatorial coordinates
+	my $coords = $match->coords;
+	my $delc = ($coords->isa("Astro::Coords::Equatorial") ? 0 : 1);
+	my %cubes = $clist->cubes;
+	for my $cub (values %cubes) {
+	  if ($delc) {
+	    $cub->group_centre( undef );
+	  } else {
+	    $cub->group_centre( $coords );
+	  }
+	}
+      }
+    }
+
 }
 
 # Is something attached to STDOUT? Then just write it out
