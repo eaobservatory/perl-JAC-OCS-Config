@@ -99,7 +99,9 @@ tangent point.
 sub group_centre {
   my $self = shift;
   if (@_) {
-    $self->{GroupCentre} = check_class_fatal( "Astro::Coords", shift);
+    my $c = shift;
+    # undef is allowed
+    $self->{GroupCentre} = (defined $c ? check_class_fatal( "Astro::Coords", $c) : undef );
   }
   return $self->{GroupCentre};
 }
