@@ -508,7 +508,10 @@ sub _extract_coord_info {
     #print "System: $sysname\n";
     my ($long ,$lat);
     my %coords;
-    if ($type eq "J2000" or $type eq "B1950") {
+    # Note that the PTCS can handle B1900 J2006.4 BUT the ICD does not allow them
+    # so they should not technically be in the XML. Given that we can support them
+    # we proceed as if they are allowed.
+    if ($type =~ /^[BJ]\d\d\d\d/) {
 
       # Proper motions and parallax
       my %pm = get_pcdata_multi( $system, "epoch", "pm1", "pm2", "parallax");
