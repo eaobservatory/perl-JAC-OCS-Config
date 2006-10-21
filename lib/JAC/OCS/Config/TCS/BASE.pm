@@ -104,8 +104,13 @@ C<JAC::OCS::Config::TCS::BASE> object return it.
 
 This allows code that is using coordinates to always assume a BASE
 object. The second argument is the tag name to use only in the event that
-an C<Astro::Coords> object is supplied. It is ignored is a BASE is given.
+an C<Astro::Coords> object is supplied. It is ignored if a BASE is given.
 "SCIENCE" is used if a tag is required and was not supplied.
+
+If a new BASE is created the tracking system is set to the magic value of
+"TRACKING". This is done because the TCS used to have a bug and defaulted
+to the previous tracking system (may not be necessary now but being explicit
+does no harm).
 
 Returns C<undef> if given undef, and throws an exception if the argument
 is not recognized.
@@ -134,6 +139,8 @@ sub from_coord {
     $base->coords( $object );
     # set the tag
     $base->tag( $tag );
+    # And tracking system
+    $base->tracking_system( "TRACKING" );
   } elsif ($object->can( "coords") && $object->can( "tag" )) {
     # special case an object that acts like a BASE. This code was
     # used in TCS.pm but can not remember the significance.
