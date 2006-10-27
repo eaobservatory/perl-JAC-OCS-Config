@@ -437,7 +437,7 @@ sub stringify {
   }
 
   my %rec = $self->receptors;
-  for my $r (keys %rec) {
+  for my $r (sort keys %rec) {
     $xml .= "<receptor id=\"$r\"\n";
     $xml .= "          health=\"$rec{$r}{health}\"\n";
     my @xy = @{ $rec{$r}->{xypos}};
