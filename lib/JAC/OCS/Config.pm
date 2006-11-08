@@ -36,6 +36,7 @@ use XML::LibXML;
 use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
 use POSIX qw/ ceil /;
+use IO::Tee;
 
 use Astro::WaveBand;
 
@@ -400,7 +401,7 @@ sub write_file {
   for my $dir (File::Spec->curdir,@dirs) {
 
     my $fullname = File::Spec->catdir( $TRANS_DIR, $dir, $cname );
-    print "Writing config to $fullname\n" if $self->verbose;
+    print {$self->outhdl} "Writing config to $fullname\n" if $self->verbose;
 
     # First time round, store the filename for later return
     $storename = $fullname unless defined $storename;
@@ -1059,6 +1060,36 @@ Enable or disable verbose messages. Default is false (quiet).
     return $verbose;
   }
 }
+
+=item B<outhdl>
+
+Output file handles to use for verbose messages.
+Defaults to STDOUT.
+
+  OMP::Translator::ACSIS->outhdl( \*STDOUT, $fh );
+
+Returns an C<IO::Tee> object.
+
+Pass in undef to reset to the default.
+
+=cut
+
+{
+  my $def = new IO::Tee(\*STDOUT);
+  my $oh = $def;
+  sub outhdl {
+    my $class = shift;
+    if (@_) {
+      if (!defined $_[0]) {
+	$oh = $def; # reset
+      } else {
+	$oh = new IO::Tee( @_ );
+      }
+    }
+    return $oh;
+  }
+}
+
 
 =back
 
