@@ -299,27 +299,27 @@ sub coords_to_xml {
     $xml .= "  </spherSystem>\n";
   } elsif ($type eq 'ELEMENTS') {
     # conicSystem
-    $xml .= "  <conicSystem>\n";
     my %el = $c->elements;
 
-    my $type;
+    my $eltype;
     if (exists $el{DM}) {
-      $type = 'major';
+      $eltype = 'major';
     } elsif (exists $el{AORL}) {
-      $type = 'minor';
+      $eltype = 'minor';
     } elsif (exists $el{EPOCHPERIH}) {
-      $type = 'comet';
+      $eltype = 'comet';
     } else {
-      throw JAC::OCS::Config::Error::FatalError("Unable to determine element type!");
+      throw JAC::OCS::Config::Error::FatalError("Unable to determine element type from elements!");
     }
 
+    $xml .= "  <conicSystem TYPE=\"$eltype\">\n";
     $xml .= "    <epoch>$el{EPOCH}</epoch>\n";
     $xml .= "    <inclination>".rad2deg($el{ORBINC})."</inclination>\n";
     $xml .= "    <anode>".rad2deg($el{ANODE})."</anode>\n";
     $xml .= "    <perihelion>".rad2deg($el{PERIH})."</perihelion>\n";
     $xml .= "    <aorq>$el{AORQ}</aorq>\n";
     $xml .= "    <e>$el{E}</e>\n";
-    $xml .= "    <epochperih>$el{EPOCHPERIH}</epochperih>\n"
+    $xml .= "    <epochPerih>$el{EPOCHPERIH}</epochPerih>\n"
       if exists $el{EPOCHPERIH};
     $xml .= "    <LorM>".rad2deg($el{AORL})."</LorM>\n"
       if exists $el{AORL};
