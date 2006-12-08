@@ -183,6 +183,9 @@ per chop).
   %t = $obs->timing();
   $obs->timing( %t );
 
+If CHOPS_PER_JIG > 0 we are in chop_jiggle mode else we are
+in jiggle_chop mode.
+
 =cut
 
 # we do not have a timing object
@@ -210,9 +213,13 @@ Can be one of
    chop
    jiggle
    jiggle_chop
+   chop_jiggle
 
 This mode is determined from the presence of CHOP and/or JIGGLE
 specifications in the object.
+
+Chop_jiggle can only be returned if timing parameters are available,
+else "jiggle_chop" is returned if CHOP and JIGGLE settings exist.
 
 =cut
 
@@ -223,7 +230,14 @@ sub smu_mode {
 
   my $mode;
   if (%c && $j) {
-    $mode = "jiggle_chop";
+    # Do we have timing
+    my %timing = $self->timing;
+    if (exists $timing{CHOPS_PER_JIG} && defined $timing{CHOPS_PER_JIG}
+       && $timing{CHOPS_PER_JIG} > 0) {
+      $mode = 'chop_jiggle';
+    } else {
+      $mode = 'jiggle_chop';
+    }
   } elsif (%c) {
     $mode = "chop";
   } elsif ($j) {
