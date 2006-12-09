@@ -276,11 +276,11 @@ sub stringify {
   my $mode = $self->smu_mode;
 
   if ($mode ne "none") {
-    if ($mode eq 'jiggle_chop') {
+    if ($mode eq 'jiggle_chop' || $mode eq 'chop_jiggle') {
       $xml .= "<JIGGLE_CHOP>\n";
     }
 
-    if ($mode eq 'jiggle' || $mode eq 'jiggle_chop') {
+    if ($mode eq 'jiggle' || $mode eq 'jiggle_chop' || $mode eq 'chop_jiggle') {
       my $j = $self->jiggle;
       throw JAC::OCS::Config::Error::FatalError("We have a jiggle configuration ($mode) but no jiggle information!\n") unless defined $j;
       $xml .= "<JIGGLE NAME=\"".$j->name ."\"\n";
@@ -292,7 +292,7 @@ sub stringify {
       $xml .= "</JIGGLE>\n";
     }
 
-    if ($mode eq 'chop' || $mode eq 'jiggle_chop') {
+    if ($mode eq 'chop' || $mode eq 'jiggle_chop' || $mode eq 'chop_jiggle') {
       my %c = $self->chop;
       $xml .= "<CHOP SYSTEM=\"$c{SYSTEM}\" >\n";
       $xml .= "<THROW>$c{THROW}</THROW>\n";
@@ -300,7 +300,7 @@ sub stringify {
       $xml .= "</CHOP>\n";
     }
 
-    if ($mode eq 'jiggle_chop') {
+    if ($mode eq 'jiggle_chop' || $mode eq 'chop_jiggle') {
       my %t = $self->timing;
       $xml .= "<TIMING>\n";
       if (exists $t{CHOPS_PER_JIG} && defined $t{CHOPS_PER_JIG}) {
