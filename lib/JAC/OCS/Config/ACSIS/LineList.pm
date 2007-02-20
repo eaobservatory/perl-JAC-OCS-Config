@@ -25,6 +25,7 @@ use XML::LibXML;
 
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Units;
+use JAC::OCS::Config::ACSIS::Line;
 
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
@@ -80,7 +81,7 @@ sub new {
 =item B<lines>
 
 Return a hash with keys corresponding to the line identifications
-and values the corresponding rest frequency of the line in Hz.
+and values of C<JAC::OCS::Config::ACSIS::Line> objects.
 
   %lines = $l->lines();
   $l->lines( %lines );
@@ -88,7 +89,7 @@ and values the corresponding rest frequency of the line in Hz.
 The keys are of the form "CO2-1" and include the molecule and transition.
 Use the class method C<moltrans2key> to generate a key in a suitable form.
 
-Note that the accessor method can only be fully overwritten, not partially
+Note that the contents can only be fully overwritten, not partially
 tweaked.
 
 =cut
@@ -124,8 +125,11 @@ sub stringify {
 
   # loop over all keys
   for my $id (keys %lines) {
-    $xml .= "<rest_frequency id=\"$id\" units=\"GHz\">\n";
-    $xml .= ($lines{$id} * $unit->mult("G")) ."\n";
+    $xml .= "<rest_frequency id=\"$id\" units=\"GHz\" ";
+    $xml .= "molecule=\"".$lines{$id}->molecule ."\" " if defined $lines{$id}->molecule;
+    $xml .= "transition=\"".$lines{$id}->transition ."\" " if defined $lines{$id}->transition;
+    $xml .= ">\n";
+    $xml .= ($lines{$id}->restfreq * $unit->mult("G")) ."\n";
     $xml .= "</rest_frequency>\n";
   }
 
@@ -215,7 +219,7 @@ sub _process_dom {
 
   my %lines;
   for my $rf (@rfreq) {
-    my %attr = find_attr( $rf, "id", "units" );
+    my %attr = find_attr( $rf, "id", "units", "molecule", "transition" );
     my $unit = new JAC::OCS::Config::Units( $attr{units} );
     my $freq = get_this_pcdata( $rf );
     next unless defined $freq;
@@ -223,7 +227,9 @@ sub _process_dom {
     # convert to Hertz
     $freq *= $unit->mult( '' );
 
-    $lines{$attr{id}} = $freq;
+    $lines{$attr{id}} = new JAC::OCS::Config::ACSIS::Line(RestFreq => $freq,
+							 Molecule => $attr{molecule},
+							 Transition => $attr{transition});
   }
 
   # store the lines
