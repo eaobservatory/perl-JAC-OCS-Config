@@ -277,6 +277,54 @@ sub line_region {
   return @{$self->{LineRegion}};
 }
 
+=item B<ishybrid>
+
+Returns true if this is a hybridized spectral window, else returns
+false.
+
+  $ish = $spw->ishybrid;
+
+=cut
+
+sub ishybrid {
+  my $self = shift;
+  my %sb = $self->subbands;
+  if (keys %sb) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+=item B<numcm>
+
+Return the number of correlator modules required to implement this
+mode. A hybrid mode will return the sum o
+
+=cut
+
+sub numcm {
+  my $self = shift;
+  my $total = 0;
+  if ($self->ishybrid) {
+    my %sb = $self->subbands;
+    for my $sb (keys %sb) {
+      $total += $sb->numcm;
+    }
+  } else {
+    my $if = $self->if_coordinate;
+    my $nchan = $if->nchannels;
+    if ($nchan == 1024 || $nchan == 4096) {
+      $total = 1;
+    } elsif ($nchan == 2048 || $nchan == 8192) {
+      $total = 2;
+    } else {
+      throw JAC::OCS::Config::Error::FatalError("Unrecognized number of channels when counting correlator modules: $nchan\n");
+    }
+  }
+  return $total;
+}
+
 =back
 
 =head1 AUTHOR
