@@ -182,8 +182,8 @@ sub stringify {
 
   my %spw = $self->spectral_windows;
 
-  # loop over all spectral windows
-  for my $k (keys %spw) {
+  # loop over all spectral windows (sort for predictability)
+  for my $k (sort keys %spw) {
     # Create each spectral window and then immediately include
     # subband specifications
     my %subbands = $spw{$k}->subbands;
