@@ -206,11 +206,8 @@ sub stringify {
 	$xml .= attrs_only("bandwidth_mode", mode => $sw->bandwidth_mode);
 	$xml .= attrs_only("window", type => $sw->window);
 
-	# shift in Hz
+	# shift in channels
 	my $shift = $sw->align_shift;
-
-	# this needs to be in MHz
-	$shift /= 1E6;
 
 	$xml .= "<align_shift>".$shift."</align_shift>\n";
       }
@@ -345,11 +342,9 @@ sub _process_dom {
       $bwmode = find_attr_child( $spw, "bandwidth_mode", "mode");
       $wintype = find_attr_child( $spw, "window", "type");
 
-      # MHz
+      # channels
       $align_shift = get_pcdata( $spw, "align_shift");
 
-      # to Hz
-      $align_shift *= 1E6;
     }
 
 
