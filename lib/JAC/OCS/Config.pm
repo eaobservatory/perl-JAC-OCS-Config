@@ -730,6 +730,30 @@ sub msbid {
   return undef;
 }
 
+=item B<msbtid>
+
+MSB transaction ID. Can be used to set a value as well as retrieve.
+Can only be set if the MSBTID header entry pre-exists.
+
+=cut
+
+sub msbtid {
+  my $self = shift;
+  my $header = $self->header;
+  return undef unless defined $header;
+
+  # get the item or items
+  my @items = $header->item( "MSBTID" );
+  return undef unless @items;
+
+  if (@_) {
+    my $new = shift;
+    $items[0]->value( $new );
+  }
+  return $items[0]->value;
+}
+
+
 =item B<obsmode>
 
 Return a string summarizing the observing mode as defined by the
@@ -828,6 +852,90 @@ modifications are for the current time.
 sub fixup {
 
 }
+
+=item B<iscal>
+
+Returns true if the configuration seems to be associated with a
+science calibration observation (e.g. a flux or wavelength
+calibration). Returns false otherwise.
+
+  $iscal = $cfg->iscal();
+
+=cut
+
+sub iscal {
+  my $self = shift;
+  my @flags = $self->_cal_flags();
+  return $flags[1];
+}
+
+=item B<isGenericCal>
+
+Returns true if the observation is a generic calibration (for example pointing
+or focus).
+
+  $cfg->isGenericCal;
+
+Returns false if this can not be determined.
+
+=cut
+
+sub isGenericCal {
+  my $self = shift;
+  my @flags = $self->_cal_flags();
+  return $flags[0];
+}
+
+=item B<isScienceObs>
+
+Returns true if the observation is a science observation and
+not a calibration observation.
+
+Returns false if not enough information is available.
+
+=cut
+
+sub isScienceObs {
+  my $self = shift;
+  my @flags = $self->_cal_flags();
+  return $flags[2];
+}
+
+# Since the calibration flags depend on all the same information
+# we write a simple routine that can be called from iscal, isScienceObs
+# and isGenericCal
+
+# ($isgencal, $iscal, $isscience) = $self->_cal_flags();
+
+# returns false for each value if insufficient information is available.
+
+sub _cal_flags {
+  my $self = shift;
+
+  # get the observation summary and the header configuration
+  my $obssum = $self->obs_summary;
+  return (0,0,0) unless defined $obssum;
+
+  # Non-science means generic cal
+  my $type = $obssum->type;
+  return (1,0,0) if lc($type) ne 'science';
+
+  # Header is required to distinguish cal from non-cal science
+  my $hdr = $self->header;
+  return (0,0,0) unless defined $hdr;
+
+  my $std = $hdr->item( "STANDARD" );
+
+  if ($std) {
+    # science standard
+    return (0,1,0);
+  } else {
+    # science observation
+    return (0,0,1);
+  }
+
+}
+
 
 =item B<stringify>
 
