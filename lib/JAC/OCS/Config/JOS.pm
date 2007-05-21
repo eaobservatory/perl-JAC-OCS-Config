@@ -38,7 +38,7 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names

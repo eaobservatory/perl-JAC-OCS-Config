@@ -43,7 +43,7 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 # Supported keys for POINTING_OFFSET element
 my @POINTING_MODEL = qw/ CA IE /;

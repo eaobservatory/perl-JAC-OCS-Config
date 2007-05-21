@@ -45,7 +45,7 @@ use JAC::OCS::Config::XMLHelper qw/ get_pcdata _check_range find_children
 
 use vars qw/ $VERSION @EXPORT_OK /;
 
-$VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 @EXPORT_OK = qw/ find_offsets find_pa pa_to_xml offset_to_xml coords_to_xml /;
 

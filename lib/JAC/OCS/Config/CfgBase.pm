@@ -34,7 +34,7 @@ use overload '""' => "_stringify_overload";
 # to supply additional init values to the constructor
 $INITKEY = '__init';
 
-$VERSION = sprintf("%d.%03d", q$Revision$ =~ /(\d+)\.(\d+)/);
+$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 =head1 METHODS
 
