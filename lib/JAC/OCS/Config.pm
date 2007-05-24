@@ -735,6 +735,9 @@ sub msbid {
 MSB transaction ID. Can be used to set a value as well as retrieve.
 Can only be set if the MSBTID header entry pre-exists.
 
+  $cfg->msbtid( $msbtid );
+  $tid = $cfg->msbtid();
+
 =cut
 
 sub msbtid {
