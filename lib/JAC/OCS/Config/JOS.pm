@@ -46,6 +46,7 @@ our @PARAMS = (qw/
 		  NUM_CYCLES
 		  NUM_NOD_SETS
 		  STEP_TIME
+		  SHAREOFF
 		  JOS_MULT
 		  JOS_MIN
 		  STEPS_PER_REF
@@ -203,6 +204,20 @@ sub step_time {
     $self->{STEP_TIME} = shift;
   }
   return $self->{STEP_TIME};
+}
+
+=item B<shareoff>
+
+Share the reference position among mutliple on positions?
+
+=cut
+
+sub shareoff {
+  my $self = shift;
+  if (@_) {
+    $self->{SHAREOFF} = shift;
+  }
+  return $self->{SHAREOFF};
 }
 
 =item B<jos_mult>
