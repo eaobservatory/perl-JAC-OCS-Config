@@ -157,11 +157,12 @@ sub parameters {
     my %input = @_;
     for my $p (keys %input) {
       # Translate obsolete
+      my $value = $input{$p};
       if (exists $OBSOLETE{$p}) {
 	$p = $OBSOLETE{$p};
       }
       my $method = lc($p);
-      $self->$method( $input{$p} ) if $self->can( $method );
+      $self->$method( $value ) if $self->can( $method );
     }
   }
   # return all relevant parameters
