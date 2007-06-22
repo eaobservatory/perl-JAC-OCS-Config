@@ -49,15 +49,22 @@ our @PARAMS = (qw/
 		  SHAREOFF
 		  JOS_MULT
 		  JOS_MIN
-		  STEPS_PER_REF
-		  STEPS_PER_CAL
-		  N_REFSAMPLES
 		  N_CALSAMPLES
 		  NUM_FOCUS_STEPS
 		  FOCUS_STEP
 		  FOCUS_AXIS
-		  START_ROW
+		  STEPS_BTWN_REFS
+		  STEPS_BTWN_CALS
+		  START_INDEX
 		  /);
+
+# These are old parameter names that should be mapped to new values
+our %OBSOLETE = (
+		 STEPS_PER_REF => 'STEPS_BTWN_REFS',
+		 STEPS_PER_CAL => 'STEPS_BTWN_CALS',
+		 START_ROW => 'START_INDEX',
+		);
+
 
 =head1 METHODS
 
@@ -149,6 +156,10 @@ sub parameters {
   if (@_) {
     my %input = @_;
     for my $p (keys %input) {
+      # Translate obsolete
+      if (exists $OBSOLETE{$p}) {
+	$p = $OBSOLETE{$p};
+      }
       my $method = lc($p);
       $self->$method( $input{$p} ) if $self->can( $method );
     }
@@ -249,7 +260,7 @@ sub jos_min {
   return $self->{JOS_MIN};
 }
 
-=item B<steps_per_ref>
+=item B<steps_btwn_refs>
 
 The number of steps that can occur between sky references. A sky ref
 must be obtained if this number of steps is exceeded (at the next
@@ -257,27 +268,27 @@ convenient location in the recipe).
 
 =cut
 
-sub steps_per_ref {
+sub steps_btwn_refs {
   my $self = shift;
   if (@_) {
-    $self->{STEPS_PER_REF} = shift;
+    $self->{STEPS_BTWN_REFS} = shift;
   }
-  return $self->{STEPS_PER_REF};
+  return $self->{STEPS_BTWN_REFS};
 }
 
-=item B<steps_per_cal>
+=item B<steps_btwn_cals>
 
 The number of steps that are allowed to occur before a new CAL should
 be obtained.
 
 =cut
 
-sub steps_per_cal {
+sub steps_btwn_cals {
   my $self = shift;
   if (@_) {
-    $self->{STEPS_PER_CAL} = shift;
+    $self->{STEPS_BTWN_CALS} = shift;
   }
-  return $self->{STEPS_PER_CAL};
+  return $self->{STEPS_BTWN_CALS};
 }
 
 =item B<n_refsamples>
@@ -291,10 +302,7 @@ by the JOS in some recipes (e.g. raster).
 
 sub n_refsamples {
   my $self = shift;
-  if (@_) {
-    $self->{N_REFSAMPLES} = shift;
-  }
-  return $self->{N_REFSAMPLES};
+  warn "N_REFSAMPLES no longer required - operation will be ignored\n";
 }
 
 =item B<n_calsamples>
@@ -353,18 +361,18 @@ sub focus_step {
   return $self->{FOCUS_STEP};
 }
 
-=item B<start_row>
+=item B<start_index>
 
-Initial row number for a raster recipe.
+Initial row number for a raster recipe, or offset position for grid recipe.
 
 =cut
 
-sub start_row {
+sub start_index {
   my $self = shift;
   if (@_) {
-    $self->{START_ROW} = shift;
+    $self->{START_INDEX} = shift;
   }
-  return $self->{START_ROW};
+  return $self->{START_INDEX};
 }
 
 =item B<stringify>
@@ -401,6 +409,24 @@ sub stringify {
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
+
+# Backwards compatibility methods
+sub start_row {
+  my $self = shift;
+  warn "start_row() method deprecated. Use start_index() instead\n";
+  return $self->start_index( @_ );
+}
+sub steps_per_ref {
+  my $self = shift;
+  warn "steps_per_ref() method deprecated. Use steps_btwn_refs() instead\n";
+  return $self->steps_btwn_refs( @_ );
+}
+sub steps_per_cal {
+  my $self = shift;
+  warn "steps_per_cal() method deprecated. Use steps_btwn_cals() instead\n";
+  return $self->steps_btwn_cals( @_ );
+}
+
 
 =back
 
@@ -472,9 +498,9 @@ sub _process_dom {
   my $rec_name = find_attr( $rec, "NAME" );
   $self->recipe( $rec_name );
 
-  # Find the parameters
+  # Find the parameters (allow OBSOLETE keys)
   my $par_el = find_children( $rec, "parameters", min=>1, max=>1);
-  my %args = find_attr( $par_el, @PARAMS);
+  my %args = find_attr( $par_el, keys %OBSOLETE, @PARAMS);
   $self->parameters( %args );
 
 
