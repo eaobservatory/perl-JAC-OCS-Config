@@ -155,6 +155,14 @@ sub parameters {
   my $self = shift;
   if (@_) {
     my %input = @_;
+
+    # Go through the obsolete keys first to remove any that exist
+    # in non-obsoleted form
+    for my $k (keys %OBSOLETE) {
+       delete $input{$k} if (exists $input{$k} && exists $input{$OBSOLETE{$k}});
+    }
+
+    # Go through the keys and store them
     for my $p (keys %input) {
       # Translate obsolete
       my $value = $input{$p};
