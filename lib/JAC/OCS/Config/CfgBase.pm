@@ -522,6 +522,7 @@ sub _import_xml_string {
   # create new parser
   my $parser = new XML::LibXML;
   $parser->validation( $self->_validation );
+  $parser->expand_xinclude(1);
   $self->_parser( $parser );
 
   # Allow the parser to fail
