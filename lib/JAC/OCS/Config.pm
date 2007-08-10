@@ -354,25 +354,18 @@ sub write_file {
   my $TRANS_DIR = shift;
   $TRANS_DIR = $self->outputdir unless defined $TRANS_DIR;
 
-  # We need to read the directory to look for subdirs matching task names
-  opendir my $dh, $TRANS_DIR or
-    throw JAC::OCS::Config::Error::FatalError("Error opening OCS config output directory '$TRANS_DIR': $!");
+  # Reading the directory can take a long time. Since we know that the
+  # number of possible directory names is small we simply see if those
+  # directories are present.
 
-  # Get all the dirs excluding unix hidden directories
-  my @dirs = grep { -d File::Spec->catdir($TRANS_DIR,$_)
-		    && $_ !~ /^\./
-		  } readdir($dh);
-
-  # Now we need to work out which directories are meant to receive
+  # Get the possible list of directories that are meant to receive
   # configurations
   my ($tmap, $invtmap) = $self->_task_map();
 
-  # and which directories require full configurations regardless (as hash for easy access)
-  my %full_configs = map { $_, undef } $self->requires_full_config;
+  my @dirs = grep { -d File::Spec->catdir($TRANS_DIR,$_) } keys %$invtmap; 
 
-  # loop over the directories, storing those that have a corresponding
-  # key in the inverse task map
-  @dirs = grep { exists $invtmap->{$_} } @dirs;;
+  # Directories which require full configurations regardless (as hash for easy access)
+  my %full_configs = map { $_, undef } $self->requires_full_config;
 
   # Format is acsis_YYYYMMDD_HHMMSSuuuuuu.xml
   #  where uuuuuu is microseconds
