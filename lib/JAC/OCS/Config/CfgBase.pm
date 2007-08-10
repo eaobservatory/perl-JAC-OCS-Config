@@ -479,7 +479,8 @@ sub _import_xml_entity_file {
   my $file = shift;
   my $wrapper = (shift || 'dummyWrapperElement');
   my $xml = $self->_read_xml_from_file( $file );
-  $xml = "<$wrapper>\n$xml\n</$wrapper>\n";
+  # We need the XInclude namespace to allow this entity to use XInclude
+  $xml = "<$wrapper xmlns:xi=\"http://www.w3.org/2001/XInclude\">\n$xml\n</$wrapper>\n";
 
   # See _import_xml_file
   # We need to chdir to the path
