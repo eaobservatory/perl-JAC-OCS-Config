@@ -21,7 +21,7 @@ use strict;
 use warnings;
 use XML::LibXML;
 use File::Basename qw/ dirname /;
-use Cwd qw/ chdir cwd /;
+use Cwd qw/ getcwd /;
 
 use JAC::OCS::Config::Error qw/ :try /;
 
@@ -662,10 +662,25 @@ sub _cdtoxml {
   my $self = shift;
   my $file = shift;
 
-  my $currdir = cwd;
+  # Rather than get the current working directory simply to return
+  # to it, we open the current directory and will chdir back to it later.
+  # Do nothing if dirname returns the current directory
   my $dirname = dirname( $file );
-  my $status = chdir($dirname);
-  throw JAC::OCS::Config::Error::FatalError("Could not chdir to XML file location [$dirname]") unless $status;
+
+  my $currdir;
+  if (defined $dirname && $dirname ne File::Spec->curdir) {
+      # Modern perls can use fchdir
+      if ($] >= 5.008008) {
+	  opendir($currdir, File::Spec->curdir) 
+	      or throw JAC::OCS::Config::Error::FatalError("Error opening current directory");
+      } else {
+	  $currdir = getcwd;
+      }
+
+      # Change to the directory
+      my $status = chdir($dirname);
+      throw JAC::OCS::Config::Error::FatalError("Could not chdir to XML file location [$dirname]") unless $status;
+  }
 
   return [ $currdir ];
 }
@@ -687,7 +702,10 @@ sub _cdfromxml {
   my $currdir = $cdinfo->[0];
 
   # get back to the current directory before throwing the exception
-  chdir($currdir) or throw JAC::OCS::Config::Error::FatalError("Could not chdir back to old working directory [$currdir]!");
+  if (defined $currdir) {
+      chdir($currdir) or throw JAC::OCS::Config::Error::FatalError("Could not chdir back to old working directory [$currdir]!");
+      $cdinfo->[0] = undef;
+  }
 
   return;
 }
