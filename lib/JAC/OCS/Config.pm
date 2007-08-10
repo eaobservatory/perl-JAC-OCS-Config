@@ -174,7 +174,7 @@ sub tasks {
   return @tasks;
 }
 
-=item B<obssum>
+=item B<obs_summary>
 
 Observation summary as an C<JAC::OCS::Config::ObsSummary> object.
 
