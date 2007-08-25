@@ -400,7 +400,7 @@ sub write_file {
     $storename = $fullname unless defined $storename;
 
     # Open it [without checking to see if we are clobbering a pre-existing file]
-    open my $fh, "> $fullname" or
+    open(my $fh, "> $fullname") or
       throw JAC::OCS::Config::Error::IOError("Error opening config output file $fullname: $!");
 
     # Now we use the inverse map and full config list to select specific configurations for
