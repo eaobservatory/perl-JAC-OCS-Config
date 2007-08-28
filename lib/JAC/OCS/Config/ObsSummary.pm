@@ -225,7 +225,7 @@ sub _process_dom {
 
 The Observation summary XML specification is documented in
 OCS/ICD/021 with a DTD available at
-http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/021/obs_summary.dtd.
+http://docs.jach.hawaii.edu/JCMT/OCS/ICD/021/obs_summary.dtd.
 
 =head1 AUTHOR
 

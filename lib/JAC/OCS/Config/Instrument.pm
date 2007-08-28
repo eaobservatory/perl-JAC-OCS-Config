@@ -688,7 +688,7 @@ sub _process_dom {
 
 The Instrument XML specification is documented in OCS/ICD/004 with a
 DTD available at
-http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/012/instrument.dtd.
+http://docs.jach.hawaii.edu/JCMT/OCS/ICD/012/instrument.dtd.
 
 =head1 AUTHOR
 

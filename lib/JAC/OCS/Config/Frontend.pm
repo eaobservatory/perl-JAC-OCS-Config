@@ -424,7 +424,7 @@ sub _process_mask {
 
 The frontend XML configuration specification is documented in
 OCS/ICD/004 with a DTD available at
-http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/004/frontend_configure.dtd.
+http://docs.jach.hawaii.edu/JCMT/OCS/ICD/004/frontend_configure.dtd.
 
 =head1 AUTHOR
 

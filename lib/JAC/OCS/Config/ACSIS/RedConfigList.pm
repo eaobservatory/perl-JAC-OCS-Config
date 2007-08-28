@@ -56,7 +56,7 @@ sub getRootElementName {
 
 The ACSIS XML configuration specification is documented in
 OCS/ICD/005 with a DTD available at
-http://www.jach.hawaii.edu/JACdocs/JCMT/OCS/ICD/005/acsis.dtd.
+http://docs.jach.hawaii.edu/JCMT/OCS/ICD/005/acsis.dtd.
 
 =head1 AUTHOR
 
