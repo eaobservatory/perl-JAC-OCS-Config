@@ -50,6 +50,7 @@ use JAC::OCS::Config::Frontend;
 use JAC::OCS::Config::Instrument;
 use JAC::OCS::Config::Header;
 use JAC::OCS::Config::RTS;
+use JAC::OCS::Config::POL;
 use JAC::OCS::Config::JOS;
 use JAC::OCS::Config::ACSIS;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
@@ -73,7 +74,7 @@ $DEBUG = 0;
 use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/obs_summary jos header rts frontend instrument_setup
+our @CONFIGS = qw/obs_summary jos header rts frontend pol instrument_setup
 		  tcs acsis /;
 
 
@@ -252,6 +253,25 @@ sub acsis {
   }
   return $self->{ACSIS_CONFIG};
 }
+
+=item B<pol>
+
+Polarimeter configuration. This can be undefined if the polarimeter is
+not part of the observation.
+
+  $acsis_cfg = $cfg->pol();
+
+=cut
+
+sub pol {
+  my $self = shift;
+  if (@_) {
+    $self->{POL_CONFIG} = check_class_fatal( "JAC::OCS::Config::POL",shift);
+  }
+  return $self->{POL_CONFIG};
+}
+
+
 
 =item B<instrument_setup>
 
@@ -1340,7 +1360,7 @@ sub getRootElementName {
 
 =item B<outputdir>
 
-Default output directory for writing the ACSIS configuration. Currently
+Default output directory for writing the OCS configuration. Currently
 a class method rather than an instance method.
 
   $out = JAC::OCS::Config->outputdir();
@@ -1408,7 +1428,7 @@ Enable or disable verbose messages. Default is false (quiet).
 Output file handles to use for verbose messages.
 Defaults to STDOUT.
 
-  OMP::Translator::ACSIS->outhdl( \*STDOUT, $fh );
+  JAC::OCS::Config->outhdl( \*STDOUT, $fh );
 
 Returns an C<IO::Tee> object.
 
@@ -1599,6 +1619,9 @@ sub _process_dom {
   $cfg = find_children( $el, "RTS_CONFIG", min => 0, max => 1);
   $self->rts( new JAC::OCS::Config::RTS( DOM => $cfg) ) if $cfg;
 
+  $cfg = find_children( $el, "POL_CONFIG", min => 0, max => 1);
+  $self->pol( new JAC::OCS::Config::POL( DOM => $cfg) ) if $cfg;
+
   return;
 }
 
@@ -1610,7 +1633,8 @@ Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
 =head1 COPYRIGHT
 
-Copyright (C) 2004-2005 Particle Physics and Astronomy Research Council.
+Copyright (C) 2007 Science and Technology Facilities Council.
+Copyright (C) 2004-2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
