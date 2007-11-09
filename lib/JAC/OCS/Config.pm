@@ -153,7 +153,7 @@ by this configuration.
 Can be used to configure the JOS. Note that the JOS is not included in
 this list and also note that the tasks() method will not necessairly
 contain the same values since the task list in the JOS object is not
-necessairly derived from the configuration (it may just be the
+necessarily derived from the configuration (it may just be the
 settings that were read from disk).
 
 =cut
@@ -249,9 +249,32 @@ observation.
 sub acsis {
   my $self = shift;
   if (@_) {
+    throw JAC::OCS::Config::Error::FatalError("SCUBA-2 configuration already present")
+      if defined $self->scuba2();
     $self->{ACSIS_CONFIG} = check_class_fatal( "JAC::OCS::Config::ACSIS",shift);
   }
   return $self->{ACSIS_CONFIG};
+}
+
+=item B<scuba2>
+
+SCUBA-2 configuration. Can not be present if ACSIS is also defined.
+
+  $scuba2_config = $cfg->scuba2;
+
+=cut
+
+sub scuba2 {
+  my $self = shift;
+  if (@_) {
+    throw JAC::OCS::Config::Error::FatalError("ACSIS configuration already present")
+      if defined $self->acsis();
+    throw JAC::OCS::Config::Error::FatalError("Heterodyne frontend configuration already present")
+      if defined $self->frontend();
+    $self->{SCUBA2_CONFIG} = check_class_fatal( "JAC::OCS::Config::SCUBA2",
+                                                shift);
+  }
+  return $self->{SCUBA2_CONFIG};
 }
 
 =item B<pol>
@@ -305,6 +328,8 @@ sub frontend {
   my $self = shift;
   if (@_) {
     my $fe = shift;
+    throw JAC::OCS::Config::Error::FatalError("SCUBA-2 configuration already present")
+      if defined $self->scuba2();
     $self->{FRONTEND_CONFIG} = check_class_fatal( "JAC::OCS::Config::Frontend",
 						  $fe);
     # if the frontend does not have a name but we do have an INSTRUMENT
@@ -479,6 +504,28 @@ sub write_file {
   }
 
   return $storename;
+}
+
+=item B<is_cont>
+
+Returns true if this is represents a continuum observation, false (0) if it
+is heterodyne. Returns undef if there is not enough information to determine
+the configuration mode.
+
+   $iscont = $cfg->is_cont( );
+
+JCMT specific.
+
+=cut
+
+sub is_cont {
+  my $self = shift;
+  if (defined $self->scuba2()) {
+    return 1;
+  } elsif (defined $self->acsis() || defined $self->frontend()) {
+    return 0;
+  }
+  return undef;
 }
 
 =item B<instrument>
@@ -1240,6 +1287,9 @@ sub stringify {
 
   my $xml = '';
 
+  # Make sure that we have the correct task names
+  $self->_sync_cont_status();
+
   # Standard declaration plus DTD
   $xml .= '<?xml version="1.0" encoding="US-ASCII"?>' .
     '<!DOCTYPE OCS_CONFIG  SYSTEM  "/jac_sw/itsroot//ICD/001/ocs.dtd">' .
@@ -1571,6 +1621,25 @@ sub _task_map {
   return (\%map, \%inverse);
 }
 
+=item B<_sync_cont_status>
+
+Synchronizes "continuum" mode in all child configurations that
+require the information.
+
+=cut
+
+sub _sync_cont_status {
+  my $self = shift;
+  my $iscont;
+  for my $method ( "pol" ) {
+    my $value = $self->$method();
+    if (defined $value) {
+      $iscont = $self->is_cont() unless defined $iscont; # cache
+      $value->is_cont( $iscont );
+    }
+  }
+}
+
 =item B<_process_dom>
 
 Using the C<_rootnode> node referring to the top of the TCS XML,
@@ -1621,6 +1690,9 @@ sub _process_dom {
 
   $cfg = find_children( $el, "POL_CONFIG", min => 0, max => 1);
   $self->pol( new JAC::OCS::Config::POL( DOM => $cfg) ) if $cfg;
+
+  # we have finished the parse so set continuum status
+  $self->_sync_cont_status();
 
   return;
 }

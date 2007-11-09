@@ -87,6 +87,47 @@ sub new {
 
 =over 4
 
+=item B<tasks>
+
+Name of the task that woulbde  involved in reading this config.
+
+  @tasks = $tcs->tasks;
+
+Can be ROVER or POL-2 depending on the state of C<is_cont>
+attribute (which can be set during stringification or read, or
+explicitly by the translator).
+
+  @tasks = $self->tasks;
+
+=cut
+
+sub tasks {
+  my $self = shift;
+  return ( $self->is_cont ? "POL-2" : "ROVER" );
+}
+
+=item B<is_cont>
+
+If true this is a continuum polarimeter (POL-2), otherwise it is
+associated with the heterodyne systems (ROVER). Controls how the task
+list is defined.
+
+  $pol->is_cont( 1 );
+  $iscont = $pol->is_cont();
+
+There is not enough information in a POL_CONFIG to be able to determine
+this internally.
+
+=cut
+
+sub is_cont {
+  my $self = shift;
+  if (@_) {
+    $self->{IsCont} = shift;
+  }
+  return $self->{IsCont};
+}
+
 =item B<is_spinning>
 
 Indicates whether the polarimeter is in spinning mode (true) or
