@@ -31,6 +31,7 @@ use XML::LibXML;
 use Data::Dumper;
 
 use Astro::Coords::Angle;
+use Astro::Coords::Offset;
 
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::Helper qw/ check_class_fatal check_class /;
@@ -45,6 +46,17 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 use vars qw/ $VERSION /;
 
 $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+
+# Allowed SCAN patterns
+my @SCAN_PATTERNS = qw/ RASTER
+                        DISCRETE_BOUSTROPHEDON
+                        CONTINUOUS_BOUSTROPHEDON
+                        SQUARE_PONG
+                        ROUNDED_PONG
+                        CURVY_PONG
+                        /;
+# hash for easy checks
+my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
 
 =head1 METHODS
 
@@ -78,6 +90,8 @@ sub new {
 			    $JAC::OCS::Config::CfgBase::INITKEY => { 
 								    MAPAREA => {},
 								    OFFSETS => [],
+                                                                    MS_OFFSETS => [],
+                                                                    ELEVATIONS => [],
 								    SCAN => {},
 								   }
 			  );
@@ -108,6 +122,40 @@ sub posang {
     $self->{POSANG} = check_class_fatal( "Astro::Coords::Angle", shift);
   }
   return $self->{POSANG};
+}
+
+=item B<microsteps>
+
+Micro steps (offsets in the focal plane) associated with the observing
+area. Microsteps can be combined with C<offsets>.
+
+See the C<offsets> method for more details. Note that the PA element is ignored
+for these offsets.
+
+Microsteps are only used in "OFFSET" obsAreas.
+
+=cut
+
+sub microsteps {
+  my $self = shift;
+
+  if (@_) {
+    my @valid = check_class( "Astro::Coords::Offset", @_ );
+    warnings::warnif("No micro steps passed validation.")
+	unless @valid;
+    @{$self->{MS_OFFSETS}} = @valid;
+    $self->old_dtd(0); # this is modern DTD
+  }
+  if (wantarray) {
+    return @{$self->{MS_OFFSETS}};
+  } else {
+    # do not want to create an undef entry
+    if (scalar @{$self->{MS_OFFSETS}}) {
+      return $self->{MS_OFFSETS}->[0];
+    } else {
+      return undef;
+    }
+  }
 }
 
 =item B<offsets>
@@ -150,6 +198,8 @@ sub offsets {
   }
 }
 
+
+
 =item B<maparea>
 
 Return details of the area to be mapped. Recognized keys are "WIDTH"
@@ -180,11 +230,16 @@ Specification of how to scan the map area.
   %scan = $obs->scan;
   $obs->scan( %scan );
 
-Allowed keys for hash are VELOCITY, SYSTEM, DY, REVERSAL and TYPE.
+Allowed keys for hash are VELOCITY, SYSTEM, DY, TYPE, PATTERN and NTERMS.
 Also, PA must be a reference to an array of C<Astro::Coords::Angle>
 objects.
 
-REVERSAL should be a boolean rather than a "YES" or "NO".
+NTERMS is only used for CURVY_PONG patterns.
+
+REVERSAL is not supported in newer versions of the TCS. It is 
+equivalent to a PATTERN of RASTER (REVERSAL=NO) or DISCRETE_BOUSTROPHEDON
+(REVERSAL=YES). If REVERSAL is supplied a pattern will be inserted if
+no PATTERN is provided.
 
 =cut
 
@@ -194,9 +249,27 @@ sub scan {
   my $self = shift;
   if (@_) {
     my %args = @_;
-    for my $k (qw/ VELOCITY SYSTEM DY REVERSAL TYPE PA /) {
-      $self->{SCAN}->{$k} = $args{$k};
+    if (exists $args{REVERSAL} && !exists $args{PATTERN}) {
+      $args{PATTERN} = ($args{REVERSAL} ? "DISCRETE_BOUSTROPHEDON" :
+                        "RASTER" );
+      $self->old_dtd( 1 );
     }
+
+    # Make sure it is a valid pattern
+    if (exists $args{PATTERN}) {
+      throw JAC::OCS::Config::Error::FatalError("Supplied pattern '".
+                                                $args{PATTERN} .
+                                                "' is not from the supported list")
+        unless exists $SCAN_PATTERNS{$args{PATTERN}};
+    }
+
+    for my $k (qw/ VELOCITY SYSTEM DY TYPE PA PATTERN /) {
+      # upper case patterns and type
+      my $val = $args{$k};
+      $val = uc($val) if not ref $val;
+      $self->{SCAN}->{$k} = $val;
+    }
+
   }
   return %{ $self->{SCAN} };
 }
@@ -212,7 +285,13 @@ Returns undef if the oberving area is not a scan.
 Recognized patterns are:
 
   RASTER         (normal raster with scan reversal false)
-  BOUSTROPHEDON  (raster with scan reversal true)
+  DISCRETE_BOUSTROPHEDON  (raster with scan reversal true)
+  CONTINUOUS_BOUSTORPHEDON (boustrophedon with no breaks)
+  SQUARE_PONG
+  ROUNDED_PONG
+  CURVY_PONG
+
+If no pattern has been specified, the default is DISCRETE_BOUSTROPHEDON.
 
 =cut
 
@@ -221,22 +300,101 @@ sub scan_pattern {
 
   if ( $self->mode eq 'area' ) {
     my %scan = $self->scan;
-    # Absence of REVERSAL means "YES"
-    my $rev = $scan{REVERSAL};
-    if (!defined $rev || $rev ) {
-      return "BOUSTROPHEDON";
+    # Absence of PATTERN means DISCRETE_BOUSTROPHEDON
+    if (!exists $scan{PATTERN} || (exists $scan{PATTERN} && !defined $scan{PATTERN})) {
+      return "DISCRETE_BOUSTROPHEDON";
     } else {
-      return "RASTER";
+      return $scan{PATTERN};
     }
   } else {
     return undef;
   }
 }
 
+=item B<skydip>
+
+Store or retrieve the elevations that should be visited by the telescope during the skydip.
+
+  @el = $oa->skydip;
+  $oa->skydip( @el );
+
+Elevations should be stored as C<Astro::Coords::Angle> objects.
+
+The elevation angles are sorted (the TCS requires that but will choose to scan in either direction).
+
+=cut
+
+sub skydip {
+  my $self = shift;
+  if (@_) {
+    my @valid = check_class( "Astro::Coords::Angle", @_ );
+    warnings::warnif("No elevations passed validation.")
+	unless @valid;
+    # Check range
+    for my $e (@valid) {
+      my $deg = $e->degrees;
+      throw JAC::OCS::Config::Error::FatalError("Elevation must be in range 0 < el < 90 degrees (not '$deg' degrees)")
+        if ($deg <= 0 || $deg > 90);
+    }
+
+    # Sort
+    @valid = sort { $a->degrees <=> $b->degrees } @valid; 
+
+    @{$self->{ELEVATIONS}} = @valid;
+    $self->old_dtd(0); # this is modern DTD
+  }
+  if (wantarray) {
+    return @{$self->{ELEVATIONS}};
+  } else {
+    # do not want to create an undef entry
+    if (scalar @{$self->{ELEVATIONS}}) {
+      return $self->{ELEVATIONS}->[0];
+    } else {
+      return undef;
+    }
+  }
+}
+
+
+=item B<skydip_mode>
+
+Controls how the telescope moves between the elevations defined for the Skydip.
+Options are "Continuous" or "Discrete".
+
+=cut
+
+sub skydip_mode {
+  my $self = shift;
+  if (@_) {
+    my $mode = uc(shift);
+    if ($mode ne 'CONTINUOUS' && $mode ne 'DISCRETE') {
+      throw JAC::OCS::Config::Error::FatalError("Skydip mode '$mode' not supported");
+    }
+    $self->{SKYDIP_MODE} = $mode;
+  }
+  return $self->{SKYDIP_MODE};
+}
+
+=item B<skydip_velocity>
+
+Velocity in elevation of continuous skydip. Units are arcsec/sec.
+
+=cut
+
+sub skydip_velocity {
+  my $self = shift;
+  if (@_) {
+    $self->{SKYDIP_VELOCITY} = shift;
+  }
+  return $self->{SKYDIP_VELOCITY};
+}
+
 =item B<mode>
 
 Return the type of observing area that has been specified.
-Can be either "offsets" or "area".
+Can be either "offsets", "skydip" or "area". Offsets and 
+micro-steps can be provided for "area" mode (only the first
+of each are used).
 
 =cut
 
@@ -246,12 +404,36 @@ sub mode {
   my $mode = '';
   if ($self->maparea) {
     $mode = "area";
-  } elsif ($self->offsets) {
+  } elsif ($self->skydip) {
+    $mode = "skydip";
+  } elsif ($self->offsets || $self->microsteps) {
     $mode = "offsets";
   } else {
-    croak "obsArea must be either offsets or map area";
+    croak "obsArea must be either offsets, skydip or map area";
   }
   return $mode;
+}
+
+=item B<old_dtd>
+
+If true indicates that this configuration is for an old version
+of the DTD that does not support scan patterns. This controls
+the stringification. This is detected by the use of the REVERSAL flag.
+
+Note that storing microsteps or skydip information will unset this
+flag.
+
+  $oa->old_dtd( 1 );
+
+Default is false.
+
+=cut
+
+sub old_dtd {
+  my $self = shift;
+  if (@_) { $self->{OLD_DTD} = shift; }
+  return 0;
+  return $self->{OLD_DTD};
 }
 
 =item B<stringify>
@@ -284,23 +466,51 @@ sub stringify {
     for my $o ($self->offsets) {
       $xml .= offset_to_xml( $o );
     }
+    for my $m ($self->microsteps) {
+      $xml .= msoffset_to_xml( $m );
+    }
+
   } elsif ($mode eq 'area') {
     $xml .= "<SCAN_AREA>\n";
 
+    # Offsets
     my @o = $self->offsets;
     $xml .= offset_to_xml( $o[0] ) if @o;
 
+    # Microsteps are not allowed in SCAN_AREA
+
+    # Area definition
     my %area = $self->maparea;
 
     $xml .= "<AREA HEIGHT=\"$area{HEIGHT}\" WIDTH=\"$area{WIDTH}\" />\n";
 
+    # Scan definition
     my %scan = $self->scan;
+
+    # DTD switching
+    my $reversal;
+    my $pattern;
+    if ($self->old_dtd) {
+      if (defined $scan{PATTERN}) {
+        if ($scan{PATTERN} eq 'RASTER') {
+          $reversal = "NO";
+        } elsif ($scan{PATTERN} eq 'DISCRETE_BOUSTROPHEDON') {
+          $reversal = "YES";
+        } else {
+          throw JAC::OCS::Config::Error::FatalError("Required to use old DTD but REVERSAL is not derivable from pattern '$scan{PATTERN}'");
+        }
+      }
+    } else {
+      $pattern = $scan{PATTERN};
+    }
+
     $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
     $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n" if defined $scan{SYSTEM};
     $xml .= "      DY=\"$scan{DY}\"\n";
-    $xml .= "      REVERSAL=\"".
-      ($scan{REVERSAL} ? "YES" : "NO" )."\"\n" if defined $scan{REVERSAL};
-    $xml .= "      TYPE=\"$scan{TYPE}\"" if defined $scan{TYPE};
+    $xml .= "      REVERSAL=\"$reversal\"\n" if defined $reversal;
+    $xml .= "      TYPE=\"$scan{TYPE}\"\n" if defined $scan{TYPE};
+    $xml .= "      PATTERN=\"$scan{PATTERN}\"\n" if defined $pattern;
+    $xml .= "      NTERMS=\"$scan{NTERMS}\"\n" if defined $scan{NTERMS};
     $xml .= " >\n";
 
     for my $pa (@{ $scan{PA} }) {
@@ -310,6 +520,23 @@ sub stringify {
     $xml .= "</SCAN>\n";
 
     $xml .= "</SCAN_AREA>\n";
+  } elsif ($mode eq 'skydip') {
+    
+    $xml .= "<SKYDIP \n";
+    my $mode = $self->skydip_mode;
+    $xml .= "     TYPE=\"$mode\"\n" if defined $mode;
+    if (defined $mode && $mode eq 'CONTINUOUS') {
+      $xml .= "     VELOCITY=\"" . $self->skydip_velocity ."\"\n" if defined $self->skydip_velocity;
+    }
+    $xml .= " >\n";
+
+    for my $el ($self->skydip) {
+      $xml .= "<ELEVATION>". $el->degrees ."</ELEVATION>\n";
+    }
+
+    $xml .= "</SKYDIP>\n";
+
+
   } else {
     croak "Unrecognized obsArea mode '$mode'";
   }
@@ -318,6 +545,15 @@ sub stringify {
 
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
+
+# Helper routine to convert microsteps to xml
+
+sub msoffset_to_xml {
+  my $ms = shift;
+  my ($dx,$dy) = map { $_->arcsec } $ms->offsets;
+  return "<MS_OFFSET DX=\"$dx\"  DY=\"$dy\" />\n";
+}
+
 
 =back
 
@@ -365,6 +601,9 @@ sub _process_dom {
   # Find the position angle
   $self->_find_posang();
 
+  # Find any microsteps
+  $self->_find_microsteps();
+
   # Find any offsets
   $self->_find_offsets();
 
@@ -372,6 +611,9 @@ sub _process_dom {
   # Noting that there will either be offsets at this level
   # or a scan area, not both
   $self->_find_scan_area();
+
+  # Look for a skydip
+  $self->_find_skydip();
 
   return;
 }
@@ -413,6 +655,28 @@ sub _find_offsets {
 
 }
 
+=item B<_find_microsteps>
+
+Find micro steps (MS_OFFSET) elements.
+
+Updates the object.
+
+=cut
+
+sub _find_microsteps {
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  # Find MS_OFFSET (do not have to be any)
+  my @ms = find_children( $root, "MS_OFFSET");
+  my @offsets;
+  for my $ms (@ms) {
+    my %attrs = find_attr( $ms, "DX", "DY" );
+    push(@offsets, Astro::Coords::Offset->new( $attrs{DX}, $attrs{DY}, system => "FPLANE" ));
+  }
+  $self->microsteps( @offsets ) if @offsets;
+}
+
 =item B<_find_scan_area>
 
 The scan area defines a raster map. It can include an offset,
@@ -427,7 +691,7 @@ sub _find_scan_area {
 
   # Find the SCAN_AREA
   my $scanarea = find_children( $root, "SCAN_AREA", max => 1);
-  return unless $scanarea;
+  return unless defined $scanarea;
 
   # We now have a scan area element
   # Find the optional offset
@@ -454,6 +718,38 @@ sub _find_scan_area {
   return;
 }
 
+=item B<_find_skydip>
+
+Look for evidence of skydip in the XML.
+
+The object is updated.
+
+=cut
+
+sub _find_skydip {
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  my $skydip = find_children( $root, "SKYDIP", max => 1 );
+  return unless defined $skydip;
+
+  my %attrs = find_attr( $skydip, "TYPE", "VELOCITY" );
+  $self->skydip_mode( $attrs{TYPE} );
+  $self->skydip_velocity( $attrs{VELOCITY} );
+
+  my @elevation_nodes = find_children( $skydip, "ELEVATION", min => 2 );
+  my @el;
+  for my $element (@elevation_nodes) {
+    my $value = $element->firstChild();
+    next unless $value;
+    push(@el, Astro::Coords::Angle->new( $value->toString, units => 'deg' ) );
+  }
+  throw JAC::OCS::Config::Error::FatalError( "Must provide at least 2 elevations to SKYDIP" )
+    unless scalar(@el) > 1;
+
+  $self->skydip( @el );
+}
+
 =back
 
 =end __PRIVATE_METHODS__
@@ -462,7 +758,8 @@ sub _find_scan_area {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright (C) 2007 Science and Technology Facilities Council.
+Copyright (C) 2004 - 2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
