@@ -265,6 +265,7 @@ sub scan {
 
     for my $k (qw/ VELOCITY SYSTEM DY TYPE PA PATTERN /) {
       # upper case patterns and type
+      next unless exists $args{$k};
       my $val = $args{$k};
       $val = uc($val) if not ref $val;
       $self->{SCAN}->{$k} = $val;
@@ -432,7 +433,6 @@ Default is false.
 sub old_dtd {
   my $self = shift;
   if (@_) { $self->{OLD_DTD} = shift; }
-  return 0;
   return $self->{OLD_DTD};
 }
 
