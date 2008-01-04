@@ -166,6 +166,9 @@ in this object C<lines> hash.
 A transition such as '8 1 4 - 7 0 3' is converted to '8_1_4-7_0-3'.
 You can not use commas in an ID attribute.
 
+Note that XML IDs can not start with a number (e.g. 13CO) so 
+a "tr" is prefixed to all keys.
+
 =cut
 
 sub moltrans2key {
@@ -186,7 +189,8 @@ sub moltrans2key {
   $mol =~ s/\s+//g;
   $mol = uc($mol);
 
-  return ($mol . $trans);
+  # Ensure that we start with a letter
+  return ("tr". $mol . $trans);
 }
 
 =back
