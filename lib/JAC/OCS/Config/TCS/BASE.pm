@@ -630,12 +630,15 @@ sub _extract_coord_info {
                                  Dumper(\%elements))
       unless defined $c;
 
- } elsif ($sysname eq "namedSystem") {
+  } elsif ($sysname eq "namedSystem") {
+
+    throw JAC::OCS::Config::Error::FatalError("No planet name supplied for namedSystem")
+      unless $name;
 
     # A planet that the TCS already knows about
     $c = Astro::Coords->new( planet => $name);
 
-    throw JAC::OCS::Config::Error::FatalError("Unable to process planet $name\n")
+    throw JAC::OCS::Config::Error::FatalError("Unable to process planet '$name'\n")
       unless defined $c;
 
   } else {
