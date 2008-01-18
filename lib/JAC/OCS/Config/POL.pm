@@ -336,14 +336,14 @@ sub stringify {
 
 Returns the names of any associated configurations required for this
 configuration to be used in a full OCS_CONFIG. The POL configuration
-does not require any other elements.
+requires knowledge of the associated instrument setup.
 
   @requires = $cfg->dtdrequires();
 
 =cut
 
 sub dtdrequires {
-  return ();
+  return ('instrument_setup');
 }
 
 =item B<getRootElementName>
