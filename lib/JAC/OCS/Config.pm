@@ -719,7 +719,7 @@ sub duration {
     # Number of sequences is number of rows plus number of refs
     $nseq = $nrefs + $nscans;
 
-  } elsif ($map_mode eq 'jiggle' && $sw_mode eq 'chop') {
+  } elsif ($map_mode eq 'jiggle' && ($sw_mode eq 'chop' || $sw_mode eq 'freqsw')) {
 
     # ABBA nodding except for focus (AB)
     # No position switch
@@ -754,6 +754,9 @@ sub duration {
       # time in the off
       my $nchunks = $njigs / $t{N_JIGS_ON};
       $nsteps += $nchunks * $t{N_CYC_OFF};
+    } elsif ($secondary->smu_mode eq 'jiggle') {
+      # no chopping
+      $nsteps = $jos->jos_mult * $njigs;
     } else {
       throw JAC::OCS::Config::Error::FatalError("Unexpected smu mode: ".
 						$secondary->smu_mode);
@@ -761,24 +764,32 @@ sub duration {
 
     print "Nsteps = $nsteps\n" if $DEBUG;
 
-    # Nod set size
-    my $nod_set_size = 2; # ABBA
-    if ($obssum->type =~ /^(focus)/i) {
-      $nod_set_size = 1; # AB
+    if ($sw_mode eq 'chop') {
+      # Nod set size
+      my $nod_set_size = 2; # ABBA
+      if ($obssum->type =~ /^(focus)/i) {
+        $nod_set_size = 1; # AB
+      }
+
+      # Number of nods (A -> B  + B -> A)
+      # AB is the minimum set. Nod Set Size can be ABBA
+      # include the offsetting
+      $nnods = $jos->num_nod_sets * $nod_set_size * $noffsets;
+      print "Number of nods = $nnods\n" if $DEBUG;
+
+      # Total number of steps is twice this because each spectrum
+      # is an AB
+      $nsteps *= $nnods * 2;
+
+      # Number of sequence starts
+      $nseq = $nnods * 2;
+    } elsif ($sw_mode eq 'freqsw') {
+      print "No nodding\n" if $DEBUG;
+      $nseq = $jos->num_cycles;
+
+    } else {
+      throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is an unexpected switch mode in jiggle: $sw_mode");
     }
-
-    # Number of nods (A -> B  + B -> A)
-    # AB is the minimum set. Nod Set Size can be ABBA
-    # include the offsetting
-    $nnods = $jos->num_nod_sets * $nod_set_size * $noffsets;
-    print "Number of nods = $nnods\n" if $DEBUG;
-
-    # Total number of steps is twice this because each spectrum
-    # is an AB
-    $nsteps *= $nnods * 2;
-
-    # Number of sequence starts
-    $nseq = $nnods * 2;
 
   } elsif ($map_mode eq 'grid' && $sw_mode eq 'chop') {
 
@@ -881,7 +892,7 @@ sub duration {
     $nseq = $nrefs + $nchunks;
 
   } else {
-    throw JAC::OCS::Config::Error::FatalError("Unrecognized mapping mode for duration calculation: $map_mode");
+    throw JAC::OCS::Config::Error::FatalError("Unrecognized mapping mode for duration calculation: $map_mode/$sw_mode");
   }
 
   # Total number of steps on+off and smu position
