@@ -26,10 +26,10 @@ use XML::LibXML;
 use JAC::OCS::Config::Error qw| :try |;
 
 use JAC::OCS::Config::XMLHelper qw(
-				   find_children
-				   find_attr
-				   indent_xml_string
-				  );
+                                    find_children
+                                    find_attr
+                                    indent_xml_string
+                                 );
 
 use JAC::OCS::Config::Header::Item;
 
@@ -65,10 +65,10 @@ sub new {
   # Now call base class with all the supplied options +
   # extra initialiser
   return $self->SUPER::new( @_, 
-			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    ITEMS => [],
-								   }
-			  );
+                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+                                                                    ITEMS => [],
+                                                                   }
+                          );
 }
 
 =back
@@ -181,14 +181,14 @@ sub set_ocscfg_filename {
 
   # Looking either for keyword of OCSCFG or method getOCSFG
   my @items = $self->item( sub { 
-			     ($_[0]->keyword eq $magic) ||
-			       (defined $_[0]->method &&
-				$_[0]->method eq "get$magic");
-			   } );
+                             ($_[0]->keyword eq $magic) ||
+                               (defined $_[0]->method &&
+                                $_[0]->method eq "get$magic");
+                           } );
 
   for my $i (@items) {
     $i->value( $filename );
-    $i->source( undef ); # clear derived status
+    $i->source( undef );        # clear derived status
   }
 
 }
@@ -216,7 +216,7 @@ sub stringify {
     $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n"
       unless ($i->type eq 'BLANKFIELD' || $i->type eq 'COMMENT');
     $xml .= "        COMMENT=\"" . $i->comment . "\"\n" 
-     if (defined $i->comment);
+      if (defined $i->comment);
     $xml .= "        VALUE=\"" . $i->value . "\" "
       unless $i->type eq 'BLANKFIELD';
 
@@ -224,48 +224,48 @@ sub stringify {
       my @attr;
       $xml .= ">\n";
       if ($i->source eq 'DRAMA') {
-	$xml .= "<DRAMA_MONITOR ";
-	@attr = qw/ TASK PARAM EVENT MULT /;
+        $xml .= "<DRAMA_MONITOR ";
+        @attr = qw/ TASK PARAM EVENT MULT /;
 
-	# task and param are mandatory
-	if (!defined $i->task || !defined $i->param) {
-	  throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using DRAMA monitor");
-	}
+        # task and param are mandatory
+        if (!defined $i->task || !defined $i->param) {
+          throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using DRAMA monitor");
+        }
 
       } elsif ($i->source eq 'GLISH') {
-	$xml .= "<GLISH_PARAMETER ";
-	@attr = qw/ TASK PARAM EVENT /;
+        $xml .= "<GLISH_PARAMETER ";
+        @attr = qw/ TASK PARAM EVENT /;
 
-	# task and param are mandatory
-	if (!defined $i->task || !defined $i->param) {
-	  throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using GLISH parameter");
-	}
+        # task and param are mandatory
+        if (!defined $i->task || !defined $i->param) {
+          throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using GLISH parameter");
+        }
 
       } elsif ($i->source eq 'DERIVED') {
-	$xml .= "<DERIVED ";
-	@attr = qw/ TASK METHOD EVENT /;
+        $xml .= "<DERIVED ";
+        @attr = qw/ TASK METHOD EVENT /;
 
-	# task and method are mandatory
-	if (!defined $i->task || !defined $i->method) {
-	  throw JAC::OCS::Config::Error::FatalError( "One of task or method is undefined for keyword ". $i->keyword ." using derived header value");
-	}
+        # task and method are mandatory
+        if (!defined $i->task || !defined $i->method) {
+          throw JAC::OCS::Config::Error::FatalError( "One of task or method is undefined for keyword ". $i->keyword ." using derived header value");
+        }
 
       } elsif ($i->source eq 'SELF') {
-	$xml .= "<SELF ";
-	@attr = qw/ PARAM ALT ARRAY BASE /;
+        $xml .= "<SELF ";
+        @attr = qw/ PARAM ALT ARRAY BASE /;
 
-	# param is mandatory
-	if (!defined $i->param ) {
-	  throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
-	}
+        # param is mandatory
+        if (!defined $i->param ) {
+          throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
+        }
 
 
       } else {
-	croak "Unrecognized parameter source '".$i->source;
+        croak "Unrecognized parameter source '".$i->source;
       }
       for my $a (@attr) {
-	my $method = lc($a);
-	$xml .= "$a=\"" . $i->$method . '" ' if $i->$method;
+        my $method = lc($a);
+        $xml .= "$a=\"" . $i->$method . '" ' if $i->$method;
       }
       $xml .= "/>\n";
       $xml .= "</HEADER>\n";
@@ -351,9 +351,9 @@ sub _process_dom {
 
     # Now create object representation
     push(@obj, new JAC::OCS::Config::Header::Item(
-						  %attr,
-						  %mon,
-						 ));
+                                                  %attr,
+                                                  %mon,
+                                                 ));
 
   }
 
@@ -380,7 +380,8 @@ L<JAC::OCS::Config>, L<Astro::FITS::Header>.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004-2005 Particle Physics and Astronomy Research Council.
+Copyright (C) 2008 Science and Technology Facilities Council.
+Copyright 2004-2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
