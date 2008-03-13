@@ -144,8 +144,7 @@ is returned (even if that value is missing).
 
 sub find_attr {
   my $el = shift;
-  croak "Internal programming error. Supplied attribute not defined" .
-    join(",",caller())
+  JAC::OCS::Config::Error::BadArgs->throw("find_attr - Internal programming error. Supplied attribute object not defined - ". join(",",caller()))
     unless defined $el;
   my @keys = @_;
 
@@ -225,6 +224,10 @@ both equal to 1) or undef if no matches.
 If either the root element or the tag are not defined, an empty list is
 returned (which may also trigger an out of range exception).
 
+The tag name can be supplied as a regular expression object.
+
+  @children = find_children( $el, qr/^HEADER/, min => 0, max => 1);
+
 =cut
 
 sub find_children {
@@ -234,8 +237,13 @@ sub find_children {
 
   # Find the children
   my @children;
-  @children = $el->getChildrenByTagName( $tag )
-    if (defined $tag && defined $el);
+  if (defined $tag && defined $el) {
+    if (not ref $tag) {
+      @children = $el->getChildrenByTagName( $tag )
+    } else {
+      @children = grep { $_->nodeName =~ $tag } $el->childNodes;
+    }
+  }
 
   return _check_range( \%range, "elements named '$tag'", @children);
 }
