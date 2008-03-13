@@ -213,6 +213,8 @@ sub method {
 
 Alternate XPATH specification into the OCS_CONFIG to use for the header value.
 
+Used for SELF source.
+
 =cut
 
 sub alt {
@@ -260,6 +262,8 @@ sub base {
 
 Constant multiplier to apply to the result. For example, this can be used
 to convert radians to degrees.
+
+Used for both DRAMA and SELF sources.
 
 =cut
 
@@ -361,7 +365,7 @@ sub stringify {
 
     } elsif ($self->source eq 'SELF') {
       $xml .= "<SELF ";
-      @attr = qw/ PARAM ALT ARRAY BASE /;
+      @attr = qw/ PARAM ALT ARRAY BASE MULT/;
 
       # param is mandatory
       if (!defined $self->param ) {

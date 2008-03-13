@@ -272,7 +272,6 @@ sub _process_dom {
     my $name = $a->nodeName;
     my @subitems;
     if ($name =~ /_INCLUDE/) {
-      print $a->toString;
       @subitems = find_children( $a, qr/^(SUB)?HEADER/, min => 1 );
     } elsif ($name eq 'HEADER' || $name eq 'SUBHEADER') {
       @subitems = ($a);
@@ -302,7 +301,7 @@ sub _process_dom {
         %mon = find_attr( $derived[0], "TASK", "METHOD", "EVENT");
         $mon{SOURCE} = "DERIVED";
       } elsif (@self) {
-        %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE");
+        %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE", "MULT");
         $mon{SOURCE} = "SELF";
       } elsif (@rts) {
         %mon = find_attr( $rts[0], "PARAM", "EVENT");
