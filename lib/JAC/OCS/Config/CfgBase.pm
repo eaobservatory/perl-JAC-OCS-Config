@@ -20,6 +20,7 @@ C<OCS_CONFIG> root element).
 use strict;
 use warnings;
 use XML::LibXML;
+use File::Spec;
 use File::Basename qw/ dirname /;
 use Cwd qw/ getcwd /;
 
