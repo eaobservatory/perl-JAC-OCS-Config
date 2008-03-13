@@ -217,7 +217,7 @@ sub stringify {
       unless ($i->type eq 'BLANKFIELD' || $i->type eq 'COMMENT');
     $xml .= "        COMMENT=\"" . $i->comment . "\"\n" 
       if (defined $i->comment);
-    $xml .= "        VALUE=\"" . $i->value . "\" "
+    $xml .= "        VALUE=\"" . (defined $i->value ? $i->value : "") . "\" "
       unless $i->type eq 'BLANKFIELD';
 
     if ($i->source) {
@@ -259,6 +259,15 @@ sub stringify {
           throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
         }
 
+      } elsif ($i->source eq 'RTS') {
+
+        $xml .= "<RTS_STATE ";
+        @attr = qw/ PARAM EVENT /;
+
+        # param is mandatory
+        if (!defined $i->param ) {
+          throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
+        }
 
       } else {
         croak "Unrecognized parameter source '".$i->source;
@@ -321,40 +330,59 @@ Populates the object with the extracted results.
 sub _process_dom {
   my $self = shift;
 
-  # Find all the header items
+  # Find all the header items, including dummy INCLUDE headers
+  # that will be removed.
   my $el = $self->_rootnode;
-  my @items = find_children( $el, "HEADER", min => 1 );
+  my @items = find_children( $el, qr/^(HEADER|HEADER_INCLUDE)/, min => 1 );
 
   my @obj;
-  for my $i (@items) {
-    my %attr = find_attr( $i, "TYPE","KEYWORD","COMMENT","VALUE");
-
-    my @drama = find_children( $i, "DRAMA_MONITOR", min =>0, max=>1);
-    my @glish = find_children( $i, "GLISH_PARAMETER", min =>0, max=>1);
-    my @derived = find_children( $i, "DERIVED", min =>0, max=>1);
-    my @self = find_children( $i, "SELF", min =>0, max=>1);
-
-    my %mon;
-    if (@drama) {
-      %mon = find_attr( $drama[0], "TASK", "PARAM", "EVENT", "MULT");
-      $mon{SOURCE} = "DRAMA";
-    } elsif (@glish) {
-      %mon = find_attr( $glish[0], "TASK", "PARAM", "EVENT");
-      $mon{SOURCE} = "GLISH";
-    } elsif (@derived) {
-      %mon = find_attr( $derived[0], "TASK", "METHOD", "EVENT");
-      $mon{SOURCE} = "DERIVED";
-    } elsif (@self) {
-      %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE");
-      $mon{SOURCE} = "SELF";
+  for my $a (@items) {
+    my $name = $a->nodeName;
+    my @subitems;
+    if ($name =~ /_INCLUDE/) {
+      print $a->toString;
+      @subitems = find_children( $a, "HEADER", min => 1 );
+    } elsif ($name eq 'HEADER') {
+      @subitems = ($a);
+    } else {
+      throw JAC::OCS::Config::Error::FatalError("Odd internal error in HEADER_CONFIG parse");
     }
 
-    # Now create object representation
-    push(@obj, new JAC::OCS::Config::Header::Item(
-                                                  %attr,
-                                                  %mon,
-                                                 ));
+    for my $i (@subitems) {
+      my %attr = find_attr( $i, "TYPE","KEYWORD","COMMENT","VALUE");
 
+      # DRAMA and DRAMA_MONITOR are synonyms
+      my @drama = find_children( $i, qr/^DRAMA/, min =>0, max=>1);
+      my @glish = find_children( $i, "GLISH_PARAMETER", min =>0, max=>1);
+      my @derived = find_children( $i, "DERIVED", min =>0, max=>1);
+      my @self = find_children( $i, "SELF", min =>0, max=>1);
+      my @rts = find_children( $i, "RTS_STATE", min => 0, max => 1 );
+
+      my %mon;
+      if (@drama) {
+        %mon = find_attr( $drama[0], "TASK", "PARAM", "EVENT", "MULT");
+        $mon{SOURCE} = "DRAMA";
+      } elsif (@glish) {
+        %mon = find_attr( $glish[0], "TASK", "PARAM", "EVENT");
+        $mon{SOURCE} = "GLISH";
+      } elsif (@derived) {
+        %mon = find_attr( $derived[0], "TASK", "METHOD", "EVENT");
+        $mon{SOURCE} = "DERIVED";
+      } elsif (@self) {
+        %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE");
+        $mon{SOURCE} = "SELF";
+      } elsif (@rts) {
+        %mon = find_attr( $rts[0], "PARAM", "EVENT");
+        $mon{SOURCE} = "RTS";
+      }
+
+      # Now create object representation
+      push(@obj, new JAC::OCS::Config::Header::Item(
+                                                    %attr,
+                                                    %mon,
+                                                   ));
+
+    }
   }
 
   $self->items( @obj );
