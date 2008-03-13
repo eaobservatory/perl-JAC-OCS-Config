@@ -25,6 +25,9 @@ use warnings;
 
 use vars qw/ $VERSION /;
 
+# Overloading
+use overload '""' => "_stringify_overload";
+
 $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 =head1 METHODS
@@ -276,6 +279,94 @@ sub undefine {
   # can effectively do this by simply removing the SOURCE value
   $self->source( undef );
   $self->value( "" );
+}
+
+=item B<stringify>
+
+Create XML representation of item.
+
+=cut
+
+sub stringify {
+  my $self = shift;
+  my $xml = '';
+
+  $xml .= "<HEADER TYPE=\"" . $self->type . "\"\n";
+  $xml .= "        KEYWORD=\"" . $self->keyword . "\"\n"
+    unless ($self->type eq 'BLANKFIELD' || $self->type eq 'COMMENT');
+  $xml .= "        COMMENT=\"" . $self->comment . "\"\n" 
+    if (defined $self->comment);
+  $xml .= "        VALUE=\"" . (defined $self->value ? $self->value : "") . "\" "
+    unless $self->type eq 'BLANKFIELD';
+
+  if ($self->source) {
+    my @attr;
+    $xml .= ">\n";
+    if ($self->source eq 'DRAMA') {
+      $xml .= "<DRAMA_MONITOR ";
+      @attr = qw/ TASK PARAM EVENT MULT /;
+
+      # task and param are mandatory
+      if (!defined $self->task || !defined $self->param) {
+        throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $self->keyword ." using DRAMA monitor");
+      }
+
+    } elsif ($self->source eq 'GLISH') {
+      $xml .= "<GLISH_PARAMETER ";
+      @attr = qw/ TASK PARAM EVENT /;
+
+      # task and param are mandatory
+      if (!defined $self->task || !defined $self->param) {
+        throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $self->keyword ." using GLISH parameter");
+      }
+
+    } elsif ($self->source eq 'DERIVED') {
+      $xml .= "<DERIVED ";
+      @attr = qw/ TASK METHOD EVENT /;
+
+      # task and method are mandatory
+      if (!defined $self->task || !defined $self->method) {
+        throw JAC::OCS::Config::Error::FatalError( "One of task or method is undefined for keyword ". $self->keyword ." using derived header value");
+      }
+
+    } elsif ($self->source eq 'SELF') {
+      $xml .= "<SELF ";
+      @attr = qw/ PARAM ALT ARRAY BASE /;
+
+      # param is mandatory
+      if (!defined $self->param ) {
+        throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $self->keyword ." using internal header value");
+      }
+
+    } elsif ($self->source eq 'RTS') {
+
+      $xml .= "<RTS_STATE ";
+      @attr = qw/ PARAM EVENT /;
+
+      # param is mandatory
+      if (!defined $self->param ) {
+        throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $self->keyword ." using internal header value");
+      }
+
+    } else {
+      croak "Unrecognized parameter source '".$self->source;
+    }
+    for my $a (@attr) {
+      my $method = lc($a);
+      $xml .= "$a=\"" . $self->$method . '" ' if $self->$method;
+    }
+    $xml .= "/>\n";
+    $xml .= "</HEADER>\n";
+  } else {
+    $xml .= "/>\n";
+  }
+
+  return $xml;
+}
+
+# forward onto stringify method
+sub _stringify_overload {
+  return $_[0]->stringify();
 }
 
 =back

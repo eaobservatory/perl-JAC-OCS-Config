@@ -211,76 +211,8 @@ sub stringify {
   $xml .= $self->_introductory_xml();
 
   for my $i ($self->items) {
-
-    $xml .= "<HEADER TYPE=\"" . $i->type . "\"\n";
-    $xml .= "        KEYWORD=\"" . $i->keyword . "\"\n"
-      unless ($i->type eq 'BLANKFIELD' || $i->type eq 'COMMENT');
-    $xml .= "        COMMENT=\"" . $i->comment . "\"\n" 
-      if (defined $i->comment);
-    $xml .= "        VALUE=\"" . (defined $i->value ? $i->value : "") . "\" "
-      unless $i->type eq 'BLANKFIELD';
-
-    if ($i->source) {
-      my @attr;
-      $xml .= ">\n";
-      if ($i->source eq 'DRAMA') {
-        $xml .= "<DRAMA_MONITOR ";
-        @attr = qw/ TASK PARAM EVENT MULT /;
-
-        # task and param are mandatory
-        if (!defined $i->task || !defined $i->param) {
-          throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using DRAMA monitor");
-        }
-
-      } elsif ($i->source eq 'GLISH') {
-        $xml .= "<GLISH_PARAMETER ";
-        @attr = qw/ TASK PARAM EVENT /;
-
-        # task and param are mandatory
-        if (!defined $i->task || !defined $i->param) {
-          throw JAC::OCS::Config::Error::FatalError( "One of task or param is undefined for keyword ". $i->keyword ." using GLISH parameter");
-        }
-
-      } elsif ($i->source eq 'DERIVED') {
-        $xml .= "<DERIVED ";
-        @attr = qw/ TASK METHOD EVENT /;
-
-        # task and method are mandatory
-        if (!defined $i->task || !defined $i->method) {
-          throw JAC::OCS::Config::Error::FatalError( "One of task or method is undefined for keyword ". $i->keyword ." using derived header value");
-        }
-
-      } elsif ($i->source eq 'SELF') {
-        $xml .= "<SELF ";
-        @attr = qw/ PARAM ALT ARRAY BASE /;
-
-        # param is mandatory
-        if (!defined $i->param ) {
-          throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
-        }
-
-      } elsif ($i->source eq 'RTS') {
-
-        $xml .= "<RTS_STATE ";
-        @attr = qw/ PARAM EVENT /;
-
-        # param is mandatory
-        if (!defined $i->param ) {
-          throw JAC::OCS::Config::Error::FatalError( "PARAM is undefined for keyword ". $i->keyword ." using internal header value");
-        }
-
-      } else {
-        croak "Unrecognized parameter source '".$i->source;
-      }
-      for my $a (@attr) {
-        my $method = lc($a);
-        $xml .= "$a=\"" . $i->$method . '" ' if $i->$method;
-      }
-      $xml .= "/>\n";
-      $xml .= "</HEADER>\n";
-    } else {
-      $xml .= "/>\n";
-    }
+    
+    $xml .= "$i";
 
   }
 
