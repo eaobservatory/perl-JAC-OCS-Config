@@ -38,6 +38,12 @@ $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 
 =item B<new>
 
+Constructor. The constructor takes keys that correspond
+to accessor methods (case insensitive).
+
+ $i = JAC::OCS::Config::Header::Item->new( keyword => "KEY1",
+                       value => "2", is_sub_header => 1 );
+
 =cut
 
 sub new {
@@ -265,6 +271,27 @@ sub mult {
   return $self->{MULT};
 }
 
+=item B<is_sub_header>
+
+Returns true if this header item has been tagged as a SUBHEADER.
+
+=cut
+
+sub is_sub_header {
+  my $self = shift;
+  if (@_) {
+    my $val = shift;
+    $self->{IS_SUB_HEADER} = ($val ? 1 : 0);
+  }
+  return $self->{IS_SUB_HEADER};
+}
+
+=back
+
+=head1 GENERAL METHODS
+
+=over 4
+
 =item B<undefine>
 
 Force the header item to refer to an undefined entry. This removes all
@@ -291,7 +318,10 @@ sub stringify {
   my $self = shift;
   my $xml = '';
 
-  $xml .= "<HEADER TYPE=\"" . $self->type . "\"\n";
+  my $head_elem = ($self->is_sub_header ? "SUB" : "" ) . "HEADER";
+
+  $xml .= "<". $head_elem .
+    " TYPE=\"" . $self->type . "\"\n";
   $xml .= "        KEYWORD=\"" . $self->keyword . "\"\n"
     unless ($self->type eq 'BLANKFIELD' || $self->type eq 'COMMENT');
   $xml .= "        COMMENT=\"" . $self->comment . "\"\n" 
@@ -356,7 +386,7 @@ sub stringify {
       $xml .= "$a=\"" . $self->$method . '" ' if $self->$method;
     }
     $xml .= "/>\n";
-    $xml .= "</HEADER>\n";
+    $xml .= "</$head_elem>\n";
   } else {
     $xml .= "/>\n";
   }

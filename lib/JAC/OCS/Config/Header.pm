@@ -273,8 +273,8 @@ sub _process_dom {
     my @subitems;
     if ($name =~ /_INCLUDE/) {
       print $a->toString;
-      @subitems = find_children( $a, "HEADER", min => 1 );
-    } elsif ($name eq 'HEADER') {
+      @subitems = find_children( $a, qr/^(SUB)?HEADER/, min => 1 );
+    } elsif ($name eq 'HEADER' || $name eq 'SUBHEADER') {
       @subitems = ($a);
     } else {
       throw JAC::OCS::Config::Error::FatalError("Odd internal error in HEADER_CONFIG parse");
@@ -282,6 +282,7 @@ sub _process_dom {
 
     for my $i (@subitems) {
       my %attr = find_attr( $i, "TYPE","KEYWORD","COMMENT","VALUE");
+      $attr{is_sub_header} = ($i->nodeName =~ /^SUB/ ? 1 : 0);
 
       # DRAMA and DRAMA_MONITOR are synonyms
       my @drama = find_children( $i, qr/^DRAMA/, min =>0, max=>1);
