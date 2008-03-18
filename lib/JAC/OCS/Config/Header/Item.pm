@@ -47,6 +47,37 @@ my %Allowed_Types = (
                      BLOCK   => "BLOCK",
 );
 
+# Map the internal Source name to the allowed attributes,
+# the corresponding XML output element name and a pattern suitable
+# for detecting source strings in input files allowing for 
+# bakwards compatibility
+
+my %Source_Info = (
+                   DRAMA => {
+                             Attrs => [qw/ TASK PARAM EVENT MULT /],
+                             XML   => "DRAMA",
+                             Pattern => qr/^DRAMA/,
+                            },
+                   DERIVED => {
+                               Attrs => [qw/ TASK METHOD EVENT /],
+                               XML => "DERIVED",
+                              },
+                   SELF => {
+                            Attrs => [qw/ PARAM ALT ARRAY BASE MULT/],
+                            XML => "SELF",
+                            },
+                   RTS => {
+                           Attrs => [qw/ PARAM EVENT /],
+                           XML => "RTS_STATE",
+                           Pattern => qr/^RTS/,
+                           },
+                   GLISH => {
+                             Attrs => [qw/ TASK PARAM EVENT /],
+                             XML => "GLISH_PARAMETER",
+                             Pattern => qr/^GLISH/,
+                            },
+                  );
+
 =head1 METHODS
 
 =head2 Constructor
@@ -161,7 +192,7 @@ sub value {
 =item B<source>
 
 Type of external data source that should be queried for the value.
-Allowed values are "GLISH" and "DRAMA", "DERIVED" and "SELF".
+Allowed values are "GLISH", "DRAMA", "DERIVED", "RTS" and "SELF".
 
 =cut
 
@@ -169,7 +200,12 @@ sub source {
   my $self = shift;
   if (@_) {
     my $value = shift;
-    $self->{SOURCE} = (defined $value ? uc($value) : $value);
+    if (defined $value) {
+      $value = uc($value);
+      JAC::OCS::Config::Error::BadArgs("Supplied source value '$value' does not match the allowed list")
+          unless exists $Source_Info{$value};
+    }
+    $self->{SOURCE} = $value;
   }
   return $self->{SOURCE};
 }
@@ -362,11 +398,8 @@ sub stringify {
     unless $self->type eq 'BLANKFIELD';
 
   if ($self->source) {
-    my @attr;
     $xml .= ">\n";
     if ($self->source eq 'DRAMA') {
-      $xml .= "<DRAMA ";
-      @attr = qw/ TASK PARAM EVENT MULT /;
 
       # task and param are mandatory
       if (!defined $self->task || !defined $self->param) {
@@ -374,8 +407,6 @@ sub stringify {
       }
 
     } elsif ($self->source eq 'GLISH') {
-      $xml .= "<GLISH_PARAMETER ";
-      @attr = qw/ TASK PARAM EVENT /;
 
       # task and param are mandatory
       if (!defined $self->task || !defined $self->param) {
@@ -383,8 +414,6 @@ sub stringify {
       }
 
     } elsif ($self->source eq 'DERIVED') {
-      $xml .= "<DERIVED ";
-      @attr = qw/ TASK METHOD EVENT /;
 
       # task and method are mandatory
       if (!defined $self->task || !defined $self->method) {
@@ -392,8 +421,6 @@ sub stringify {
       }
 
     } elsif ($self->source eq 'SELF') {
-      $xml .= "<SELF ";
-      @attr = qw/ PARAM ALT ARRAY BASE MULT/;
 
       # param is mandatory
       if (!defined $self->param ) {
@@ -401,9 +428,6 @@ sub stringify {
       }
 
     } elsif ($self->source eq 'RTS') {
-
-      $xml .= "<RTS_STATE ";
-      @attr = qw/ PARAM EVENT /;
 
       # param is mandatory
       if (!defined $self->param ) {
@@ -413,7 +437,12 @@ sub stringify {
     } else {
       croak "Unrecognized parameter source '".$self->source;
     }
-    for my $a (@attr) {
+    croak "Bizarre internal error since ".$self->source.
+      " does not have corresponding attribute list"
+        unless exists $Source_Info{$self->source};
+
+    $xml .= "<". $Source_Info{$self->source}{XML}. " ";
+    for my $a (@{$Source_Info{$self->source}{Attrs}}) {
       my $method = lc($a);
       $xml .= "$a=\"" . $self->$method . '" ' if $self->$method;
     }
@@ -429,6 +458,108 @@ sub stringify {
 # forward onto stringify method
 sub _stringify_overload {
   return $_[0]->stringify();
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item B<source_attrs>
+
+Given a source string (DRAMA, RTS, DERIVED etc), return the names
+of the possible attributes (TASK, PARAM etc).
+
+ @attr = JAC::OCS::Config::Header::Item->source_attrs( "DRAMA" );
+
+Returns empty list if the source is not recognized.
+
+=cut
+
+sub source_attrs {
+  my $self = shift;
+  my $source = shift;
+  return () unless defined $source;
+  $source = uc($source);
+
+  if (exists $Source_Info{$source}) {
+    return @{$Source_Info{$source}{Attrs}};
+  }
+  return;
+}
+
+=item B<source_types>
+
+Returns the supported source types (DRAMA, GLISH etc). Useful
+for loops.
+
+ @sources = JAC::OCS::Config::Header::Item->source_types();
+
+=cut
+
+sub source_types {
+  return keys %Source_Info;
+}
+
+=item B<source_pattern>
+
+Returns a pattern match object suitable for determining whether 
+a particular XML element name matches a source type.
+
+  $qr = JAC::OCS::Config::Header::Item->source_pattern( "DRAMA" );
+
+Returns undef if the source type is not recognized.
+
+=cut
+
+sub source_pattern {
+  my $self = shift;
+  my $source = shift;
+  return unless defined $source;
+  $source = uc($source);
+  
+  my $qr;
+  if (exists $Source_Info{$source}) {
+    if (exists $Source_Info{$source}{Pattern}) {
+      $qr = $Source_Info{$source}{Pattern};
+    } else {
+      $qr = $Source_Info{$source}{XML};
+      # turn into a Regexp if we have a scalar
+      $qr = qr/^$qr$/;
+    }
+  }
+  return $qr;
+}
+
+=item B<normalize_source>
+
+Given a source string that can either be from XML or in standard internal
+form, return the standard internal form.
+
+ $norm = JAC::OCS::Config::Header::Item->normalize_source( $source );
+
+=cut
+
+sub normalize_source {
+  my $self = shift;
+  my $source = shift;
+  return unless defined $source;
+  $source = uc($source);
+  
+  if (exists $Source_Info{$source}) {
+    # seems to already be in normalized form
+    return $source;
+  }
+
+  # loop over all options, doing pattern match
+  for my $s ($self->source_types) {
+    my $patt = $self->source_pattern($s);
+    if ($source =~ $patt) {
+      return $s;
+    }
+  }
+  return;
 }
 
 =back
