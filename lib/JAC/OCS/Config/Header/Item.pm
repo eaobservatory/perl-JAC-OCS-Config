@@ -78,6 +78,11 @@ my %Source_Info = (
                             },
                   );
 
+# Get all the method names relating to source attributes
+my %Source_Attr_Methods = 
+  map { lc($_) => undef  }
+  map { @{$_->{Attrs}} } values %Source_Info;
+
 =head1 METHODS
 
 =head2 Constructor
@@ -371,9 +376,29 @@ derived components and sets the value to the empty string.
 
 sub undefine {
   my $self = shift;
-  # can effectively do this by simply removing the SOURCE value
-  $self->source( undef );
   $self->value( "" );
+  # can effectively do this by simply removing the SOURCE value
+  # but we clear everything for to prevent oddities if a source
+  # is set again
+  $self->unset_source;
+  return;
+}
+
+=item B<unset_source>
+
+Clear all source related information.
+
+  $item->unset_source();
+
+=cut
+
+sub unset_source {
+  my $self = shift;
+  $self->source( undef );
+  for my $m (keys %Source_Attr_Methods) {
+    $self->$m( undef );
+  }
+  return;
 }
 
 =item B<stringify>
