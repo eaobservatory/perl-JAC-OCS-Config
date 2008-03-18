@@ -33,6 +33,7 @@ use JAC::OCS::Config::XMLHelper qw(
 
 use JAC::OCS::Config::Header::Item;
 
+use warnings::register;
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
@@ -211,7 +212,7 @@ sub stringify {
   $xml .= $self->_introductory_xml();
 
   for my $i ($self->items) {
-    
+
     $xml .= "$i";
 
   }
@@ -220,8 +221,52 @@ sub stringify {
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
 }
 
-=back
+=item B<read_source_definitions>
 
+It is possible for source definitions (eg DERIVED, DRAMA, RTS_STATE etc)
+to be specified in a separate text file indexed by keyword. If this
+method is called the supplied text file will be read and the source
+definitions will be updated in the current header. Only keywords present in
+the current header will be modified.
+
+If a header item already has source information it will be overridden.
+
+  $hdr->read_source_definitions( $defn_file );
+
+The format of the file is defined in section L</SOURCE DEFINITIONS>.
+
+=cut
+
+sub read_source_definitions {
+  my $self = shift;
+  my $file = shift;
+
+  # Get a hash with all the heavy lifting performed
+  # indexed by KEYWORD
+  my %modifiers = $self->_read_source_defs( $file );
+
+  # Since there is no hash table lookup into the array of items
+  # (unlike Astro::FITS::HdrTrans) it is more efficient to
+  # go through each item in turn and see if there is a modified
+  # specified for it.
+  for my $i ($self->items) {
+    my $k = $i->keyword;
+    next unless defined $k; # BLANKFIELD, COMMENT
+    if (exists $modifiers{$k}) {
+      # get the new information and obtain the source type
+      my %updated_info = %{$modifiers{$k}};
+      my $source = $updated_info{SOURCE};
+      delete $updated_info{SOURCE}; # even though it will be ignored by set_source
+
+      # now update the Item
+      $i->set_source( $source, %updated_info );
+    }
+  }
+
+  return;
+}
+
+=back
 
 =head2 Class Methods
 
@@ -257,6 +302,10 @@ process the DOM tree and extract all the coordinate information.
 
 Populates the object with the extracted results.
 
+A source definition file will be read automatically if the XML contains
+a C<SOURCE_DEFINITION> element with attribute FILE pointing to a
+definition file.
+
 =cut
 
 sub _process_dom {
@@ -279,33 +328,22 @@ sub _process_dom {
       throw JAC::OCS::Config::Error::FatalError("Odd internal error in HEADER_CONFIG parse");
     }
 
+    my $ItemClass = "JAC::OCS::Config::Header::Item";
     for my $i (@subitems) {
       my %attr = find_attr( $i, "TYPE","KEYWORD","COMMENT","VALUE");
       $attr{is_sub_header} = ($i->nodeName =~ /^SUB/ ? 1 : 0);
 
-      # DRAMA and DRAMA_MONITOR are synonyms
-      my @drama = find_children( $i, qr/^DRAMA/, min =>0, max=>1);
-      my @glish = find_children( $i, "GLISH_PARAMETER", min =>0, max=>1);
-      my @derived = find_children( $i, "DERIVED", min =>0, max=>1);
-      my @self = find_children( $i, "SELF", min =>0, max=>1);
-      my @rts = find_children( $i, "RTS_STATE", min => 0, max => 1 );
-
+      # Look for source information - there should only be one match
       my %mon;
-      if (@drama) {
-        %mon = find_attr( $drama[0], "TASK", "PARAM", "EVENT", "MULT");
-        $mon{SOURCE} = "DRAMA";
-      } elsif (@glish) {
-        %mon = find_attr( $glish[0], "TASK", "PARAM", "EVENT");
-        $mon{SOURCE} = "GLISH";
-      } elsif (@derived) {
-        %mon = find_attr( $derived[0], "TASK", "METHOD", "EVENT");
-        $mon{SOURCE} = "DERIVED";
-      } elsif (@self) {
-        %mon = find_attr( $self[0], "PARAM", "ALT", "ARRAY", "BASE", "MULT");
-        $mon{SOURCE} = "SELF";
-      } elsif (@rts) {
-        %mon = find_attr( $rts[0], "PARAM", "EVENT");
-        $mon{SOURCE} = "RTS";
+      for my $s ($ItemClass->source_types) {
+        my @found = find_children($i,
+                                  $ItemClass->source_pattern($s),
+                                  min => 0, max => 1);
+        if (@found) {
+          %mon = find_attr($found[0],$ItemClass->source_attrs($s));
+          $mon{SOURCE} = $s;
+          last;
+        }
       }
 
       # Now create object representation
@@ -313,18 +351,200 @@ sub _process_dom {
                                                     %attr,
                                                     %mon,
                                                    ));
-
     }
   }
 
   $self->items( @obj );
 
+  # update the definitions if required
+  my $defn = find_children( $el, "SOURCE_DEFINITION", min => 0, max => 1 );
+  if ($defn) {
+    my $file = find_attr($defn, "FILE");
+    $self->read_source_definitions( $file ) if defined $file;
+  }
+
   return;
+}
+
+=item B<_read_source_defs>
+
+Read a source definition file and return a hash indexed by keyword.
+
+ %modified = $self->_read_source_defs( $file );
+
+To support recursion a task mapping hash can be supplied as a second
+argument.
+
+ %modified = $self->_read_source_defs( $file, \%taskmap );
+
+There is usually no need to specify this explicitly.
+
+=cut
+
+sub _read_source_defs {
+  my $self = shift;
+  my $file = shift;
+  my $taskmap = shift;
+
+  throw JAC::OCS::Config::Error::BadArgs( "Must supply a definition file name" )
+    unless $file;
+
+  # Assume current directory
+  open(my $fh, "<", $file)
+    or JAC::OCS::Config::Error::IOError->throw("Could not open file '$file': $!");
+
+  my @lines = <$fh>;
+  close($fh) or
+    JAC::OCS::Config::Error::IOError->throw("Error closing file '$file': $!" );
+  chomp(@lines);
+  
+  return $self->_parse_source_defs( \@lines, $taskmap );
+}
+
+=item B<_parse_source_defs>
+
+Given lines of content read from a definition file, parse it and
+return a hash indexed by keyword.
+
+  %modified = $self->_parse_source_defs( \@lines );
+
+=cut
+
+sub _parse_source_defs {
+  my $self = shift;
+  my $lref = shift;
+  my $tmref = shift;
+
+  # local copy of task mappings to prevent mappings propagating
+  # upwards.
+  my %taskmap;
+  %taskmap = %$tmref if defined $tmref;
+
+  my %modifiers;
+  for my $l (@$lref) {
+    $l =~ s/\#.*//;     # strip comments
+    $l =~ s/^\s*//;     # strip leading space
+    $l =~ s/\s*$//;     # strip trailing space
+    next unless $l =~ /\w/;
+
+    # remove xml-isms since they do not add information
+    $l =~ s/<//;
+    $l =~ s/\/>//;
+
+    # split on whitespace (we assume the key=val pairs do not 
+    # include whitespace)
+    my @parts = split(/\s+/, $l );
+
+    # The first part of the line is the command
+    my $command = uc(shift(@parts));
+
+    if ($command eq 'INCLUDE') {
+      my $file = shift(@parts);
+      # do not trap infinite recursion
+      my %submod = $self->_read_source_defs( $file, \%taskmap );
+
+      # merge with current modifiers - precedence to included data
+      %modifiers = (%modifiers, %submod);
+
+    } elsif ($command eq 'TASKMAP') {
+      if (@parts >= 2) {
+        my $generic = shift(@parts);
+        my $specific = shift(@parts);
+        $taskmap{$generic} = $specific;
+      } else {
+        warnings::warnif( "TASKMAP requires two values, not ".@parts );
+      }
+
+    } else {
+
+      # must be a SOURCE and one attribute
+      JAC::OCS::Config::Error::XMLBadStructure->throw("Unrecognized format for line '$l'")
+          unless @parts > 1;
+
+      my $keyword = $command;
+
+      my %item;
+
+      # SOURCE can be in XML or internal form
+      my $source = JAC::OCS::Config::Header::Item->normalize_source(shift(@parts));
+      $item{SOURCE} = $source;
+
+      # Now process the keyword=val pairs
+      while (my $part = shift(@parts)) {
+        if ($part =~ /=/) {
+          my ($key, $value) = split(/=/, $part, 2);
+          $key = uc($key);
+          $value =~ s/\"//g; # strip quotes
+          $item{$key} = $value;
+        } else {
+          # end of key=val section so must be comment override
+          # Put comment back together and abort loop
+          $item{COMMENT} = join(" ", $part, @parts);
+          last;
+        }
+      }
+
+      # Apply task mapping
+      if ($item{SOURCE} eq 'DERIVED' && exists $taskmap{$item{TASK}}) {
+        $item{TASK} = $taskmap{$item{TASK}};
+      }
+
+      # store the information
+      $modifiers{$keyword} = \%item;
+
+    }
+
+  }
+
+  return %modifiers;
 }
 
 =back
 
 =end __PRIVATE_METHODS__
+
+=head1 SOURCE DEFINITIONS
+
+The source definitions file has the following format:
+
+=over 4
+
+=item Comment character
+
+The comment character is "#".
+
+=item INCLUDE filename
+
+Used to include definitions from another file. Usually used to
+load shared definitions. Any definitions previously read will be
+overridden if the same definitions exist in this file. The position
+of the INCLUDE (at the start or end of the keywords) controls the
+precedence behaviour.
+
+=item TASKMAP Generic Specific
+
+For DERIVED source definitions, this line can be used to set up
+a mapping from a generic task name to a specific task name (since
+task names may differ between instruments). The task map is case
+sensitive. Task mappings defined in a file are used in INCLUDEd
+files that have been read after the mapping is defined. A taskmap
+defined in an included file does not affect the definitions in the
+parent file.
+
+=item KEYWORD <DERIVED TASK="task" EVENT="stop" /> Comment
+
+All other lines are assumed to be keyword definitions and the
+first word will be treated as a KEYWORD. The XML syntax is optional
+and
+
+   KEYWORD DERIVED TASK=X EVENT=Y Comment
+
+is also supported. Any text at the end that is not Keyword=Value
+will be treated as a comment that will be inserted into the header.
+This is used if an instrument requires a slightly different comment 
+to appear in a file.
+
+=back
 
 =head1 XML SPECIFICATION
 
