@@ -25,10 +25,27 @@ use warnings;
 
 use vars qw/ $VERSION /;
 
+use JAC::OCS::Config::Error;
+
 # Overloading
 use overload '""' => "_stringify_overload";
 
 $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+
+# Allowed types
+my %Allowed_Types = ( 
+                     FLOATING => "FLOAT",
+                     FLOAT    => "FLOAT",
+                     INTEGER  => "INT",
+                     INT      => "INT",
+                     CHARACTER=> "STRING",
+                     STRING   => "STRING",
+                     BLANKFIELD=> "BLANKFIELD",
+                     COMMENT => "COMMENT",
+                     HISTORY => "HISTORY",
+                     LOGICAL => "LOGICAL",
+                     BLOCK   => "BLOCK",
+);
 
 =head1 METHODS
 
@@ -86,14 +103,25 @@ sub keyword {
 
 FITS type associated with this item.
 
-Allowed values are CHARACTER, LOGICAL, INTEGER, FLOATING, COMMENT and HISTORY.
+Allowed values are STRING/CHARACTER, LOGICAL, INT/INTEGER,
+FLOAT/FLOATING, COMMENT and HISTORY.
+
+CHARACTER will be converted to STRING, INTEGER to INT and
+FLOATING to FLOAT to match the FITS definitions.
+
+An exception is thrown if the type is not recognized.
 
 =cut
 
 sub type {
   my $self = shift;
   if (@_) {
-    $self->{TYPE} = shift;
+    my $t = uc(shift);
+    if (exists $Allowed_Types{$t}) {
+      $self->{TYPE} = $Allowed_Types{$t};
+    } else {
+      throw JAC::OCS::Config::Error::BadArgs("Unsupported keyword type '$t'");
+    }
   }
   return $self->{TYPE};
 }
@@ -337,7 +365,7 @@ sub stringify {
     my @attr;
     $xml .= ">\n";
     if ($self->source eq 'DRAMA') {
-      $xml .= "<DRAMA_MONITOR ";
+      $xml .= "<DRAMA ";
       @attr = qw/ TASK PARAM EVENT MULT /;
 
       # task and param are mandatory
