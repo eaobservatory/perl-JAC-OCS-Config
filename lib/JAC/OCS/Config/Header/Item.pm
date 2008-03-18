@@ -401,6 +401,44 @@ sub unset_source {
   return;
 }
 
+=item B<set_source>
+
+Convenience routine to clear the current source information and
+replace it with the new supplied information.
+
+  $item->set_source( $source, %info );
+
+The keys in the supplied hash must match the source attributes
+(TASK, PARAM, EVENT etc).
+
+=cut
+
+sub set_source {
+  my $self = shift;
+  my $source = shift;
+  JAC::OCS::Config::Error::BadArgs->throw("Must define source type for set_source() method") unless defined $source;
+
+  # clear all current values and set new source value
+  $self->unset_source;
+  $self->source( $source );
+
+  # read the information from the arguments but convert the
+  # keys to lower case
+  my %args = @_;
+  my %new_info = map { lc($_) => $args{$_} } keys %args;
+
+  # get the attributes for this source
+  # and only set information relevent to this source
+  for my $attr ($self->source_attrs($source)) {
+    # method name is lower case
+    my $m = lc($attr);
+    if (exists $new_info{$m}) {
+      $self->$m($new_info{$m});
+    }
+  }
+  return;
+}
+
 =item B<stringify>
 
 Create XML representation of item.
@@ -571,7 +609,7 @@ sub normalize_source {
   my $source = shift;
   return unless defined $source;
   $source = uc($source);
-  
+
   if (exists $Source_Info{$source}) {
     # seems to already be in normalized form
     return $source;
