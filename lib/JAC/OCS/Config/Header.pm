@@ -264,6 +264,10 @@ sub read_source_definitions {
 
         # now update the Item
         $i->set_source( $source, %updated_info );
+
+        # update comment if one is given
+        $i->comment( $updated_info{COMMENT} ) if exists $updated_info{COMMENT};
+
       }
     }
   }
@@ -494,7 +498,8 @@ sub _parse_source_defs {
       }
 
       # Apply task mapping
-      if ($item{SOURCE} eq 'DERIVED' && exists $taskmap{$item{TASK}}) {
+      if (($item{SOURCE} eq 'DERIVED' ||
+           $item{SOURCE} eq 'DRAMA' ) && exists $taskmap{$item{TASK}}) {
         $item{TASK} = $taskmap{$item{TASK}};
       }
 
