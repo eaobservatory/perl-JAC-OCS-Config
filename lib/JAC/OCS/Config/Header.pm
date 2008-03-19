@@ -253,13 +253,18 @@ sub read_source_definitions {
     my $k = $i->keyword;
     next unless defined $k; # BLANKFIELD, COMMENT
     if (exists $modifiers{$k}) {
-      # get the new information and obtain the source type
-      my %updated_info = %{$modifiers{$k}};
-      my $source = $updated_info{SOURCE};
-      delete $updated_info{SOURCE}; # even though it will be ignored by set_source
+      # special case an undef entry
+      if (!defined $modifiers{$k}) {
+        $i->unset_source;
+      } else {
+        # get the new information and obtain the source type
+        my %updated_info = %{$modifiers{$k}};
+        my $source = $updated_info{SOURCE};
+        delete $updated_info{SOURCE}; # even though it will be ignored by set_source
 
-      # now update the Item
-      $i->set_source( $source, %updated_info );
+        # now update the Item
+        $i->set_source( $source, %updated_info );
+      }
     }
   }
 
@@ -455,6 +460,10 @@ sub _parse_source_defs {
         warnings::warnif( "TASKMAP requires two values, not ".@parts );
       }
 
+    } elsif (@parts == 1 && $parts[0] eq 'UNDEF') {
+      # special case a request to remove all source information from keyword
+      $modifiers{$command} = undef;
+
     } else {
 
       # must be a SOURCE and one attribute
@@ -543,6 +552,11 @@ is also supported. Any text at the end that is not Keyword=Value
 will be treated as a comment that will be inserted into the header.
 This is used if an instrument requires a slightly different comment 
 to appear in a file.
+
+=item KEYWORD UNDEF
+
+If the source identifier is explicitly UNDEF (rather than DRAMA, DERIVED
+etc) the source definition for this keyword will be removed.
 
 =back
 
