@@ -31,6 +31,7 @@ use Astro::Coords::Offset;
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Units;
 
+use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
@@ -278,7 +279,6 @@ sub pointing {
   return %{ $self->{POINTING_OFF} };
 }
 
-
 =item B<smu_offset>
 
 X, Y and Z offsets of the SMU when using this instrument.
@@ -296,6 +296,29 @@ sub smu_offset {
     @{$self->{SMU_OFF}} = @_;
   }
   return @{$self->{SMU_OFF}};
+}
+
+=item B<array_radius>
+
+Radius of the array of the instrument on the sky. Used
+by the telescope control system to enable full coverage
+of the map area when scanning. This is not the same as the
+the value returned by footprint_radius(), which is a calculation
+of the radius from the receptor positions.
+
+  $rad = $ins->footprint_radius();
+
+Returns a radius as C<Astro::Coords::Angle> object.
+
+=cut
+
+sub footprint_radius {
+  my $self = shift;
+  if (@_) {
+    $self->{ARRAY_RADIUS} = check_class_fatal( "Astro::Coords::Angle",
+                                                   shift);
+  }
+  return $self->{ARRAY_RADIUS};
 }
 
 =item B<receptor_offset>
@@ -434,6 +457,12 @@ sub stringify {
       $xml .= "$p=\"$val\" ";
     }
     $xml .= "/>\n";
+  }
+
+  # Array area is optional
+  my $array_rad = $self->array_radius();
+  if (defined $array_rad) {
+    $xml .= "<array_area radius=\"".$array_rad->arcsec ."\"/>\n";
   }
 
   my %rec = $self->receptors;
@@ -647,6 +676,15 @@ sub _process_dom {
   if (defined $child) {
     my %pnt = find_attr( $child, @POINTING_MODEL );
     $self->pointing( %pnt ) if keys %pnt;
+  }
+
+  $child = find_children( $el, "array_area", max => 1);
+  if (defined $child) {
+    my $rad = find_attr( $child, "radius" );
+    JAC::OCS::Config::Error::XMLBadStructure->throw("array_area element had no radius attribute")
+        unless defined $rad;
+    $self->array_radius( Astro::Coords::Angle->new( $rad,
+                                                    units => 'arcsec'));
   }
 
   # now process the receptor info
