@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::ProcessLayout;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS process layout configurations
+JAC::OCS::Config::ACSIS::ProcessLayout - Parse OCS ACSIS process layout configurations
 
 =head1 SYNOPSIS
 
@@ -63,6 +63,7 @@ http://docs.jach.hawaii.edu/JCMT/OCS/ICD/005/acsis.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
+Copyright (C) 2008 Science and Technology Facilities Council.
 Copyright 2004 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
