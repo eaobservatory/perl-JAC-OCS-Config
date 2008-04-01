@@ -26,11 +26,11 @@ use XML::LibXML;
 use JAC::OCS::Config::Error qw| :try |;
 
 use JAC::OCS::Config::XMLHelper qw(
-				   find_children
-				   find_attr
-				   indent_xml_string
-				   get_pcdata
-				  );
+                                    find_children
+                                    find_attr
+                                    indent_xml_string
+                                    get_pcdata
+                                 );
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -41,28 +41,28 @@ $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names
 our @PARAMS = (qw/
-		  NUM_CYCLES
-		  NUM_NOD_SETS
-		  STEP_TIME
-		  SHAREOFF
-		  JOS_MULT
-		  JOS_MIN
-		  N_CALSAMPLES
-		  NUM_FOCUS_STEPS
-		  FOCUS_STEP
-		  FOCUS_AXIS
-		  STEPS_BTWN_REFS
-      STEPS_BTWN_DARKS
-		  STEPS_BTWN_CALS
-		  START_INDEX
-		  /);
+                   NUM_CYCLES
+                   NUM_NOD_SETS
+                   STEP_TIME
+                   SHAREOFF
+                   JOS_MULT
+                   JOS_MIN
+                   N_CALSAMPLES
+                   NUM_FOCUS_STEPS
+                   FOCUS_STEP
+                   FOCUS_AXIS
+                   STEPS_BTWN_REFS
+                   STEPS_BTWN_DARKS
+                   STEPS_BTWN_CALS
+                   START_INDEX
+                 /);
 
 # These are old parameter names that should be mapped to new values
 our %OBSOLETE = (
-		 STEPS_PER_REF => 'STEPS_BTWN_REFS',
-		 STEPS_PER_CAL => 'STEPS_BTWN_CALS',
-		 START_ROW => 'START_INDEX',
-		);
+                 STEPS_PER_REF => 'STEPS_BTWN_REFS',
+                 STEPS_PER_CAL => 'STEPS_BTWN_CALS',
+                 START_ROW => 'START_INDEX',
+                );
 
 
 =head1 METHODS
@@ -91,10 +91,10 @@ sub new {
   # Now call base class with all the supplied options +
   # extra initialiser
   return $self->SUPER::new( @_, 
-			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    TASKS => [],
-								   }
-			  );
+                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+                                                                    TASKS => [],
+                                                                   }
+                          );
 }
 
 =back
@@ -158,7 +158,7 @@ sub parameters {
     # Go through the obsolete keys first to remove any that exist
     # in non-obsoleted form
     for my $k (keys %OBSOLETE) {
-       delete $input{$k} if (exists $input{$k} && exists $input{$OBSOLETE{$k}});
+      delete $input{$k} if (exists $input{$k} && exists $input{$OBSOLETE{$k}});
     }
 
     # Go through the keys and store them
@@ -166,7 +166,7 @@ sub parameters {
       # Translate obsolete
       my $value = $input{$p};
       if (exists $OBSOLETE{$p}) {
-	$p = $OBSOLETE{$p};
+        $p = $OBSOLETE{$p};
       }
       my $method = lc($p);
       $self->$method( $value ) if $self->can( $method );
