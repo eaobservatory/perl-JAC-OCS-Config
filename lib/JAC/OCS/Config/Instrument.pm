@@ -39,6 +39,7 @@ use JAC::OCS::Config::XMLHelper qw(
 				   get_pcdata
 				  );
 
+use JAC::OCS::Config::Instrument::SCUBA2Extras;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -49,6 +50,12 @@ $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 # Supported keys for POINTING_OFFSET element
 my @POINTING_MODEL = qw/ CA IE /;
 
+# Attributes used for heterodyne or continuum
+my %RecepSubArray = (
+                     shared => [qw/ id x y band health /],
+                     heterodyne => [qw/ pol_type /],
+                     continuum => [qw/ mceport chipId flatfile /],
+);
 
 =head1 METHODS
 
@@ -91,33 +98,44 @@ sub new {
 
 Note that there is no C<tasks> method associated with this class
 because this XML represents initialisation rather than
-configuration. See the C<JAC::OCS::Config::Frontend> class for the
-task mapping for configuration.
+configuration. See the C<JAC::OCS::Config::Frontend> or
+C<JAC::OCS::Config::SCUBA2> classes for the task mapping for
+configuration.
 
 =over 4
 
 =item B<receptors>
 
-Information concerning each receptor in the instrument.
+Information concerning each discrete unit (receptor or subarray)
+in the instrument.
 
  %receptors = $ins->receptors;
  $ins->receptors( %receptors );
 
-The hash is indexed by the receptor ID (and so is usable to generate
-a mask for the frontend) and each value is a reference to a hash containing
+The hash is indexed by the receptor or subarray ID (and so is usable to generate
+a mask for the frontend or SCUBA-2) and each value is a reference to a hash containing
 the following information
 
  health -  ON, OFF, or UNSTABLE
  xypos  -  X coordinate (arcsec) of the pixel relative to the focal plane &
            Y coordinate (arcsec) of the pixel relative to the focal plane
+ band   - waveband associated with this receptor (A,B,C, or D, 450, 850)
+
+Heterodyne receptors have the following information in addition to that above:
+
  pol_type - Polarisation type for this pixel (eg Linear)
  refpix -  ID of reference pixel for gain calibration
  sensitivity - Relative sensitivity of this pixel to the reference pixel
  angle  - polarization angle (Astro::Coords::Angle object)
- band   - waveband associated with this receptor (A,B,C, or D)
 
 The reference pixel should refer to one of the pixels in this receptor
 hash.
+
+SCUBA-2 sub arrays have this information:
+
+ flatfile - Name of flatfield file
+ mceport - optical encoder values on the MCE matching this subarray
+ chipid - Unique identifier for this physical detector
 
 =cut
 
@@ -131,10 +149,11 @@ sub receptors {
 
 =item B<receptor>
 
-Retrieve information about a specific receptor. Hash keys match those
+Retrieve information about a specific receptor or subarray. Hash keys match those
 described in the C<receptors> method.
 
   %info = $inst->receptor( "H00" );
+  %info - $inst->receptor( "s8a" );
 
 =cut
 
@@ -161,7 +180,7 @@ sub name {
 
 =item B<serial>
 
-Serial name of the instrument. (e.g. RxA3)
+Serial name of the instrument. (e.g. RxA3, SCUBA-2)
 
 =cut
 
@@ -189,7 +208,10 @@ sub bandwidth {
 
 =item B<wavelength>
 
-Approximate wavelength of the instrument band, in microns.
+Approximate wavelength of the instrument band, in microns. This is the
+wavelength used for pointing corrections and not necessarily the wavelength
+of the instrument. Especially true with instruments that can simultaneously
+observe in multiple wave bands.
 
 =cut
 
@@ -221,7 +243,7 @@ sub focal_station {
 
 =item B<if_center_freq>
 
-IF frequency.
+IF frequency for heterodyne instruments.
 
 =cut
 
@@ -306,19 +328,57 @@ of the map area when scanning. This is not the same as the
 the value returned by footprint_radius(), which is a calculation
 of the radius from the receptor positions.
 
-  $rad = $ins->footprint_radius();
+  $rad = $ins->array_radius();
 
 Returns a radius as C<Astro::Coords::Angle> object.
 
 =cut
 
-sub footprint_radius {
+sub array_radius {
   my $self = shift;
   if (@_) {
     $self->{ARRAY_RADIUS} = check_class_fatal( "Astro::Coords::Angle",
                                                    shift);
   }
   return $self->{ARRAY_RADIUS};
+}
+
+=item B<extras>
+
+Any extra information stored in the configuration.
+
+Currently only allows a single C<JAC::OCS::Config::Instrument::SCUBA2Extras>
+object.
+
+=cut
+
+sub extras {
+  my $self = shift;
+  if (@_) {
+    $self->{EXTRAS} = check_class_fatal( "JAC::OCS::Config::Instrument::SCUBA2Extras",
+                                         shift);
+  }
+  return $self->{EXTRAS};
+}
+
+=back
+
+=head2 Read-only accessor methods
+
+=over 4
+
+=item B<has_subarrays>
+
+Returns true if this instrument has sub arrays rather than receptors.
+
+  $hassub = $inst->has_subarrays;
+
+=cut
+
+sub has_subarrays {
+  my $self = shift;
+  my $bw = $self->bandwidth;
+  return (defined $bw ? 0 : 1);
 }
 
 =item B<receptor_offset>
@@ -436,15 +496,21 @@ sub stringify {
   # Version declaration
   $xml .= $self->_introductory_xml();
 
-  $xml .= "<IF_CENTER_FREQ>". $self->if_center_freq .
-    "</IF_CENTER_FREQ>\n";
+  # see if we are a continuum instrument
+  my $IsCont = $self->has_subarrays;
 
-  # MHz is a natural unit for bandwidth so multiply by 1E-6
-  # Using unit class in the off chance that I begin storing the
-  # bandwidth as an object with associated unit
-  my $u = new JAC::OCS::Config::Units('Hz');
-  $xml .= "<bw units=\"MHz\" value=\"".($self->bandwidth * $u->mult('M'))
-    ."\" />\n";
+  if (!$IsCont) {
+    $xml .= "<IF_CENTER_FREQ>". $self->if_center_freq .
+      "</IF_CENTER_FREQ>\n";
+
+    # MHz is a natural unit for bandwidth so multiply by 1E-6
+    # Using unit class in the off chance that I begin storing the
+    # bandwidth as an object with associated unit
+    my $u = new JAC::OCS::Config::Units('Hz');
+    $xml .= "<bw units=\"MHz\" value=\"".($self->bandwidth * $u->mult('M'))
+      ."\" />\n";
+  }
+
   my @smu = $self->smu_offset;
   $xml .= "<smu_offset X=\"$smu[0]\" Y=\"$smu[1]\" Z=\"$smu[2]\" />\n";
 
@@ -465,28 +531,42 @@ sub stringify {
     $xml .= "<array_area radius=\"".$array_rad->arcsec ."\"/>\n";
   }
 
+  my $array_or_receptor = ($IsCont ? "subArray" : "receptor");
+
   my %rec = $self->receptors;
   for my $r (sort keys %rec) {
-    $xml .= "<receptor id=\"$r\"\n";
+    $xml .= "<$array_or_receptor id=\"$r\"\n";
     $xml .= "          health=\"$rec{$r}{health}\"\n";
     my @xy = @{ $rec{$r}->{xypos}};
     $xml .= "          x=\"$xy[0]\"\n";
     $xml .= "          y=\"$xy[1]\"\n";
-    $xml .= "          pol_type=\"$rec{$r}{pol_type}\" >\n";
 
-    my $refpix = $rec{$r}{refpix};
-    if (!exists $rec{$refpix}) {
-      throw JAC::OCS::Config::Error::FatalError("Reference pixel ($refpix) is not available to this instrument configuration");
+    # specific attributes
+    my @attributes = (@{$RecepSubArray{($IsCont ? "continuum" : "heterodyne")}});
+    for my $a (@attributes) {
+      $xml .= "          $a=\"$rec{$r}{$a}\"\n";
     }
 
-    $xml .= "<sensitivity reference=\"$refpix\"\n";
-    $xml .= "             value=\"$rec{$r}{sensitivity}\" />\n";
+    if (!$IsCont) {
+      $xml .= ">\n"; # terminate the opening element
+      my $refpix = $rec{$r}{refpix};
+      if (!exists $rec{$refpix}) {
+        throw JAC::OCS::Config::Error::FatalError("Reference pixel ($refpix) is not available to this instrument configuration");
+      }
 
-    $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
+      $xml .= "<sensitivity reference=\"$refpix\"\n";
+      $xml .= "             value=\"$rec{$r}{sensitivity}\" />\n";
 
-    $xml .= "</receptor>\n";
+      $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
+      $xml .= "</$array_or_receptor>\n";
+    } else {
+      # not a container element so just empty the opening element
+      $xml .= "/>\n";
+    }
+
   }
 
+  $xml .= $self->extras if defined $self->extras;
 
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
@@ -573,6 +653,7 @@ sub reference_receptor {
 
   my %ref;
   for my $r (@working) {
+    next unless exists $rec{$r}->{refpix};
     $ref{$rec{$r}->{refpix}}++;
   }
 
@@ -650,25 +731,7 @@ sub _process_dom {
   $self->position( $attr{X}, $attr{Y});
   $self->wavelength( $attr{WAVELENGTH} );
 
-  my $if = get_pcdata( $el, "IF_CENTER_FREQ");
-  $self->if_center_freq( $if );
-
-  my $child = find_children( $el, "bw", min=>1,max=>1);
-  my %bwinfo = find_attr($child, "units","value");
-
-  # simple unit parsing
-  my $mult = 1;
-  if (exists $bwinfo{units}) {
-    my $u = JAC::OCS::Config::Units->new( $bwinfo{units} );
-    if (defined $u) {
-      $mult = $u->mult( '' );
-    } else {
-      warn "Unable to parse units '$bwinfo{units} in Instrument\n";
-    }
-  }
-  $self->bandwidth( $bwinfo{value} * $mult );
-
-  $child = find_children( $el, "smu_offset", min=>1,max=>1);
+  my $child = find_children( $el, "smu_offset", min=>1,max=>1);
   my %smu = find_attr($child, "X","Y","Z");
   $self->smu_offset( @smu{"X","Y","Z"});
 
@@ -687,33 +750,79 @@ sub _process_dom {
                                                     units => 'arcsec'));
   }
 
+  # Determine whether this is heterodyne or continuum
+  my $bw = find_children($el, "bw", max => 1);
+  my $IsCont = 1;
+  if (defined $bw) {
+    $IsCont = 0;
+  }
+
+  # HETERODYNE only
+  if (!$IsCont) {
+    my $if = get_pcdata( $el, "IF_CENTER_FREQ");
+    $self->if_center_freq( $if );
+
+    my $child = find_children( $el, "bw", min=>1,max=>1);
+    my %bwinfo = find_attr($child, "units","value");
+
+    # simple unit parsing
+    my $mult = 1;
+    if (exists $bwinfo{units}) {
+      my $u = JAC::OCS::Config::Units->new( $bwinfo{units} );
+      if (defined $u) {
+        $mult = $u->mult( '' );
+      } else {
+        warn "Unable to parse units '$bwinfo{units} in Instrument\n";
+      }
+    }
+    $self->bandwidth( $bwinfo{value} * $mult );
+  }
+
   # now process the receptor info
-  my @r = find_children( $el, "receptor", min => 1);
+  my $array_or_receptor = ($IsCont ? "subArray" : "receptor" );
+  my @r = find_children( $el, $array_or_receptor, min => 1);
+
+  # Work out the expected attribute list
+  my @attributes = (@{$RecepSubArray{shared}},
+                    @{$RecepSubArray{($IsCont ? "continuum" : "heterodyne")}});
 
   my %receptor;
   for my $r (@r) {
-    my %attr = find_attr( $r, "id","health","x","y","pol_type","band");
-    my $child = find_children($r,"sensitivity",min=>1,max=>1);
-    my %sens = find_attr($child, "reference","value");
-    $child = find_children($r,"angle",min=>1,max=>1);
-    my %ang = find_attr($child,"units","value");
+    my %attr = find_attr( $r, @attributes);
 
-    $receptor{$attr{id}} = {
-			    health => $attr{health},
-			    xypos => [
-				      $attr{x},$attr{"y"}
-				     ],
-			    pol_type => $attr{pol_type},
-			    refpix => $sens{reference},
-						     sensitivity => $sens{value},
-			    angle => new Astro::Coords::Angle($ang{value},
-							      units => $ang{units}),
-			    band => $attr{band},
-			   };
+    # some things need manual tweaks before we assign everything
+    # to the receptor hash
+    my $id = $attr{id}; delete $attr{id};
+
+    # Store the focal plane offset as a single entry
+    $attr{xypos} = [ $attr{x}, $attr{"y"} ];
+    delete $attr{x};
+    delete $attr{"y"};
+
+    # Heterodyne has child elements
+    if (!$IsCont) {
+      my $child = find_children($r,"sensitivity",min=>1,max=>1);
+      my %sens = find_attr($child, "reference","value");
+      $attr{sensitivity} = $sens{value};
+      $attr{refpix} = $sens{reference};
+
+      $child = find_children($r,"angle",min=>1,max=>1);
+      my %ang = find_attr($child,"units","value");
+      $attr{angle} = Astro::Coords::Angle->new( $ang{value}, units => $ang{units} );
+    }
+
+    # Store the information indexed by ID
+    $receptor{$id} = \%attr;
 
   }
 
   $self->receptors(%receptor);
+
+  # Look for SCUBA2_EXTRAS - mandatory for SCUBA-2
+  if ($self->name() eq 'SCUBA2') {
+    my $o = JAC::OCS::Config::Instrument::SCUBA2Extras->new( DOM => $el );
+    $self->extras( $o );
+  }
 
   return;
 }
@@ -726,13 +835,14 @@ sub _process_dom {
 
 The Instrument XML specification is documented in OCS/ICD/004 with a
 DTD available at
-http://docs.jach.hawaii.edu/JCMT/OCS/ICD/012/instrument.dtd.
+http://docs.jach.hawaii.edu/JCMT/OCS/ICD/004/instrument.dtd.
 
 =head1 AUTHOR
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004-2005 Particle Physics and Astronomy Research Council.
+Copyright (C) 2008 Science and Technology Facilities Council.
+Copyright 2004-2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
