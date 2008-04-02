@@ -33,7 +33,7 @@ use JAC::OCS::Config::XMLHelper qw(
 				  );
 
 
-use base qw/ JAC::OCS::Config::CfgBase /;
+use base qw/ JAC::OCS::Config::CfgBase JAC::OCS::Config::FEHelper /;
 
 use vars qw/ $VERSION /;
 
@@ -217,26 +217,6 @@ sub doppler {
   return %{$self->{DOPPLER}};
 }
 
-
-=item B<mask>
-
-Hash containing the state of each receptor for the configuration.
-
-  %mask = $fe->mask;
-  $fe->mask( %mask );
-
-Keys are the receptor IDs, values are "ON", "ANY", "OFF" or "NEED".
-
-=cut
-
-sub mask {
-  my $self = shift;
-  if (@_) {
-    %{$self->{MASK}} = @_;
-  }
-  return %{$self->{MASK}};
-}
-
 =item B<active_receptors>
 
 Returns the list of receptors that are active (ie not "OFF")
@@ -247,9 +227,7 @@ Returns the list of receptors that are active (ie not "OFF")
 
 sub active_receptors {
   my $self = shift;
-  my %mask = $self->mask;
-  my @good = grep { $mask{$_} ne 'OFF' } keys %mask;
-  return @good;
+  return $self->_active_elements;
 }
 
 =item B<stringify>
@@ -292,12 +270,7 @@ sub stringify {
   $xml .= "<OPTIMIZE>". $self->optimize ."</OPTIMIZE>\n"
     if defined $self->optimize;
 
-
-  my %mask = $self->mask;
-
-  for my $r (sort keys %mask) {
-    $xml .= "<RECEPTOR_MASK RECEPTOR_ID=\"$r\" VALUE=\"$mask{$r}\"/>\n";
-  }
+  $xml .= $self->_stringify_mask();
 
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
@@ -390,30 +363,15 @@ sub _process_dom {
   return;
 }
 
-=item B<_process_mask>
+=item B<_mask_xml_name>
 
-Process all the RECEPTOR_MASK XML. and configure the mask() method in the
-object.
-
-  $cfg->_process_mask();
+Returns the string that is used to represent the mask information xml
+element name. Returns "RECEPTOR"
 
 =cut
 
-sub _process_mask {
-  my $self = shift;
-
-  # Find all the header items
-  my $el = $self->_rootnode;
-
-  # Receptor Mask
-  my @masks = find_children( $el, "RECEPTOR_MASK", min => 1);
-  my %mask;
-  for my $m (@masks) {
-    my %attr = find_attr( $m, "RECEPTOR_ID", "VALUE");
-    $mask{$attr{RECEPTOR_ID}} = $attr{VALUE};
-  }
-  $self->mask( %mask );
-
+sub _mask_xml_name {
+  return "RECEPTOR";
 }
 
 =back
@@ -430,6 +388,7 @@ http://docs.jach.hawaii.edu/JCMT/OCS/ICD/004/frontend_configure.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
+Copyright (C) 2008 Science and Technology Facilities Council.
 Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 

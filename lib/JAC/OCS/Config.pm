@@ -47,6 +47,7 @@ use JAC::OCS::Config::Error;
 use JAC::OCS::Config::ObsSummary;
 use JAC::OCS::Config::TCS;
 use JAC::OCS::Config::Frontend;
+use JAC::OCS::Config::SCUBA2;
 use JAC::OCS::Config::Instrument;
 use JAC::OCS::Config::Header;
 use JAC::OCS::Config::RTS;
