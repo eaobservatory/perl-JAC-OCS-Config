@@ -2,7 +2,7 @@ package JAC::OCS::Config::XMLHelper;
 
 =head1 NAME
 
-JAC::OCS::Config::XMLHelper - Helper functions for TCS XML parsing
+JAC::OCS::Config::XMLHelper - Helper functions for XML parsing
 
 =head1 SYNOPSIS
 
