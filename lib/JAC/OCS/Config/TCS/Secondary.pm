@@ -48,8 +48,8 @@ use JCMT::SMU::Jiggle;
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr get_pcdata 
-				    get_this_pcdata indent_xml_string
-				    /;
+                                    get_this_pcdata indent_xml_string
+                                  /;
 use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets pa_to_xml /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -87,12 +87,12 @@ sub new {
 
   # Now call base class with all the supplied options
   return $self->SUPER::new( @_,
-			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    CHOP => {},
-								    TIMING => {},
-								    JIGGLE => undef,
-								   }
-			  );
+                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+                                                                    CHOP => {},
+                                                                    TIMING => {},
+                                                                    JIGGLE => undef,
+                                                                   }
+                          );
 }
 
 =back
@@ -233,7 +233,7 @@ sub smu_mode {
     # Do we have timing
     my %timing = $self->timing;
     if (exists $timing{CHOPS_PER_JIG} && defined $timing{CHOPS_PER_JIG}
-       && $timing{CHOPS_PER_JIG} > 0) {
+        && $timing{CHOPS_PER_JIG} > 0) {
       $mode = 'chop_jiggle';
     } else {
       $mode = 'jiggle_chop';
@@ -304,13 +304,13 @@ sub stringify {
       my %t = $self->timing;
       $xml .= "<TIMING>\n";
       if (exists $t{CHOPS_PER_JIG} && defined $t{CHOPS_PER_JIG}) {
-	$xml .= "<CHOPS_PER_JIG>$t{CHOPS_PER_JIG}</CHOPS_PER_JIG>\n";
+        $xml .= "<CHOPS_PER_JIG>$t{CHOPS_PER_JIG}</CHOPS_PER_JIG>\n";
       } elsif (exists $t{N_JIGS_ON} && defined $t{N_JIGS_ON} &&
-	       exists $t{N_CYC_OFF} && defined $t{N_CYC_OFF}) {
-	$xml .= "<JIGS_PER_CHOP N_JIGS_ON=\"$t{N_JIGS_ON}\"\n";
-	$xml .= "               N_CYC_OFF=\"$t{N_CYC_OFF}\" />\n";
+               exists $t{N_CYC_OFF} && defined $t{N_CYC_OFF}) {
+        $xml .= "<JIGS_PER_CHOP N_JIGS_ON=\"$t{N_JIGS_ON}\"\n";
+        $xml .= "               N_CYC_OFF=\"$t{N_CYC_OFF}\" />\n";
       } else {
-	warnings::warnif( "No timing information for SMU\n" );
+        warnings::warnif( "No timing information for SMU\n" );
       }
       $xml .= "</TIMING>\n";
       $xml .= "</JIGGLE_CHOP>\n";
