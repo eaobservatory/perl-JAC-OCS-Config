@@ -89,6 +89,7 @@ sub new {
   return $self->SUPER::new( @_,
                             $JAC::OCS::Config::CfgBase::INITKEY => { 
                                                                     CHOP => {},
+                                                                    DREAM => {},
                                                                     TIMING => {},
                                                                     JIGGLE => undef,
                                                                    }
@@ -172,6 +173,27 @@ sub chop {
   return %{ $self->{CHOP} };
 }
 
+=item B<dream>
+
+Specification of the DREAM pattern. Recognized keys are
+NAME, LEG_LENGTH and BOLO_PER_VERTS.
+
+  %d = $obs->dream();
+  $obs->dream( %d );
+
+=cut
+
+sub dream {
+  my $self = shift;
+  if (@_) {
+    my %args = @_;
+    for my $k (qw/ NAME LEG_LENGTH BOLO_PER_VERTS /) {
+      $self->{DREAM}->{$k} = $args{$k};
+    }
+  }
+  return %{ $self->{DREAM} };
+}
+
 =item B<timing>
 
 If we are chopping and jiggling at the same time, this field
@@ -214,6 +236,7 @@ Can be one of
    jiggle
    jiggle_chop
    chop_jiggle
+   dream
 
 This mode is determined from the presence of CHOP and/or JIGGLE
 specifications in the object.
@@ -226,6 +249,7 @@ else "jiggle_chop" is returned if CHOP and JIGGLE settings exist.
 sub smu_mode {
   my $self = shift;
   my %c = $self->chop;
+  my %d = $self->dream;
   my $j = $self->jiggle;
 
   my $mode;
@@ -242,6 +266,8 @@ sub smu_mode {
     $mode = "chop";
   } elsif ($j) {
     $mode = "jiggle";
+  } elsif (%d) {
+    $mode = "dream";
   } else {
     $mode = "none";
   }
@@ -275,7 +301,15 @@ sub stringify {
   # Obs mode
   my $mode = $self->smu_mode;
 
-  if ($mode ne "none") {
+  if ($mode eq 'dream') {
+    my %d = $self->dream;
+    $xml .= "<DREAM\n";
+    for my $attr (qw/ NAME LEG_LENGTH BOLO_PER_VERTS / ) {
+      $xml .= "       $attr=\"$d{$attr}\"\n";
+    }
+    $xml .= "/>\n";
+
+  } elsif ($mode ne "none") {
     if ($mode eq 'jiggle_chop' || $mode eq 'chop_jiggle') {
       $xml .= "<JIGGLE_CHOP>\n";
     }
@@ -374,6 +408,15 @@ sub _process_dom {
 
   # Find a chop if we did not find one in a jiggle chop
   $self->_find_chop() unless $self->chop;
+
+  # Look for DREAM (does not check to make sure that chop and jiggle have not
+  # been found)
+  my $el = $self->_rootnode;
+  my $dream = find_children( $el, "DREAM", min => 0, max => 1);
+  if (defined $dream) {
+    my %dream = find_attr( $dream, "NAME", "LEG_LENGTH", "BOLO_PER_VERTS" );
+    $self->dream( %dream );
+  }
 
   return;
 }
@@ -570,6 +613,7 @@ sub _find_jiggle_gen {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
+Copyright (C) 2008 Science and Technology Facilities Council.
 Copyright 2004-2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
