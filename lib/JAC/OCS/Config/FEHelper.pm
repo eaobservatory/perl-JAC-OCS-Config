@@ -76,7 +76,7 @@ Will be called by active_receptors() or active_subarrays() method.
 
 =cut
 
-sub _active_receptors {
+sub _active_elements {
   my $self = shift;
   my %mask = $self->mask;
   my @good = grep { $mask{$_} ne 'OFF' } keys %mask;
