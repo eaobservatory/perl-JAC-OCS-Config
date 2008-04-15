@@ -667,8 +667,12 @@ sub reference_receptor {
 
 =item B<contains_id>
 
-Returns true if the supplied receptor ID is available on this
-instrument. Otherwise false.
+Returns the matching ID if it exists (regardless of case),
+otherwise returns undef.
+
+Note that the return value will correspond to a key in the 
+receptors() hash whereas the argument to this routine can
+be case insensitive.
 
 =cut
 
@@ -676,7 +680,16 @@ sub contains_id {
   my $self = shift;
   my $query = uc( shift );
   my %rec = $self->receptors;
-  return ( exists $rec{$query} ? 1 : 0 );
+
+  # take care of case
+  for my $id (keys %rec) {
+    if ($query eq uc($id)) {
+      return $id;
+    }
+  }
+  
+  # did not match
+  return;
 }
 
 =back
