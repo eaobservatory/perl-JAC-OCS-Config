@@ -75,8 +75,8 @@ $DEBUG = 0;
 use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/obs_summary jos header rts frontend pol instrument_setup
-		  tcs acsis /;
+our @CONFIGS = qw/obs_summary jos header rts scuba2 frontend pol
+                  instrument_setup tcs acsis /;
 
 
 =head1 METHODS
@@ -598,6 +598,8 @@ sub duration {
 
   # Basic step time
   my $step = $jos->step_time;
+  throw JAC::OCS::Config::Error::FatalError("JOS Steptime must be positive")
+    unless $step > 0;
 
   # This will be the number of steps per cycle to complete the observation
   my $nsteps = 0;
@@ -911,9 +913,12 @@ sub duration {
 
   # Approximate number of cals - needs the total number of steps
   # And make sure the cal is at least long enough for the ref
-  my $ncals = ceil($ntot / $jos->steps_btwn_cals);
   my $cal_len = ($jos->n_calsamples || 0);
   $cal_len = max( $nsteps_ref, $cal_len ) if $cal_len;
+  my $ncals = 0;
+  if ($jos->n_calsamples > 0) {
+    $ncals = ceil($ntot / $jos->steps_btwn_cals);
+  }
 
   # Assume that if a cal can share the ref, that the number of steps
   # due to the SKY cal (Which we assume to dominate because the others
