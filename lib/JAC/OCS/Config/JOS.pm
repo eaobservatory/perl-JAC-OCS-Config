@@ -52,7 +52,7 @@ our @PARAMS = (qw/
                    FOCUS_STEP
                    FOCUS_AXIS
                    STEPS_BTWN_REFS
-                   STEPS_BTWN_DARKS
+                   STEPS_BTWN_DARK
                    STEPS_BTWN_CALS
                    START_INDEX
                  /);
@@ -299,19 +299,19 @@ sub steps_btwn_cals {
   return $self->{STEPS_BTWN_CALS};
 }
 
-=item B<steps_btwn_darks>
+=item B<steps_btwn_dark>
 
 Number of steps that are allowed to occur before a new DARK should
 be obtained.
 
 =cut
 
-sub steps_btwn_darks {
+sub steps_btwn_dark {
   my $self = shift;
   if (@_) {
-    $self->{STEPS_BTWN_DARKS} = shift;
+    $self->{STEPS_BTWN_DARK} = shift;
   }
-  return $self->{STEPS_BTWN_DARKS};
+  return $self->{STEPS_BTWN_DARK};
 }
 
 =item B<n_refsamples>
