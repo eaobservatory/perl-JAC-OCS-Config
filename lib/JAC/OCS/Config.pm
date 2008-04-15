@@ -547,7 +547,7 @@ sub instrument {
 
 Estimated duration of the observation resulting from this configuration.
 This must be an estimate because of uncertainties in slew time and
-the possibility that a raster map may not use predictable scanning.
+the possibility that a scan map may not use predictable scanning.
 
 =cut
 
@@ -627,11 +627,11 @@ sub duration {
   my $nseq = 0;
 
   # Each mode needs a different calculation
-  if ($map_mode eq 'raster') {
+  if ($map_mode =~ /(raster|scan)/) {
 
     # consistency check
     my $mode = $oa->mode;
-    throw JAC::OCS::Config::Error::FatalError("Inconsistency in configuration. Raster requested but obsArea does not specify a map area (mode='$mode' not 'area')") unless $mode =~ /area/i;
+    throw JAC::OCS::Config::Error::FatalError("Inconsistency in configuration. Scan map requested but obsArea does not specify a map area (mode='$mode' not 'area')") unless $mode =~ /area/i;
 
     # Need to work out the number of samples in the map
 
@@ -710,7 +710,7 @@ sub duration {
     # Convert to number of reference steps
     $nsteps_ref = ceil( sqrt($nrows_per_ref*$rsteps) );
 
-    # For raster/pssw we interpolate offs so the number of times we go to
+    # For scan/pssw we interpolate offs so the number of times we go to
     # reference is the same as the actual number of refs required. So number
     # of telescope moves is 2 times the number of refs with the last ref
     # not required to return
@@ -1141,7 +1141,7 @@ sub verify {
   # get the observing mode and make sure that we need a target
   my $obs = $self->obsmode;
 
-  if ($obs =~ /(raster|jiggle|grid)/i) {
+  if ($obs =~ /(scan|dream|stare|raster|jiggle|grid)/i) {
 
     # Get the TCS object
     my $tcs = $self->tcs;

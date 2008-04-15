@@ -679,8 +679,9 @@ sub _find_microsteps {
 
 =item B<_find_scan_area>
 
-The scan area defines a raster map. It can include an offset,
-and must include an area specification, and a scan specification.
+The scan area defines the size of the region to be scan mapped. It can
+include an offset, and must include an area specification, and a scan
+specification.
 
 =cut
 
