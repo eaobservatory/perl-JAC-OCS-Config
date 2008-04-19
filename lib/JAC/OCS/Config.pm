@@ -418,16 +418,26 @@ sub write_file {
   # Directories which require full configurations regardless (as hash for easy access)
   my %full_configs = map { $_, undef } $self->requires_full_config;
 
-  # Format is acsis_YYYYMMDD_HHMMSSuuuuuu.xml
+  # Format is backend_YYYYMMDD_HHMMSSuuuuuu.xml
   #  where uuuuuu is microseconds
 
   my ($sec, $mic_sec) = gettimeofday();
   my $ut = gmtime( $sec );
 
+  # get backend
+  my $backend;
+  if (defined $self->acsis) {
+    $backend = "acsis";
+  } elsif (defined $self->scuba2) {
+    $backend = "scuba2";
+  } else {
+    $backend = "unknown";
+  }
+
   # Rather than worry that the computer is so fast in looping that we might
   # reuse milli-seconds (and therefore have to check that we are not opening
   # a file that has previously been created) put micro-seconds in the filename
-  my $cname = "acsis_". $ut->strftime("%Y%m%d_%H%M%S") .
+  my $cname = $backend . "_". $ut->strftime("%Y%m%d_%H%M%S") .
     "_".sprintf("%06d",$mic_sec) .
       ".xml";
 
