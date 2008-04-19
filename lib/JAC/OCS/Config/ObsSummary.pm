@@ -68,7 +68,7 @@ Mapping mode associated with this observation.
 
   $mapmode = $obs->mapping_mode();
 
-Usually one of 'raster', 'jiggle', or 'grid'
+Usually one of 'scan', 'dream', 'stare', 'jiggle', or 'grid'
 
 =cut
 
@@ -86,7 +86,8 @@ Switching mode associated with this observation.
 
   $swmode = $obs->switching_mode();
 
-Usually one of 'none', 'pssw', 'chop', 'freqsw_slow', or 'freqsw_fast'.
+Usually one of 'none', 'pssw', 'chop', 'freqsw_slow', or 'freqsw_fast',
+'self', 'spin'.
 
 =cut
 
@@ -104,7 +105,7 @@ The type of observation.
 
   $type = $obs->type();
 
-Usually one of 'science', 'pointing', or 'focus'.
+Usually one of 'science', 'pointing', 'focus', 'skydip' or 'flatfield'.
 
 =cut
 
@@ -114,6 +115,26 @@ sub type {
     $self->{OBS_TYPE} = shift;
   }
   return $self->{OBS_TYPE};
+}
+
+=item B<inbeam>
+
+Whether the observation requires some additional hardware to be
+in the beam.
+
+ $inbeam = $obs->inbeam();
+
+Currently only one item can be in the beam. Usually one of 'pol'
+or 'fts'.
+
+=cut
+
+sub inbeam {
+  my $self = shift;
+  if (@_) {
+    $self->{IN_BEAM} = shift;
+  }
+  return $self->{IN_BEAM};
 }
 
 =item B<comment>
@@ -158,6 +179,9 @@ sub stringify {
   $xml .= "<obs_type>".
     (defined $self->type ? $self->type : '')
     . "</obs_type>\n";
+  if ($self->inbeam) {
+    $xml .= "<in_beam>".$self->inbeam."</in_beam>\n";
+  }
   $xml .= "<obs_comment>". $self->comment . "</obs_comment>"
     if $self->comment;
 
@@ -212,6 +236,7 @@ sub _process_dom {
   $self->mapping_mode( get_pcdata( $el, "mapping_mode") );
   $self->switching_mode( get_pcdata( $el, "switching_mode") );
   $self->type( get_pcdata( $el, "obs_type") );
+  $self->inbeam( get_pcdata( $el, "in_beam") );
   $self->comment( get_pcdata( $el, "comment") );
 
   return;
@@ -231,6 +256,7 @@ http://docs.jach.hawaii.edu/JCMT/OCS/ICD/021/obs_summary.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
+Copyright (C) 2008 Science and Technology Facilities Council.
 Copyright 2005 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
