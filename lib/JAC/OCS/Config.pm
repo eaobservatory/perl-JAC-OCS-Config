@@ -605,6 +605,7 @@ sub duration {
   # Worry about SCUBA-2 at some point...
   my $map_mode = lc($obssum->mapping_mode);
   my $sw_mode  = lc($obssum->switching_mode);
+  my $obs_type = lc($obssum->type);
 
   # Basic step time
   my $step = $jos->step_time;
@@ -637,7 +638,10 @@ sub duration {
   my $nseq = 0;
 
   # Each mode needs a different calculation
-  if ($map_mode =~ /(raster|scan)/) {
+  if ($obs_type =~ /skydip/) {
+    # do not yet know
+
+  } elsif ($map_mode =~ /(raster|scan)/) {
 
     # consistency check
     my $mode = $oa->mode;
