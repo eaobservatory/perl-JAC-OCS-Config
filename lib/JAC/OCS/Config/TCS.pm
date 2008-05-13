@@ -1164,7 +1164,7 @@ sub _find_rotator {
     my @pa = find_pa( $rot );
 
     $self->rotator( %ropt,
-		    PA => \@pa,
+                    ( @pa ? (PA => \@pa) : () ),
 	       );
   }
 
@@ -1335,13 +1335,11 @@ sub _toString_rotator {
 	if exists $rot{MOTION};
       $xml .= ">\n";
 
-      if (exists $rot{PA}) {
+      # PA is optional
+      if (exists $rot{PA} && @{$rot{PA}}) {
 	for my $pa (@{$rot{PA}}) {
 	  $xml .= "  ". pa_to_xml( $pa );
 	}
-      } else {
-        # PA is mandatory so assume 0 deg
-        $xml .= "  ".pa_to_xml( new Astro::Coords::Angle( 0 ) );
       }
 
       $xml .= "</ROTATOR>\n";
