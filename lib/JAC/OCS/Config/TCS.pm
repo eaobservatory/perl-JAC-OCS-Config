@@ -38,8 +38,8 @@ use Data::Dumper;
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw| find_children find_attr
-				    indent_xml_string
-				    |;
+                                    indent_xml_string
+                                  |;
 use JAC::OCS::Config::TCS::Generic qw| find_pa pa_to_xml offset_to_xml |;
 
 use JAC::OCS::Config::TCS::BASE;
@@ -94,13 +94,13 @@ sub new {
   # Now call base class with all the supplied options +
   # extra initialiser
   return $self->SUPER::new( %args,
-			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    Telescope => $tel,
-								    TAGS => {},
-								    SLEW => {},
-								    ROTATOR => {},
-								   }
-			  );
+                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+                                                                    Telescope => $tel,
+                                                                    TAGS => {},
+                                                                    SLEW => {},
+                                                                    ROTATOR => {},
+                                                                   }
+                          );
 }
 
 =item B<from_coord>
@@ -183,7 +183,9 @@ element. If this class is reading TOML the telescope will not be defined.
 
 sub telescope {
   my $self = shift;
-  if (@_) { $self->{Telescope} = shift;}
+  if (@_) {
+    $self->{Telescope} = shift;
+  }
   return $self->{Telescope};
 }
 
@@ -195,7 +197,9 @@ Name instrument aperture (if any) associated with this observation.
 
 sub aperture_name {
   my $self = shift;
-  if (@_) { $self->{ApertureName} = shift; }
+  if (@_) {
+    $self->{ApertureName} = shift;
+  }
   return $self->{ApertureName};
 }
 
@@ -669,26 +673,26 @@ sub setTargetSync {
       # compare with science (if set)
       my $modify;
       if (defined $scoord) {
-	# compare with the current position and modify
-	# if they are within an arcsec
-	my $distance = $bcoord->distance( $scoord );
-	$modify = ( defined $distance && $distance->arcsec < 1 );
+        # compare with the current position and modify
+        # if they are within an arcsec
+        my $distance = $bcoord->distance( $scoord );
+        $modify = ( defined $distance && $distance->arcsec < 1 );
       } else {
-	# modify since we do not have a science to compare with
-	# but do need to check for OFFSETS
-	$modify = 1;
+        # modify since we do not have a science to compare with
+        # but do need to check for OFFSETS
+        $modify = 1;
 
-	my $off = $base->offset;
-	throw JAC::OCS::Config::Error::FatalError("Can not sync target positions if no SCIENCE/BASE is available and tag ".
-						  $base->tag
-						  ." does not contain offsets")
-	  if ( !defined $off || ($off->xoffset == 0 && $off->yoffset == 0));
+        my $off = $base->offset;
+        throw JAC::OCS::Config::Error::FatalError("Can not sync target positions if no SCIENCE/BASE is available and tag ".
+                                                  $base->tag
+                                                  ." does not contain offsets")
+          if ( !defined $off || ($off->xoffset == 0 && $off->yoffset == 0));
 
       }
       if ($modify) {
-	# can replace
-	$base->coords( $ncoord );
-	delete $tags{$t};
+        # can replace
+        $base->coords( $ncoord );
+        delete $tags{$t};
       }
     }
   }
@@ -949,10 +953,10 @@ be used to insert new tagged coordinates.
 
 {
   my %synonyms = ( BASE => 'SCIENCE',
-		   SCIENCE => 'BASE',
-		   REFERENCE => 'SKY',
-		   SKY => 'REFERENCE',
-		 );
+                   SCIENCE => 'BASE',
+                   REFERENCE => 'SKY',
+                   SKY => 'REFERENCE',
+                 );
 
 
   sub _translate_tag_name {
@@ -969,14 +973,14 @@ be used to insert new tagged coordinates.
       return $synonyms{$tag};
     } else {
       if ($ignore_exists) {
-	# see if this tag would be valid in general even if it does not currently
-	# exist
-	for my $v ( values %synonyms ) {
-	  return $v if $tag eq $v;
-	}
-	for my $k (keys %synonyms) {
-	  return $synonyms{$k} if $tag eq $k;
-	}
+        # see if this tag would be valid in general even if it does not currently
+        # exist
+        for my $v ( values %synonyms ) {
+          return $v if $tag eq $v;
+        }
+        for my $k (keys %synonyms) {
+          return $synonyms{$k} if $tag eq $k;
+        }
       }
 
       return undef;
@@ -1112,7 +1116,7 @@ sub _find_base_posns {
 
     # Create the object from the dom.
     my $base = new JAC::OCS::Config::TCS::BASE( DOM => $b,
-						telescope => $tel);
+                                                telescope => $tel);
     my $tag = $base->tag;
     $tags{$tag} = $base;
 
@@ -1165,7 +1169,7 @@ sub _find_rotator {
 
     $self->rotator( %ropt,
                     ( @pa ? (PA => \@pa) : () ),
-	       );
+                  );
   }
 
 }
@@ -1247,14 +1251,14 @@ sub _toString_slew {
     if (!$slew{OPTION}) {
       # no explicit option
       if (defined $slew{CYCLE} && defined $slew{TRACK_TIME}) {
-	throw JAC::OCS::Error::FatalError("No explicit Slew option but CYCLE and TRACK_TIME are specified. Please fix ambiguity.");
+        throw JAC::OCS::Error::FatalError("No explicit Slew option but CYCLE and TRACK_TIME are specified. Please fix ambiguity.");
       } elsif (defined $slew{CYCLE}) {
-	$slew{OPTION} = 'CYCLE';
+        $slew{OPTION} = 'CYCLE';
       } elsif (defined $slew{TRACK_TIME}) {
-	$slew{OPTION} = 'TRACK_TIME';
+        $slew{OPTION} = 'TRACK_TIME';
       } else {
-	# default to longest track
-	$slew{OPTION} = 'SHORTEST_SLEW';
+        # default to longest track
+        $slew{OPTION} = 'SHORTEST_SLEW';
       }
     }	
     if ($slew{OPTION} eq 'CYCLE' && !defined $slew{CYCLE}) {
@@ -1321,25 +1325,25 @@ sub _toString_rotator {
     $xml .= "\n<!-- Configure the instrument rotator here -->\n\n";
     if (keys %rot) {
 
-       # Check that the slew option is okay
+      # Check that the slew option is okay
       my %slew = $self->slew;
       if ($rot{SLEW_OPTION} eq 'TRACK_TIME' &&
-	  !exists $slew{TRACK_TIME}) {
-	throw JAC::OCS::Config::Error::FatalError("Rotator is attempting to use TRACK_TIME slew option but no track time has been defined in the SLEW parameter");
+          !exists $slew{TRACK_TIME}) {
+        throw JAC::OCS::Config::Error::FatalError("Rotator is attempting to use TRACK_TIME slew option but no track time has been defined in the SLEW parameter");
       }
 
       $xml .= "<ROTATOR SYSTEM=\"$rot{SYSTEM}\"\n";
       $xml .= "         SLEW_OPTION=\"$rot{SLEW_OPTION}\"\n"
-	if exists $rot{SLEW_OPTION};
+        if exists $rot{SLEW_OPTION};
       $xml .= "         MOTION=\"$rot{MOTION}\"\n" 
-	if exists $rot{MOTION};
+        if exists $rot{MOTION};
       $xml .= ">\n";
 
       # PA is optional
       if (exists $rot{PA} && @{$rot{PA}}) {
-	for my $pa (@{$rot{PA}}) {
-	  $xml .= "  ". pa_to_xml( $pa );
-	}
+        for my $pa (@{$rot{PA}}) {
+          $xml .= "  ". pa_to_xml( $pa );
+        }
       }
 
       $xml .= "</ROTATOR>\n";
