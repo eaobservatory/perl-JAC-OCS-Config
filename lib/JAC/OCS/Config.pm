@@ -559,9 +559,70 @@ Estimated duration of the observation resulting from this configuration.
 This must be an estimate because of uncertainties in slew time and
 the possibility that a scan map may not use predictable scanning.
 
+  $duration = $Cfg->duration();
+
+Returns a Time::Seconds object.
+
 =cut
 
 sub duration {
+  my $self = shift;
+
+  # switch on instrument.
+  if (defined $self->acsis) {
+    return $self->duration_acsis();
+  } elsif (defined $self->scuba2) {
+    return $self->duration_scuba2();
+  } else {
+    warn "Unable to determine instrument configuration for duration calculation";
+  }
+  return Time::Seconds->new(0);
+}
+
+=item B<duration_scuba2>
+
+SCUBA-2 specific calculation of observing duration. Currently separate
+from ACSIS since commonality of calcualations is unknown and observing modes
+are somewhat different.
+
+  $dur = $cfg->duration_scuba2();
+
+=cut
+
+sub duration_scuba2 {
+  my $self = shift;
+
+  # Get the JOS information
+  my $jos = $self->jos;
+  throw JAC::OCS::Config::Error::FatalError( "Unable to determine duration since there is no JOS configuration available") unless defined $jos;
+
+  # Get observation summary
+  my $obssum = $self->obs_summary;
+  throw JAC::OCS::Config::Error::FatalError( "Unable to determine duration since there is no observation summary available") unless defined $obssum;
+
+  # Need the TCS configuration
+  my $tcs = $self->tcs;
+  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no telescope configuration") unless defined $tcs;
+
+  # Need the observing area (either for the number of offset positions or the
+  # map area
+  my $oa = $tcs->getObsArea;
+  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
+
+  warn "SCUBA-2 observation durations are not yet calculated\n";
+  return Time::Seconds->new(0);
+}
+
+=item B<duration_acsis>
+
+ACSIS-specific calculation of observing duration. Currently we keep the
+ACSIS and SCUBA-2 calculations separate until we work out whether there
+is any commonality. No clever subclassing since there is no concept
+(yet) of a JAC::OCS::Config::ACSIS subclass of JAC::OCS::Config.
+
+=cut
+
+sub duration_acsis {
   my $self = shift;
 
   # Get the JOS information
@@ -602,7 +663,7 @@ sub duration {
   my $cal_overhead = $tel_ref_overhead;
 
 
-  # Worry about SCUBA-2 at some point...
+  # get the base mapping modes
   my $map_mode = lc($obssum->mapping_mode);
   my $sw_mode  = lc($obssum->switching_mode);
   my $obs_type = lc($obssum->type);
