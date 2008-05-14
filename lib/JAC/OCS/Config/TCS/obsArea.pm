@@ -54,6 +54,7 @@ my @SCAN_PATTERNS = qw/ RASTER
                         SQUARE_PONG
                         ROUNDED_PONG
                         CURVY_PONG
+                        LISSAJOUS
                         /;
 # hash for easy checks
 my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
@@ -236,6 +237,8 @@ objects.
 
 NTERMS is only used for CURVY_PONG patterns.
 
+PA will be ignored by the TCS for PONG scans.
+
 REVERSAL is not supported in newer versions of the TCS. It is 
 equivalent to a PATTERN of RASTER (REVERSAL=NO) or DISCRETE_BOUSTROPHEDON
 (REVERSAL=YES). If REVERSAL is supplied a pattern will be inserted if
@@ -252,7 +255,6 @@ sub scan {
     if (exists $args{REVERSAL} && !exists $args{PATTERN}) {
       $args{PATTERN} = ($args{REVERSAL} ? "DISCRETE_BOUSTROPHEDON" :
                         "RASTER" );
-      $self->old_dtd( 1 );
     }
 
     # Make sure it is a valid pattern
@@ -291,6 +293,7 @@ Recognized patterns are:
   SQUARE_PONG
   ROUNDED_PONG
   CURVY_PONG
+  LISSAJOUS   (curvy_pong with nterms=1)
 
 If no pattern has been specified, the default is DISCRETE_BOUSTROPHEDON.
 
