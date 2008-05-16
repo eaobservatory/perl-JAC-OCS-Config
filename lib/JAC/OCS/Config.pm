@@ -57,11 +57,11 @@ use JAC::OCS::Config::JOS;
 use JAC::OCS::Config::ACSIS;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
 use JAC::OCS::Config::XMLHelper qw(
-				   find_children
-				   find_attr
-				   indent_xml_string
-				   get_pcdata_multi
-				  );
+                                    find_children
+                                    find_attr
+                                    indent_xml_string
+                                    get_pcdata_multi
+                                 );
 
 # Bizarrely, inherit from a sub-class for DOM processing
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -107,22 +107,22 @@ Returns C<undef> if an object can not be constructed.
 
 =cut
 
-sub new {
-  my $self = shift;
-  my %args = @_;
+  sub new {
+    my $self = shift;
+    my %args = @_;
 
-  # extract telescope
-  my $tel = $args{telescope};
-  delete $args{telescope};
+    # extract telescope
+    my $tel = $args{telescope};
+    delete $args{telescope};
 
-  # Now call base class with all the supplied options +
-  # extra initialiser
-  return $self->SUPER::new( %args,
-                            $JAC::OCS::Config::CfgBase::INITKEY => {
-								    Telescope => $tel,
-                                                                   }
-                          );
-}
+    # Now call base class with all the supplied options +
+    # extra initialiser
+    return $self->SUPER::new( %args,
+                              $JAC::OCS::Config::CfgBase::INITKEY => {
+                                                                      Telescope => $tel,
+                                                                     }
+                            );
+  }
 
 =back
 
@@ -163,7 +163,7 @@ settings that were read from disk).
 sub tasks {
   my $self = shift;
   my @tasks;
-  my %dups; # check for duplicates
+  my %dups;                     # check for duplicates
 
   # The tasks should retain the order delievered by the subsystems but
   # we need to make sure that duplicates are removed
@@ -173,9 +173,9 @@ sub tasks {
     if ($self->can($o) && defined $self->$o() && $self->$o->can( 'tasks' )) {
       my @new = $self->$o->tasks;
       for my $n (@new) {
-	next if exists $dups{$n};
-	$dups{$n} = undef;
-	push(@tasks, $n);
+        next if exists $dups{$n};
+        $dups{$n} = undef;
+        push(@tasks, $n);
       }
     }
   }
@@ -309,7 +309,7 @@ sub instrument_setup {
   if (@_) {
     my $inst = shift;
     $self->{INSTRUMENT_CONFIG} = check_class_fatal( "JAC::OCS::Config::Instrument",
-						    $inst);
+                                                    $inst);
     # if a frontend config exists, check to see if a name is defined
     # if it is undef, set it
     my $fe = $self->frontend;
@@ -333,7 +333,7 @@ sub frontend {
     throw JAC::OCS::Config::Error::FatalError("SCUBA-2 configuration already present")
       if defined $self->scuba2();
     $self->{FRONTEND_CONFIG} = check_class_fatal( "JAC::OCS::Config::Frontend",
-						  $fe);
+                                                  $fe);
     # if the frontend does not have a name but we do have an INSTRUMENT
     # then use that name
     # Does not verify that the receptors in INSTRUMENT are used in FRONTEND
@@ -492,15 +492,15 @@ sub write_file {
       my $this_acsis = $self->acsis();
       if (defined $this_acsis) {
 
-	my $this_if = $this_acsis->acsis_if();
-	my $this_map = $this_acsis->acsis_map();
+        my $this_if = $this_acsis->acsis_if();
+        my $this_map = $this_acsis->acsis_map();
 
-	$acsis->acsis_if( $this_if ) if defined $this_if;
-	$acsis->acsis_map( $this_map ) if defined $this_map;
+        $acsis->acsis_if( $this_if ) if defined $this_if;
+        $acsis->acsis_map( $this_map ) if defined $this_map;
 
-	# write it
-	print $fh $dummy->stringify();
-	$has_written = 1;
+        # write it
+        print $fh $dummy->stringify();
+        $has_written = 1;
       }
     }
 
@@ -814,7 +814,7 @@ sub duration_acsis {
   my $obs_overhead = 40.0;
   #  - time per telescope move to reference (one way so that 
   #    we can take into account OFF ON ON OFF sequences
-  my $tel_ref_overhead = 5.0; # seconds
+  my $tel_ref_overhead = 5.0;   # seconds
   #  - time per telescope move to NOD (one way so that A B B A sequences
   #    can be taken into account)
   my $tel_nod_overhead = 2.0;
@@ -903,8 +903,8 @@ sub duration_acsis {
       # -PI to PI
       my @scan_pa = map { $map_pa - $_->degrees } @{$scan{PA}};
       @scan_pa = map { Astro::Coords::Angle->new($_, units => 'deg',
-						 range => 'PI')->degrees
-					       } @scan_pa;
+                                                 range => 'PI')->degrees
+                                               } @scan_pa;
 
       # if the angle is 90 +/- 45 we are scanning along width
       # else we are scanning along height. If we have a choice
@@ -912,20 +912,20 @@ sub duration_acsis {
 
       my $choose;
       for my $ang (@scan_pa) {
-	my $key = "HEIGHT";
-	my $okey = "WIDTH";
-	if (abs(90-$ang) <= 45) {
-	  # width
-	  $key = "WIDTH";
-	  $okey = "HEIGHT";
-	}
-	if (!defined $rowlen) {
-	  $rowlen = $mapdims{$key};
-	  $ysize = $mapdims{$okey};
-	} elsif ($rowlen < $mapdims{$key}) {
-	  $rowlen = $mapdims{$key};
-	  $ysize = $mapdims{$okey};
-	}
+        my $key = "HEIGHT";
+        my $okey = "WIDTH";
+        if (abs(90-$ang) <= 45) {
+          # width
+          $key = "WIDTH";
+          $okey = "HEIGHT";
+        }
+        if (!defined $rowlen) {
+          $rowlen = $mapdims{$key};
+          $ysize = $mapdims{$okey};
+        } elsif ($rowlen < $mapdims{$key}) {
+          $rowlen = $mapdims{$key};
+          $ysize = $mapdims{$okey};
+        }
       }
     }
 
@@ -999,16 +999,16 @@ sub duration_acsis {
       $nsteps = $jos->jos_mult * $njigs;
     } else {
       throw JAC::OCS::Config::Error::FatalError("Unexpected smu mode: ".
-						$secondary->smu_mode);
+                                                $secondary->smu_mode);
     }
 
     print "Nsteps = $nsteps\n" if $DEBUG;
 
     if ($sw_mode eq 'chop') {
       # Nod set size
-      my $nod_set_size = 2; # ABBA
+      my $nod_set_size = 2;     # ABBA
       if ($obssum->type =~ /^(focus)/i) {
-        $nod_set_size = 1; # AB
+        $nod_set_size = 1;      # AB
       }
 
       # Number of nods (A -> B  + B -> A)
@@ -1049,9 +1049,9 @@ sub duration_acsis {
     $nsteps = $jos->jos_mult * 2;
 
     # Nod set size
-    my $nod_set_size = 2; # ABBA
+    my $nod_set_size = 2;       # ABBA
     if ($obssum->type =~ /^(focus)/i) {
-      $nod_set_size = 1; # AB
+      $nod_set_size = 1;        # AB
     }
 
     # Number of nods (A -> B  + B -> A)
@@ -1099,7 +1099,7 @@ sub duration_acsis {
     if (@offsets > 1) {
       my $min_per_ref = int($jos->steps_btwn_refs / $jos->jos_min);
       if ($min_per_ref > 1 && $jos->shareoff) {
-	$n_chunks_per_ref = $min_per_ref;
+        $n_chunks_per_ref = $min_per_ref;
       }
     }
 
@@ -1109,12 +1109,12 @@ sub duration_acsis {
     # Length of a ref depends on shareoff
     if ($jos->shareoff) {
       if ($map_mode =~ /jiggle/) {
-	# timing depends on the size of the jiggle pattern
-	# and the number of times we have gone round it
-	$nsteps_ref = ($jos->jos_min / $njigs) * sqrt($njigs);
+        # timing depends on the size of the jiggle pattern
+        # and the number of times we have gone round it
+        $nsteps_ref = ($jos->jos_min / $njigs) * sqrt($njigs);
       } else {
-	# timing depends on the number of offsets we did per ON
-	$nsteps_ref = $jos->jos_min * sqrt( $n_chunks_per_ref );
+        # timing depends on the number of offsets we did per ON
+        $nsteps_ref = $jos->jos_min * sqrt( $n_chunks_per_ref );
       }
     } else {
       # Not shared so we do JOS_MIN in the OFF
@@ -1175,10 +1175,10 @@ sub duration_acsis {
 
   # Time per cycle, including overheads
   # Convert to an actual time
-  my $duration = ( $npercyc * $step )  # on+off time
-    + ( $ntel_ref_moves * $tel_ref_overhead )   # number of refs
-      + ($nseq * $seq_overhead ) # sequence overhead
-      + ( $nnods * $tel_nod_overhead); # number of nods
+  my $duration = ( $npercyc * $step )         # on+off time
+    + ( $ntel_ref_moves * $tel_ref_overhead ) # number of refs
+      + ($nseq * $seq_overhead )              # sequence overhead
+        + ( $nnods * $tel_nod_overhead);      # number of nods
 
   print "Duration=$duration TotSteps=$npercyc obs_overhead=$obs_overhead\n" if $DEBUG;
 
@@ -1323,12 +1323,12 @@ sub obsmode {
   return "UNKNOWN" unless defined $obssum;
 
   my $mode = join("_", 
-		  (defined $obssum->mapping_mode ? $obssum->mapping_mode
-		                                 : "unknown"),
-		  (defined $obssum->switching_mode ? $obssum->switching_mode
-		                                  : "unknown"),
-		  (defined $obssum->type ? $obssum->type : "unknown")
-		 );
+                  (defined $obssum->mapping_mode ? $obssum->mapping_mode
+                   : "unknown"),
+                  (defined $obssum->switching_mode ? $obssum->switching_mode
+                   : "unknown"),
+                  (defined $obssum->type ? $obssum->type : "unknown")
+                 );
   return $mode;
 }
 
@@ -1348,9 +1348,9 @@ sub waveband {
   if (defined $fe) {
     my $rfreq = $fe->rest_frequency;
     my $wb = new Astro::WaveBand( 
-				 Frequency => $rfreq,
-				 Instrument => $inst,
-				);
+                                 Frequency => $rfreq,
+                                 Instrument => $inst,
+                                );
 
     return $wb;
   }
@@ -1547,7 +1547,7 @@ sub stringify {
   # Standard declaration plus DTD
   $xml .= '<?xml version="1.0" encoding="US-ASCII"?>' .
     '<!DOCTYPE OCS_CONFIG  SYSTEM  "/jac_sw/itsroot//ICD/001/ocs.dtd">' .
-    "\n";
+      "\n";
 
   $xml .= "<OCS_CONFIG>\n";
 
@@ -1596,7 +1596,7 @@ sub stringify {
     @configs = ();
     for my $c (@CONFIGS) {
       if (exists $local{$c}) {
-	push(@configs, $c);
+        push(@configs, $c);
       }
     }
   }
@@ -1678,16 +1678,16 @@ Should use a configuration file for this.
 
 =cut
 
-  {
-    my $outputdir = "/jcmtdata/orac_data/ocsconfigs";
-    sub outputdir {
-      my $class = shift;
-      if ( @_ ) {
-	$outputdir = shift;
-      }
-      return $outputdir;
+{
+  my $outputdir = "/jcmtdata/orac_data/ocsconfigs";
+  sub outputdir {
+    my $class = shift;
+    if ( @_ ) {
+      $outputdir = shift;
     }
+    return $outputdir;
   }
+}
 
 =item B<debug>
 
@@ -1747,9 +1747,9 @@ Pass in undef to reset to the default.
     my $class = shift;
     if (@_) {
       if (!defined $_[0]) {
-	$oh = $def; # reset
+        $oh = $def;             # reset
       } else {
-	$oh = new IO::Tee( @_ );
+        $oh = new IO::Tee( @_ );
       }
     }
     return $oh;
@@ -1799,7 +1799,7 @@ sub qsummary {
     my $c = $tcs->getTarget;
     $targ = $c->name if (defined $c && defined $c->name);
     $targ =~ s/\s+$//;
-    $targ = "EMPTY" if !$targ; # empty string test
+    $targ = "EMPTY" if !$targ;  # empty string test
   }
 
   my $str;
@@ -1927,7 +1927,7 @@ sub _process_dom {
   $hlp{telescope} = $tel if defined $tel;
   $cfg = find_children( $el, "TCS_CONFIG", min => 0, max => 1);
   $self->tcs( new JAC::OCS::Config::TCS( DOM => $cfg,
-					 %hlp) ) if $cfg;
+                                         %hlp) ) if $cfg;
 
   $cfg = find_children( $el, "ACSIS_CONFIG", min => 0, max => 1);
   $self->acsis( new JAC::OCS::Config::ACSIS( DOM => $cfg) ) if $cfg;
