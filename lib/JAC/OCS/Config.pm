@@ -37,10 +37,11 @@ use Time::HiRes qw/ gettimeofday /;
 use Time::Piece qw/ :override /;
 use POSIX qw/ ceil /;
 use IO::Tee;
-use List::Util qw/ max /;
+use List::Util qw/ max min /;
 
 use Astro::WaveBand;
 use JCMT::SMU::Jiggle;
+use JCMT::TCS::Pong;
 
 use JAC::OCS::Config::Error;
 
@@ -609,8 +610,169 @@ sub duration_scuba2 {
   my $oa = $tcs->getObsArea;
   throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
 
-  warn "SCUBA-2 observation durations are not yet calculated\n";
-  return Time::Seconds->new(0);
+  # get the base mapping modes
+  my $map_mode = lc($obssum->mapping_mode);
+  my $obs_type = lc($obssum->type);
+
+  # Steps between darks
+  my $steps_btwn_darks = $jos->steps_btwn_dark();
+
+  # Things that can happen
+  my $ndarks = 0;
+  my $nseq = 0;
+  my $time_per_seq = 0;
+
+  if ($obs_type eq 'skydip') {
+
+    my @el = $oa->skydip;
+
+    if ($map_mode eq 'scan') {
+
+      $nseq = 1;
+      $ndarks = 1;
+      
+      # elevation range
+      my $delta_el = abs( $el[-1]->degrees - $el[0]->degrees );
+
+      # velocity in degrees
+      my $scanvel = $oa->skydip_velocity() / 3600;
+
+      # time taken to scan
+      $time_per_seq = $delta_el / $scanvel;
+
+      # convert to steps
+      $time_per_seq = $time_per_seq / $jos->step_time;
+
+
+    } elsif ($map_mode eq 'stare') {
+      $time_per_seq = $jos->jos_min();
+      $nseq = @el;
+      $ndarks = $nseq;
+
+    } else {
+      JAC::OCS::Config::Error::FatalError->throw( "Unknown map mode for SCUBA-2 skydip: '$map_mode'");
+    }
+
+
+
+  } elsif ($obs_type eq 'noise') {
+
+
+  } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
+
+    # Number of offsets and microsteps (1 is minimum)
+    my @offsets = $oa->offsets;
+    my @msoffsets = $oa->microsteps;
+    my $noffsets = (@offsets ? @offsets : 1);
+    my $nms = (@msoffsets ? @msoffsets : 1);
+
+    # number of sequences is number of offsets times the number of cycles
+    $nseq = $noffsets * $nms * $jos->num_cycles;
+
+    # integration time per sequence
+    $time_per_seq = $jos->jos_min();
+
+    # number of sequences per dark (minimum 1)
+    my $nseq_per_dark = max( 1, POSIX::floor( $steps_btwn_darks / $time_per_seq ));
+
+    # total number of darks
+    $ndarks = POSIX::ceil( $nseq / $nseq_per_dark );
+
+  } elsif ($map_mode eq 'scan') {
+
+    # need to work out the duration of a single map area
+    my $pattern = $oa->scan_pattern;
+
+    my %scan = $oa->scan;
+    my %map = $oa->maparea;
+
+
+    # Variable for duration of a single map area
+    my $steps_per_map = 0;
+
+    if ($jos->jos_min() > 1) {
+      # special case - this is simply the time we are going to spend on each "map" between darks
+      $steps_per_map = $jos->jos_min;
+
+    } elsif ($pattern =~ /raster|bous/i) {
+
+      # make an estimate of the number of samples in the map area. Add one array diameter to longest dimension
+      # and also add an extra 60 arcsec turn around area.
+      my $inst = $self->instrument_setup();
+      throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no instrument configuration")
+        unless defined $inst;
+
+      my $radius = $inst->array_radius;
+
+      # work out map area
+      my $minwidth = min( values %map );
+      my $maxwidth = max( values %map );
+      $maxwidth += (2 * $radius->arcsec) + 60.0;
+
+      my $maparea = $minwidth * $maxwidth;
+
+      # work out the sample size
+      my $sample_area = $scan{DY} * ( $scan{VELOCITY} * $jos->step_time);
+
+      # number of samples is the number of steps
+      $steps_per_map = $maparea / $sample_area;
+
+    } elsif ($pattern =~ /lissajous|pong/i) {
+
+      my $time_per_map = JCMT::TCS::Pong::get_pong_dur( %map, %scan );
+      $steps_per_map = $time_per_map / $jos->step_time;
+
+    } else {
+      JAC::OCS::Config::Error::FatalError->throw("Scan pattern '$pattern' not recognized");
+    }
+
+    # how many maps do we need
+    my $nmaps = $jos->num_cycles;
+
+    # number of maps per dark
+    my $nmaps_per_dark = max( 1, POSIX::floor( $steps_btwn_darks / $steps_per_map ) );
+
+    # we are allowed to do 2 maps, dark, 2 maps, dark, 1 map so nseq can be an integer
+    # but we need time_per_seq * nseq to get the total correct time (nmaps * steps_per_map)
+    $ndarks = POSIX::ceil( $nmaps / $nmaps_per_dark );
+
+    # number of darks is the number of sequences
+    $nseq = $ndarks;
+
+    # but time per seq is not the real time per seq since that can change
+    $time_per_seq = $nmaps * $steps_per_map / $nseq;
+
+  } else {
+    JAC::OCS::Config::Error::FatalError->throw("Unrecognized observing mode for duration calculation: '$map_mode/$obs_type'");
+
+  }
+
+  # if we are a focus we need to multiply by the number of focus positions
+  if ($obs_type eq 'focus') {
+    $nseq *= $jos->num_focus_steps();
+  }
+
+  print "NDARKS=$ndarks  NSEQ= $nseq  TIME/SEQ=".($jos->step_time*$time_per_seq)."\n"
+    if $DEBUG;
+
+  # calculate the duration
+
+  # Overhead for all observations
+  my $startup_overhead = 20.0;
+
+  # overhead for each sequence
+  my $seq_start_overhead = 2.0;
+
+  # length of dark. A dark is a sequence.
+  my $darklen = $jos->n_calsamples * $jos->step_time;
+
+  # Convert time per sequence into seconds rather than steps
+  $time_per_seq *= $jos->step_time;
+
+  my $duration = $startup_overhead + (($ndarks + $nseq) * $seq_start_overhead)
+    + ($time_per_seq * $nseq) + ($ndarks * $darklen);
+
+  return Time::Seconds->new($duration);
 }
 
 =item B<duration_acsis>
