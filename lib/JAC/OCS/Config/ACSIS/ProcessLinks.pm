@@ -100,9 +100,9 @@ sub links {
 Add a C<JAC::OCS::Config::ACSIS::ProcessLink> object to the list of links.
 
   my $link = JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => 'if_monitor',
-			 from_event => 'if_data',
-			 to_ref     => 'sync1',
-			 to_event   => 'if_data');
+						  from_event => 'if_data',
+						  to_ref     => 'sync1',
+						  to_event   => 'if_data');
   $pls->addLink( $link );
 
 =cut
@@ -181,14 +181,14 @@ sub createFromNumbers {
 
   my $pls = new JAC::OCS::Config::ACSIS::ProcessLinks();
 
-  my %monitors = {
+  my %monitors = (
       if_monitor    => 'if_data',
       rts_monitor   => 'rts_data',
       fe_monitor    => 'fe_data',
       rover_monitor => 'rover_data',
       ws_monitor    => 'weather_data',
       ant_monitor   => 'ant_data',
-  };
+  );
 
   my $reducercounter = 1;
   # For every sync_task: links to monitors and reducers
