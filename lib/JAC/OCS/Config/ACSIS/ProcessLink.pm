@@ -138,8 +138,8 @@ sub to_event {
 
 =cut
 
-# Routine to clean up molecule and transition strings
-# to remove trailing and leading spaces.
+# Routine to remove trailing and leading
+# spaces from a string.
 
 sub _cleanup {
   my $x = shift;
@@ -153,7 +153,7 @@ sub _cleanup {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>, Walther Zwart E<lt>w.zwart@jach.hawaii.eduE<gt>
 
-Copyright 2004-2007 Particle Physics and Astronomy Research Council.
+Copyright 2004-2008 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under

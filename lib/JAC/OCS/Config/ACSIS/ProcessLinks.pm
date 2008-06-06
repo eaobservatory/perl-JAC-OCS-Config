@@ -110,7 +110,7 @@ Add a C<JAC::OCS::Config::ACSIS::ProcessLink> object to the list of links.
 sub addLink {
   my $self = shift;
   if (@_) {
-    @{$self->{ProcessLinks}} = (@{$self->{ProcessLinks}}, @_);
+    push(@{$self->{ProcessLinks}}, @_);
   }
 }
 
@@ -180,6 +180,7 @@ sub createFromNumbers {
   my ($numSynctasks, $numReducers, $numGridders) = @_;
 
   my $pls = new JAC::OCS::Config::ACSIS::ProcessLinks();
+  my $linkCl = "JAC::OCS::Config::ACSIS::ProcessLink";
 
   my %monitors = (
       if_monitor    => 'if_data',
@@ -197,64 +198,50 @@ sub createFromNumbers {
 
     # create a link from every monitor to this sync_task
     for my $monitor (keys %monitors) {
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $monitor,
-							     from_event => $monitors{$monitor},
-							     to_ref     => $sync,
-							     to_event   => $monitors{$monitor}));
+      $pls->addLink($linkCl->new(from_ref   => $monitor,
+				 from_event => $monitors{$monitor},
+				 to_ref     => $sync,
+				 to_event   => $monitors{$monitor}));
     };
-    
+
     # create a link from one corr_monitor to this sync_task
-    $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => 'corr_monitor' . $i,
-							   from_event => 'corr_data',
-							   to_ref     => $sync,
-							   to_event   => 'corr_data'));
+    $pls->addLink($linkCl->new(from_ref   => 'corr_monitor' . $i,
+			       from_event => 'corr_data',
+			       to_ref     => $sync,
+			       to_event   => 'corr_data'));
 
     # create a link to the correct number of reducers
     # there is usually one reducer per sync_task, but it can be two
     for my $ri (1..int($numReducers / $numSynctasks)) {
       my $reducer = 'reducer' . $reducercounter++;
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $reducer,
-							     from_event => 'reducer_target.attach',
-							     to_ref     => $sync,
-							     to_event   => 'sync_source.attach'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $reducer,
-							     from_event => 'reducer_target.detach',
-							     to_ref     => $sync,
-							     to_event   => 'sync_source.detach'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $sync,
-							     from_event => 'data_4_' . $reducer,
-							     to_ref     => $reducer,
-							     to_event   => 'reducer_target.data'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $reducer,
-							     from_event => 'reducer_target.available',
-							     to_ref     => $sync,
-							     to_event   => 'sync_source.available'));
+      my %args = (from_ref => $reducer, to_ref => $sync);
+      for my $event ( qw( attach detach available ) ) {
+	$pls->addLink($linkCl->new(%args, 
+				   from_event => "reducer_target.$event",
+				   to_event   => "sync_source.$event"));
+      }
+      $pls->addLink($linkCl->new(from_ref   => $sync,
+				 from_event => 'data_4_' . $reducer,
+				 to_ref     => $reducer,
+				 to_event   => 'reducer_target.data'));
     };
   };
+
   # Links between reducers and gridders
-  my @gridders = ('specwriter2');
-  for my $gi (1..$numGridders) {
-    $gridders[$gi] = 'gridder' . $gi;
-  };
+  my @gridders = ('specwriter2', map { 'gridder'.$_ } (1..$numGridders));
   for my $ri (1..$numReducers) {
     my $reducer = 'reducer' . $ri;
     for my $gridder (@gridders) {
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $gridder,
-							     from_event => 'gridder_target.attach',
-							     to_ref     => $reducer,
-							     to_event   => 'reducer_source.attach'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $gridder,
-							     from_event => 'gridder_target.detach',
-							     to_ref     => $reducer,
-							     to_event   => 'reducer_source.detach'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $gridder,
-							     from_event => 'gridder_target.available',
-							     to_ref     => $reducer,
-							     to_event   => 'reducer_source.available'));
-      $pls->addLink(new JAC::OCS::Config::ACSIS::ProcessLink(from_ref   => $reducer,
-							     from_event => 'data_4_' . $gridder,
-							     to_ref     => $gridder,
-							     to_event   => 'gridder_target.data'));
+      my %args = (from_ref => $gridder, to_ref => $reducer);
+      for my $event ( qw( attach detach available ) ) {
+	  $pls->addLink($linkCl->new(%args,
+				     from_event => "gridder_target.$event",
+				     to_event   => "reducer_source.$event"));
+      }
+      $pls->addLink($linkCl->new(from_ref   => $reducer,
+				 from_event => 'data_4_' . $gridder,
+				 to_ref     => $gridder,
+				 to_event   => 'gridder_target.data'));
     }
   };
 
@@ -315,7 +302,8 @@ http://docs.jach.hawaii.edu/JCMT/OCS/ICD/005/acsis.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>, Walther Zwart E<lt>w.zwart@jach.hawaii.eduE<gt>
 
-Copyright 2004 Particle Physics and Astronomy Research Council.
+Copyright (C) 2004 Particle Physics and Astronomy Research Council.
+Copyright (C) 2008 Science and Technology Facilities Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
