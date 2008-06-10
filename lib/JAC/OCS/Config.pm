@@ -830,6 +830,9 @@ sub duration_acsis {
   my $sw_mode  = lc($obssum->switching_mode);
   my $obs_type = lc($obssum->type);
 
+  # A _spin switch mode is not relevant
+  $sw_mode =~ s/_spin//;
+
   # Basic step time
   my $step = $jos->step_time;
   throw JAC::OCS::Config::Error::FatalError("JOS Steptime must be positive")
