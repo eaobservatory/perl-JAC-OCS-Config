@@ -1381,6 +1381,9 @@ sub verify {
   # get the observing mode and make sure that we need a target
   my $obs = $self->obsmode;
 
+  # Skydip does not need a target
+  return if $obs =~ /skydip/;
+
   if ($obs =~ /(scan|dream|stare|raster|jiggle|grid)/i) {
 
     # Get the TCS object
