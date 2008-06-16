@@ -39,8 +39,6 @@ use JAC::OCS::Config::XMLHelper qw(
 				   get_pcdata
 				  );
 
-use JAC::OCS::Config::Instrument::SCUBA2Extras;
-
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
@@ -343,24 +341,6 @@ sub array_radius {
   return $self->{ARRAY_RADIUS};
 }
 
-=item B<extras>
-
-Any extra information stored in the configuration.
-
-Currently only allows a single C<JAC::OCS::Config::Instrument::SCUBA2Extras>
-object.
-
-=cut
-
-sub extras {
-  my $self = shift;
-  if (@_) {
-    $self->{EXTRAS} = check_class_fatal( "JAC::OCS::Config::Instrument::SCUBA2Extras",
-                                         shift);
-  }
-  return $self->{EXTRAS};
-}
-
 =back
 
 =head2 Read-only accessor methods
@@ -565,8 +545,6 @@ sub stringify {
     }
 
   }
-
-  $xml .= $self->extras if defined $self->extras;
 
   $xml .= "</". $self->getRootElementName .">\n";
   return ($args{NOINDENT} ? $xml : indent_xml_string( $xml ));
@@ -830,12 +808,6 @@ sub _process_dom {
   }
 
   $self->receptors(%receptor);
-
-  # Look for SCUBA2_EXTRAS - mandatory for SCUBA-2
-  if ($self->name() eq 'SCUBA2') {
-    my $o = JAC::OCS::Config::Instrument::SCUBA2Extras->new( DOM => $el );
-    $self->extras( $o );
-  }
 
   return;
 }
