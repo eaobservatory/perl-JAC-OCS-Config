@@ -30,13 +30,15 @@ use Astro::Coords::Offset;
 
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Units;
+use JAC::OCS::Config::Instrument::WaveBand;
 
-use JAC::OCS::Config::Helper qw/ check_class_fatal /;
+use JAC::OCS::Config::Helper qw/ check_class_fatal check_class_hash_fatal /;
 use JAC::OCS::Config::XMLHelper qw(
 				   find_children
 				   find_attr
 				   indent_xml_string
 				   get_pcdata
+           get_this_pcdata
 				  );
 
 use base qw/ JAC::OCS::Config::CfgBase /;
@@ -341,6 +343,25 @@ sub array_radius {
   return $self->{ARRAY_RADIUS};
 }
 
+=item B<wavebands>
+
+Waveband objects associated with this instrument configuration. Hash indexed
+by band ID. Objects are of class C<JAC::OCS::Config::Instrument::WaveBand>.
+
+  %bands = $inst->wavebands;
+  $inst->wavebands( %bands );
+
+=cut
+
+sub wavebands {
+  my $self = shift;
+  if (@_) {
+    %{$self->{WaveBands}} = check_class_hash_fatal( "JAC::OCS::Config::Instrument::WaveBand",
+                                                    @_);
+  }
+  return %{$self->{WaveBands}};
+}
+
 =back
 
 =head2 Read-only accessor methods
@@ -509,6 +530,13 @@ sub stringify {
   my $array_rad = $self->array_radius();
   if (defined $array_rad) {
     $xml .= "<array_area radius=\"".$array_rad->arcsec ."\"/>\n";
+  }
+
+  # Waveband (ordered by bandcentre)
+  my %WB = $self->wavebands;
+  my @WB = sort { $a->bandcentre <=> $b->bandcentre } values %WB;
+  for my $k (@WB) {
+    $xml .= $k;
   }
 
   my $array_or_receptor = ($IsCont ? "subArray" : "receptor");
@@ -722,16 +750,19 @@ sub _process_dom {
   $self->position( $attr{X}, $attr{Y});
   $self->wavelength( $attr{WAVELENGTH} );
 
+  # SMU
   my $child = find_children( $el, "smu_offset", min=>1,max=>1);
   my %smu = find_attr($child, "X","Y","Z");
   $self->smu_offset( @smu{"X","Y","Z"});
 
+  # Pointing
   $child = find_children( $el, "pointing_offset", max=>1);
   if (defined $child) {
     my %pnt = find_attr( $child, @POINTING_MODEL );
     $self->pointing( %pnt ) if keys %pnt;
   }
 
+  # Array Area
   $child = find_children( $el, "array_area", max => 1);
   if (defined $child) {
     my $rad = find_attr( $child, "radius" );
@@ -740,6 +771,35 @@ sub _process_dom {
     $self->array_radius( Astro::Coords::Angle->new( $rad,
                                                     units => 'arcsec'));
   }
+
+  # Wave Band
+  my @wb = find_children( $el, "waveBand", min => 1);
+  my %WaveBand;
+  for my $w (@wb) {
+    my %wbattr = find_attr( $w, "band", "units", "centre", "width" );
+    JAC::OCS::Config::Error::XMLBadStructure->throw("No band attribute in waveBand element") unless exists $wbattr{band};
+    $WaveBand{$wbattr{band}} = JAC::OCS::Config::Instrument::WaveBand->new( %wbattr );
+
+    # ETAL
+    my @etal_elem = find_children( $w, "etal", min=>1);
+    my %etal;
+    for my $e (@etal_elem) {
+      my $freq = find_attr( $e, "freq");
+      if (!defined $freq && @etal_elem > 1) {
+        JAC::OCS::Config::Error::XMLBadStructure->throw("Multiple etal entries require mandatory freq attributes");
+      } elsif (!defined $freq) {
+        $freq = 0;
+      }
+      if (!exists $etal{$freq}) {
+        my $etal = get_this_pcdata( $e );
+        $etal{$freq} = $etal;
+      } else {
+        JAC::OCS::Config::Error::XMLBadStructure->throw("etal element refers to previous frequency");
+      }
+    }
+    $WaveBand{$wbattr{band}}->etal( %etal );
+  }
+  $self->wavebands( %WaveBand );
 
   # Determine whether this is heterodyne or continuum
   my $bw = find_children($el, "bw", max => 1);
