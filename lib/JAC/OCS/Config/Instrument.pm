@@ -54,7 +54,7 @@ my @POINTING_MODEL = qw/ CA IE /;
 my %RecepSubArray = (
                      shared => [qw/ id x y band health /],
                      heterodyne => [qw/ pol_type /],
-                     continuum => [qw/ mceport chipId flatfile /],
+                     continuum => [qw/ mceport chipId flatfile task dreamweightfile /],
 );
 
 =head1 METHODS
@@ -120,6 +120,7 @@ the following information
  xypos  -  X coordinate (arcsec) of the pixel relative to the focal plane &
            Y coordinate (arcsec) of the pixel relative to the focal plane
  band   - waveband associated with this receptor (A,B,C, or D, 450, 850)
+          JAC::OCS::Config::Instrument::WaveBand object.
 
 Heterodyne receptors have the following information in addition to that above:
 
@@ -544,6 +545,7 @@ sub stringify {
   my %rec = $self->receptors;
   for my $r (sort keys %rec) {
     $xml .= "<$array_or_receptor id=\"$r\"\n";
+    $xml .= "          band=\"".$rec{$r}{band}->band."\"\n";
     $xml .= "          health=\"$rec{$r}{health}\"\n";
     my @xy = @{ $rec{$r}->{xypos}};
     $xml .= "          x=\"$xy[0]\"\n";
@@ -849,6 +851,12 @@ sub _process_dom {
     $attr{xypos} = [ $attr{x}, $attr{"y"} ];
     delete $attr{x};
     delete $attr{"y"};
+
+    # Deal with waveband - replace with object
+    my $band = $attr{band};
+    throw JAC::OCS::Config::Error::XMLBadStructure->throw("Band '$band' not listed in waveBand element")
+      unless exists $WaveBand{$band};
+    $attr{band} = $WaveBand{$band};
 
     # Heterodyne has child elements
     if (!$IsCont) {
