@@ -778,7 +778,7 @@ sub _process_dom {
   my @wb = find_children( $el, "waveBand", min => 1);
   my %WaveBand;
   for my $w (@wb) {
-    my %wbattr = find_attr( $w, "band", "units", "centre", "width" );
+    my %wbattr = find_attr( $w, "band", "label", "units", "centre", "width" );
     JAC::OCS::Config::Error::XMLBadStructure->throw("No band attribute in waveBand element") unless exists $wbattr{band};
     $WaveBand{$wbattr{band}} = JAC::OCS::Config::Instrument::WaveBand->new( %wbattr );
 

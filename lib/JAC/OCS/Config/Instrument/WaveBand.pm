@@ -72,7 +72,7 @@ sub new {
   }
 
   # Call units before calling bandcentre
-  for my $key (qw/ band units waveband bandcentre bandwidth /) {
+  for my $key (qw/ band units label waveband bandcentre bandwidth /) {
     my $method = lc($key);
     if ($w->can($method) && exists $args{$key}) {
       $w->$method( $args{$key});
@@ -89,7 +89,8 @@ sub new {
 
 =item B<band>
 
-Global identifier string for this wave band.
+Global identifier string for this wave band linking it to a particular
+receptor or sub array.
 
 =cut
 
@@ -97,6 +98,18 @@ sub band {
   my $self = shift;
   if (@_) { $self->{Band} = shift;}
   return $self->{Band};
+}
+
+=item B<label>
+
+Label of this waveband entry. For example, can be used as a FILTER name.
+
+=cut
+
+sub label {
+  my $self = shift;
+  if (@_) { $self->{Label} = shift;}
+  return $self->{Label};
 }
 
 =item B<waveband>
@@ -243,11 +256,12 @@ Method called by the stringification overload.
 sub stringify {
   my $self = shift;
   my $xml = "<waveBand ";
-  for my $a (qw/ band units centre width/ ) {
+  for my $a (qw/ band label units centre width/ ) {
     my $method = $a;
     $method = "band".$method if $a =~ /centre|width/;
     my $value = $self->$method();
-    $xml .= "$a=\"". (defined $value ? $value : "")."\" ";
+    next unless defined $value;
+    $xml .= "$a=\"". $value ."\" ";
   }
   $xml .= ">\n";
 
