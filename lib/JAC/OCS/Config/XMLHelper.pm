@@ -245,7 +245,11 @@ sub find_children {
     }
   }
 
-  return _check_range( \%range, "elements named '$tag'", @children);
+  # get the nodename for error reporting
+  my $pname = $el->nodeName;
+
+  return _check_range( \%range, "elements named '$tag' in element $pname",
+                       @children);
 }
 
 =item B<indent_xml_string>
