@@ -854,7 +854,7 @@ sub _process_dom {
 
     # Deal with waveband - replace with object
     my $band = $attr{band};
-    throw JAC::OCS::Config::Error::XMLBadStructure->throw("Band '$band' not listed in waveBand element")
+    JAC::OCS::Config::Error::XMLBadStructure->throw("Band '$band' not listed in waveBand element")
       unless exists $WaveBand{$band};
     $attr{band} = $WaveBand{$band};
 
