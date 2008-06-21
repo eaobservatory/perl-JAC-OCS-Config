@@ -601,18 +601,25 @@ sub duration_scuba2 {
   my $obssum = $self->obs_summary;
   throw JAC::OCS::Config::Error::FatalError( "Unable to determine duration since there is no observation summary available") unless defined $obssum;
 
-  # Need the TCS configuration
-  my $tcs = $self->tcs;
-  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no telescope configuration") unless defined $tcs;
-
-  # Need the observing area (either for the number of offset positions or the
-  # map area
-  my $oa = $tcs->getObsArea;
-  throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
-
   # get the base mapping modes
   my $map_mode = lc($obssum->mapping_mode);
   my $obs_type = lc($obssum->type);
+
+  # if this is a flatfield observation then we do not need a tcs
+  my $tcs;
+  my $oa;
+
+  if ($obs_type eq "flatfield") {
+
+    # Need the TCS configuration
+    my $tcs = $self->tcs;
+    throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no telescope configuration") unless defined $tcs;
+
+    # Need the observing area (either for the number of offset positions or the
+    # map area
+    my $oa = $tcs->getObsArea;
+    throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
+  }
 
   # Steps between darks
   my $steps_btwn_darks = $jos->steps_btwn_dark();
@@ -643,7 +650,6 @@ sub duration_scuba2 {
       # convert to steps
       $time_per_seq = $time_per_seq / $jos->step_time;
 
-
     } elsif ($map_mode eq 'stare') {
       $time_per_seq = $jos->jos_min();
       $nseq = @el;
@@ -653,6 +659,7 @@ sub duration_scuba2 {
       JAC::OCS::Config::Error::FatalError->throw( "Unknown map mode for SCUBA-2 skydip: '$map_mode'");
     }
 
+  } elsif ($obs_type eq 'flatfield') {
 
 
   } elsif ($obs_type eq 'noise') {
