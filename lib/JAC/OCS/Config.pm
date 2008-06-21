@@ -609,7 +609,7 @@ sub duration_scuba2 {
   my $tcs;
   my $oa;
 
-  if ($obs_type eq "flatfield") {
+  if ($obs_type ne "flatfield") {
 
     # Need the TCS configuration
     my $tcs = $self->tcs;
