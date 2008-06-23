@@ -612,12 +612,12 @@ sub duration_scuba2 {
   if ($obs_type ne "flatfield") {
 
     # Need the TCS configuration
-    my $tcs = $self->tcs;
+    $tcs = $self->tcs;
     throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no telescope configuration") unless defined $tcs;
 
     # Need the observing area (either for the number of offset positions or the
     # map area
-    my $oa = $tcs->getObsArea;
+    $oa = $tcs->getObsArea;
     throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is no observing area configuration") unless defined $oa;
   }
 
