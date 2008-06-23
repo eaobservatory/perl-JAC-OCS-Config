@@ -181,8 +181,9 @@ sub set_ocscfg_filename {
   my $magic = 'OCSCFG';
 
   # Looking either for keyword of OCSCFG or method getOCSFG
-  my @items = $self->item( sub { 
-                             ($_[0]->keyword eq $magic) ||
+  my @items = $self->item( sub {
+                             (defined $_[0]->keyword &&
+                              $_[0]->keyword eq $magic) ||
                                (defined $_[0]->method &&
                                 $_[0]->method eq "get$magic");
                            } );
@@ -323,7 +324,7 @@ sub _process_dom {
   # Find all the header items, including dummy INCLUDE headers
   # that will be removed.
   my $el = $self->_rootnode;
-  my @items = find_children( $el, qr/^(HEADER|HEADER_INCLUDE)/, min => 1 );
+  my @items = find_children( $el, qr/^(SUBHEADER|HEADER|HEADER_INCLUDE)/, min => 1 );
 
   my @obj;
   for my $a (@items) {
