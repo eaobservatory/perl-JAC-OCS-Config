@@ -1229,17 +1229,19 @@ The TCS_CONFIG value takes precedence if both are defined.
 sub telescope {
   my $self = shift;
   if ( @_ ) {
-    my $tel = shift;
     $self->{Telescope} = shift;
     my $tcs = $self->tcs;
-    $tcs->telescope( $tel ) if defined $tcs;
+    $tcs->telescope( $self->{Telescope} ) if defined $tcs;
   }
 
   # return the current value
   my $tcs = $self->tcs;
-  my $tcstel;
-  $tcstel = $tcs->telescope if defined $tcs;
-  return $tcstel if defined $tcstel;
+  if (defined $tcs) {
+    my $tcstel = $tcs->telescope;
+    if (defined $tcstel) {
+      return $tcstel;
+    }
+  }
   return $self->{Telescope};
 }
 
