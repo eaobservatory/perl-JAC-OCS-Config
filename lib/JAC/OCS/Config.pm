@@ -1945,6 +1945,9 @@ sub _process_dom {
   $cfg = find_children( $el, "ACSIS_CONFIG", min => 0, max => 1);
   $self->acsis( new JAC::OCS::Config::ACSIS( DOM => $cfg) ) if $cfg;
 
+  $cfg = find_children( $el, "SCUBA2_CONFIG", min => 0, max => 1);
+  $self->scuba2( new JAC::OCS::Config::SCUBA2( DOM => $cfg) ) if $cfg;
+
   $cfg = find_children( $el, "INSTRUMENT", min => 0, max => 1);
   $self->instrument_setup( new JAC::OCS::Config::Instrument( DOM => $cfg) )
     if $cfg;
