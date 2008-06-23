@@ -713,11 +713,17 @@ sub _find_scan_area {
   # Attributes of scan
   my %scan_info = find_attr( $scan, 
 			     "VELOCITY","SYSTEM","DY","REVERSAL",
-			     "TYPE");
+			     "TYPE", "PATTERN");
 
   # Allowed position angles of scan
-  my @spa = find_pa( $scan, min => 1);
-  $self->scan( %scan_info, PA => \@spa);
+  # PONG does not need one
+  my $minpa = 1;
+  if (exists $scan_info{PATTERN} && 
+      $scan_info{PATTERN} =~ /(pong|liss)/i) {
+    $minpa = 0;
+  }
+  my @spa = find_pa( $scan, min => $minpa);
+  $self->scan( %scan_info, (@spa ? (PA => \@spa) : () ));
 
   return;
 }
