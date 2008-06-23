@@ -107,13 +107,18 @@ sub _process_mask {
   my $el = $self->_rootnode;
 
   my $root_name = $self->_mask_xml_name;
+  my $idkey = $root_name . "_ID";
+  my $maskkey = $root_name . "_MASK";
 
   # Receptor Mask
-  my @masks = find_children( $el, $root_name . "_MASK", min => 1);
+  my @masks = find_children( $el, $maskkey, min => 1);
   my %mask;
   for my $m (@masks) {
-    my %attr = find_attr( $m, $root_name . "_ID", "VALUE");
-    $mask{$attr{RECEPTOR_ID}} = $attr{VALUE};
+    my %attr = find_attr( $m, $idkey, "VALUE");
+    JAC::OCS::Config::Error::XMLBadStructure->throw("$idkey not present")
+        unless (exists $attr{$idkey} &&
+                defined $attr{$idkey});
+    $mask{$attr{$idkey}} = $attr{VALUE};
   }
   $self->mask( %mask );
   return %mask;
