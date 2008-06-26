@@ -609,7 +609,7 @@ sub duration_scuba2 {
   my $tcs;
   my $oa;
 
-  if ($obs_type ne "flatfield") {
+  if ($obs_type ne "flatfield" && $obs_type ne 'array_tests') {
 
     # Need the TCS configuration
     $tcs = $self->tcs;
@@ -667,11 +667,16 @@ sub duration_scuba2 {
 
   } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
 
-    # Number of offsets and microsteps (1 is minimum)
-    my @offsets = $oa->offsets;
-    my @msoffsets = $oa->microsteps;
-    my $noffsets = (@offsets ? @offsets : 1);
-    my $nms = (@msoffsets ? @msoffsets : 1);
+    # Array tests will not have any
+    my $noffsets = 1;
+    my $nms = 1;
+    if (defined $oa) {
+      # Number of offsets and microsteps (1 is minimum)
+      my @offsets = $oa->offsets;
+      my @msoffsets = $oa->microsteps;
+      $noffsets = (@offsets ? @offsets : 1);
+      $nms = (@msoffsets ? @msoffsets : 1);
+    }
 
     # number of sequences is number of offsets times the number of cycles
     $nseq = $noffsets * $nms * $jos->num_cycles;
