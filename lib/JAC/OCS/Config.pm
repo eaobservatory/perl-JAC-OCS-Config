@@ -626,7 +626,7 @@ sub duration_scuba2 {
 
   # Things that can happen
   my $ndarks = 0;
-  my $nseq = 0;
+  my $nseq = 1;
   my $time_per_seq = 0;
 
   if ($obs_type eq 'skydip') {
@@ -740,6 +740,7 @@ sub duration_scuba2 {
 
     # how many maps do we need
     my $nmaps = $jos->num_cycles;
+    $nmaps = 1 if !$nmaps; # at least one
 
     # number of maps per dark
     my $nmaps_per_dark = max( 1, POSIX::floor( $steps_btwn_darks / $steps_per_map ) );
@@ -749,7 +750,7 @@ sub duration_scuba2 {
     $ndarks = POSIX::ceil( $nmaps / $nmaps_per_dark );
 
     # number of darks is the number of sequences
-    $nseq = $ndarks;
+    $nseq = ($ndarks > 0 ? $ndarks : 1);
 
     # but time per seq is not the real time per seq since that can change
     $time_per_seq = $nmaps * $steps_per_map / $nseq;
