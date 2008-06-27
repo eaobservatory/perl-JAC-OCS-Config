@@ -99,6 +99,7 @@ sub new {
                                                                     TAGS => {},
                                                                     SLEW => {},
                                                                     ROTATOR => {},
+                                                                    ApertureCoords => [],
                                                                    }
                           );
 }
@@ -201,6 +202,27 @@ sub aperture_name {
     $self->{ApertureName} = shift;
   }
   return $self->{ApertureName};
+}
+
+=item B<aperture_xy>
+
+The aperture name can be associated with an override coordinate. This value
+is optional. If it does not exist the telescope will assume that the aperture
+name is sufficient.
+
+  ($x, $y) = $tcs->aperture_xy;
+  $tcs->aperture_xy( $x, $y );
+
+=cut
+
+sub aperture_xy {
+  my $self = shift;
+  if (@_) {
+    JAC::OCS::Config::Error::BadArgs->throw( "Must supply 2 arguments to aperture_xy() not ".scalar(@_) )
+        unless @_ == 2;
+    @{$self->{ApertureCoords}} = @_;
+  }
+  return @{$self->{ApertureCoords}};
 }
 
 
@@ -873,8 +895,14 @@ sub stringify {
   $xml .= $self->_introductory_xml();
 
   # Aperture name
-  $xml .= "<INST_AP NAME=\"".$self->aperture_name."\" />\n"
-    if defined $self->aperture_name;
+  if (defined $self->aperture_name) {
+    $xml .= "<INST_AP NAME=\"".$self->aperture_name."\" ";
+    my @xy = $self->aperture_xy();
+    if (@xy) {
+      $xml .= "X=\"$xy[0]\" Y=\"$xy[1]\" ";
+    }
+    $xml .= "/>\n";
+  }
 
   # Now add the constituents in turn
   $xml .= $self->_toString_base;
@@ -1055,8 +1083,20 @@ sub _find_instrument_aperture_name {
   my $el = $self->_rootnode;
   my $inst_ap = find_children( $el, "INST_AP", min => 0, max => 1 );
   return unless defined $inst_ap;
-  my $name = $inst_ap->getAttribute( "NAME" );
-  $self->aperture_name( $name ) if defined $name;
+  my %params = find_attr( $inst_ap, "X", "Y", "NAME" );
+
+  my $havexy = 0;
+  if (exists $params{X} && exists $params{Y}) {
+    $self->aperture_xy( $params{X} , $params{Y} );
+    $havexy = 1;
+  }
+
+  if (defined $params{NAME}) {
+    $self->aperture_name( $params{NAME} );
+  } elsif ($havexy) {
+    # better put something in to go with the coordinates
+    $self->aperture_name( "UNNAMED_AP" );
+  }
   return;
 }
 
