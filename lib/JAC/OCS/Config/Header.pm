@@ -155,7 +155,9 @@ sub item {
     } elsif (ref($arg) eq 'CODE') {
       @match = grep { $arg->( $_ ) } @items;
     } else {
-      @match = grep { $_->keyword eq $arg } @items;
+      @match = grep { 
+        defined $_->keyword && 
+        $_->keyword eq $arg } @items;
     }
 
     return (wantarray ? @match : $match[0] );
