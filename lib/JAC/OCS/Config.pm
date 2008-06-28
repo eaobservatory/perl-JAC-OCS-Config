@@ -1361,6 +1361,8 @@ Returns an C<Astro::WaveBand> object representing this configuration.
 sub waveband {
   my $self = shift;
   my $fe = $self->frontend;
+  my $s2 = $self->scuba2;
+
   my $inst = $self->instrument;
 
   if (defined $fe) {
@@ -1370,6 +1372,10 @@ sub waveband {
                                  Instrument => $inst,
                                 );
 
+    return $wb;
+  } elsif (defined $s2) {
+    my $wb = Astro::WaveBand->new( Instrument => "SCUBA-2",
+                                   Filter => "850");
     return $wb;
   }
   return undef;
