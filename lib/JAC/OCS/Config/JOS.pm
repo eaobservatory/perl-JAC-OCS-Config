@@ -41,20 +41,32 @@ $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names
 our @PARAMS = (qw/
-                   NUM_CYCLES
-                   NUM_NOD_SETS
-                   STEP_TIME
-                   SHAREOFF
-                   JOS_MULT
-                   JOS_MIN
-                   N_CALSAMPLES
-                   NUM_FOCUS_STEPS
-                   FOCUS_STEP
                    FOCUS_AXIS
-                   STEPS_BTWN_REFS
-                   STEPS_BTWN_DARK
-                   STEPS_BTWN_CALS
+                   FOCUS_STEP
+                   FREQUENCY
+                   JOS_MIN
+                   JOS_MULT
+                   NUM_CYCLES
+                   NUM_FOCUS_STEPS
+                   NUM_NOD_SETS
+                   N_CALSAMPLES
+                   N_REFSAMPLES
+                   PISTON_NUM
+                   PISTON_START
+                   PISTON_STEP
+                   PITCH_NUM
+                   PITCH_START
+                   PITCH_STEP
+                   SHAREOFF
                    START_INDEX
+                   STEPS_BTWN_CALS
+                   STEPS_BTWN_DARK
+                   STEPS_BTWN_REFS
+                   STEP_TIME
+                   TUNE_FILENAME
+                   YAW_NUM
+                   YAW_START
+                   YAW_STEP
                  /);
 
 # These are old parameter names that should be mapped to new values
@@ -63,7 +75,6 @@ our %OBSOLETE = (
                  STEPS_PER_CAL => 'STEPS_BTWN_CALS',
                  START_ROW => 'START_INDEX',
                 );
-
 
 =head1 METHODS
 
@@ -183,60 +194,60 @@ sub parameters {
   return %output;
 }
 
-=item B<num_cycles>
+=item B<focus_axis>
 
-Number of cycles. This is the number of complete loops round the sequence.
+Focus axis to move (X, Y, Z)
 
 =cut
 
-sub num_cycles {
+sub focus_axis {
   my $self = shift;
   if (@_) {
-    $self->{NUM_CYCLES} = shift;
+    $self->{FOCUS_AXIS} = uc(shift);
   }
-  return $self->{NUM_CYCLES};
+  return $self->{FOCUS_AXIS};
 }
 
-=item B<num_nod_sets>
+=item B<focus_step>
 
-Number of nod repeats.
+Size of SMU movement for each step in mm.
 
 =cut
 
-sub num_nod_sets {
+sub focus_step {
   my $self = shift;
   if (@_) {
-    $self->{NUM_NOD_SETS} = shift;
+    $self->{FOCUS_STEP} = shift;
   }
-  return $self->{NUM_NOD_SETS};
+  return $self->{FOCUS_STEP};
 }
 
-=item B<step_time>
+=item B<frequency>
 
-Step time (in sec)
+Name of the file with tuning parameters.
 
 =cut
 
-sub step_time {
+sub frequency {
   my $self = shift;
   if (@_) {
-    $self->{STEP_TIME} = shift;
+    $self->{FREQUENCY} = shift;
   }
-  return $self->{STEP_TIME};
+  return $self->{FREQUENCY};
 }
 
-=item B<shareoff>
+=item B<jos_min>
 
-Share the reference position among mutliple on positions?
+Minimum number of sequence steps.
 
 =cut
 
-sub shareoff {
+sub jos_min {
   my $self = shift;
   if (@_) {
-    $self->{SHAREOFF} = shift;
+    $self->{JOS_MIN} = shift;
   }
-  return $self->{SHAREOFF};
+  return $self->{JOS_MIN};
 }
 
 =item B<jos_mult>
@@ -254,34 +265,186 @@ sub jos_mult {
   return $self->{JOS_MULT};
 }
 
-=item B<jos_min>
+=item B<num_cycles>
 
-Minimum number of sequence steps.
+Number of cycles. This is the number of complete loops round the sequence.
 
 =cut
 
-sub jos_min {
+sub num_cycles {
   my $self = shift;
   if (@_) {
-    $self->{JOS_MIN} = shift;
+    $self->{NUM_CYCLES} = shift;
   }
-  return $self->{JOS_MIN};
+  return $self->{NUM_CYCLES};
 }
 
-=item B<steps_btwn_refs>
+=item B<num_focus_steps>
 
-The number of steps that can occur between sky references. A sky ref
-must be obtained if this number of steps is exceeded (at the next
-convenient location in the recipe).
+Number of smu positions to stop through for a focus observation.
 
 =cut
 
-sub steps_btwn_refs {
+sub num_focus_steps {
   my $self = shift;
   if (@_) {
-    $self->{STEPS_BTWN_REFS} = shift;
+    $self->{NUM_FOCUS_STEPS} = shift;
   }
-  return $self->{STEPS_BTWN_REFS};
+  return $self->{NUM_FOCUS_STEPS};
+}
+
+=item B<num_nod_sets>
+
+Number of nod repeats.
+
+=cut
+
+sub num_nod_sets {
+  my $self = shift;
+  if (@_) {
+    $self->{NUM_NOD_SETS} = shift;
+  }
+  return $self->{NUM_NOD_SETS};
+}
+
+=item B<n_calsamples>
+
+Number of samples to integrate for the cal observation.
+
+=cut
+
+sub n_calsamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_CALSAMPLES} = shift;
+  }
+  return $self->{N_CALSAMPLES};
+}
+
+=item B<n_refsamples>
+
+Number of samples to integrate for the reference position.
+
+The number of samples in subsequent reference observations is calculated
+by the JOS in some recipes (e.g. raster).
+
+=cut
+
+sub n_refsamples {
+  my $self = shift;
+  warn "N_REFSAMPLES no longer required - operation will be ignored\n";
+}
+
+=item B<piston_num>
+
+Number of step iterations for piston.
+
+=cut
+
+sub piston_num {
+  my $self = shift;
+  if (@_) {
+    $self->{PISTON_NUM} = shift;
+  }
+  return $self->{PISTON_NUM};
+}
+
+=item B<piston_start>
+
+Initial piston position.
+
+=cut
+
+sub piston_start {
+  my $self = shift;
+  if (@_) {
+    $self->{PISTON_START} = shift;
+  }
+  return $self->{PISTON_START};
+}
+
+=item B<piston_step>
+
+Step for piston position.
+
+=cut
+
+sub piston_step {
+  my $self = shift;
+  if (@_) {
+    $self->{PISTON_STEP} = shift;
+  }
+  return $self->{PISTON_STEP};
+}
+
+=item B<pitch_num>
+
+Number of step iterations for pitch.
+
+=cut
+
+sub pitch_num {
+  my $self = shift;
+  if (@_) {
+    $self->{PITCH_NUM} = shift;
+  }
+  return $self->{PITCH_NUM};
+}
+
+=item B<pitch_start>
+
+Initial pitch position.
+
+=cut
+
+sub pitch_start {
+  my $self = shift;
+  if (@_) {
+    $self->{PITCH_START} = shift;
+  }
+  return $self->{PITCH_START};
+}
+
+=item B<pitch_step>
+
+Step for pitch position.
+
+=cut
+
+sub pitch_step {
+  my $self = shift;
+  if (@_) {
+    $self->{PITCH_STEP} = shift;
+  }
+  return $self->{PITCH_STEP};
+}
+
+=item B<shareoff>
+
+Share the reference position among mutliple on positions?
+
+=cut
+
+sub shareoff {
+  my $self = shift;
+  if (@_) {
+    $self->{SHAREOFF} = shift;
+  }
+  return $self->{SHAREOFF};
+}
+
+=item B<start_index>
+
+Initial row number for a raster recipe, or offset position for grid recipe.
+
+=cut
+
+sub start_index {
+  my $self = shift;
+  if (@_) {
+    $self->{START_INDEX} = shift;
+  }
+  return $self->{START_INDEX};
 }
 
 =item B<steps_btwn_cals>
@@ -314,89 +477,92 @@ sub steps_btwn_dark {
   return $self->{STEPS_BTWN_DARK};
 }
 
-=item B<n_refsamples>
+=item B<steps_btwn_refs>
 
-Number of samples to integrate for the reference position.
-
-The number of samples in subsequent reference observations is calculated
-by the JOS in some recipes (e.g. raster).
-
-=cut
-
-sub n_refsamples {
-  my $self = shift;
-  warn "N_REFSAMPLES no longer required - operation will be ignored\n";
-}
-
-=item B<n_calsamples>
-
-Number of samples to integrate for the cal observation.
+The number of steps that can occur between sky references. A sky ref
+must be obtained if this number of steps is exceeded (at the next
+convenient location in the recipe).
 
 =cut
 
-sub n_calsamples {
+sub steps_btwn_refs {
   my $self = shift;
   if (@_) {
-    $self->{N_CALSAMPLES} = shift;
+    $self->{STEPS_BTWN_REFS} = shift;
   }
-  return $self->{N_CALSAMPLES};
+  return $self->{STEPS_BTWN_REFS};
 }
 
-=item B<focus_axis>
+=item B<step_time>
 
-Focus axis to move (X, Y, Z)
+Step time (in sec)
 
 =cut
 
-sub focus_axis {
+sub step_time {
   my $self = shift;
   if (@_) {
-    $self->{FOCUS_AXIS} = uc(shift);
+    $self->{STEP_TIME} = shift;
   }
-  return $self->{FOCUS_AXIS};
+  return $self->{STEP_TIME};
 }
 
-=item B<num_focus_steps>
+=item B<tune_filename>
 
-Number of smu positions to stop through for a focus observation.
+Name of the file with tuning parameters.
 
 =cut
 
-sub num_focus_steps {
+sub tune_filename {
   my $self = shift;
   if (@_) {
-    $self->{NUM_FOCUS_STEPS} = shift;
+    $self->{TUNE_FILENAME} = shift;
   }
-  return $self->{NUM_FOCUS_STEPS};
+  return $self->{TUNE_FILENAME};
 }
 
-=item B<focus_step>
+=item B<yaw_num>
 
-Size of SMU movement for each step in mm.
+Number of step iterations for yaw.
 
 =cut
 
-sub focus_step {
+sub yaw_num {
   my $self = shift;
   if (@_) {
-    $self->{FOCUS_STEP} = shift;
+    $self->{YAW_NUM} = shift;
   }
-  return $self->{FOCUS_STEP};
+  return $self->{YAW_NUM};
 }
 
-=item B<start_index>
+=item B<yaw_start>
 
-Initial row number for a raster recipe, or offset position for grid recipe.
+Initial yaw position.
 
 =cut
 
-sub start_index {
+sub yaw_start {
   my $self = shift;
   if (@_) {
-    $self->{START_INDEX} = shift;
+    $self->{YAW_START} = shift;
   }
-  return $self->{START_INDEX};
+  return $self->{YAW_START};
 }
+
+=item B<yaw_step>
+
+Step for yaw position.
+
+=cut
+
+sub yaw_step {
+  my $self = shift;
+  if (@_) {
+    $self->{YAW_STEP} = shift;
+  }
+  return $self->{YAW_STEP};
+}
+
 
 =item B<stringify>
 
