@@ -224,7 +224,7 @@ sub focus_step {
 
 =item B<frequency>
 
-Name of the file with tuning parameters.
+Line source frequency.
 
 =cut
 
