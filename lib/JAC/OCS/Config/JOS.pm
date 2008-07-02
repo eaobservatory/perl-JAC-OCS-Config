@@ -332,7 +332,11 @@ by the JOS in some recipes (e.g. raster).
 
 sub n_refsamples {
   my $self = shift;
-  warn "N_REFSAMPLES no longer required - operation will be ignored\n";
+  # Used by some remaining recipes
+  if (@_) {
+    $self->{N_REFSAMPLES} = shift;
+  }
+  return $self->{N_REFSAMPLES};
 }
 
 =item B<piston_num>
