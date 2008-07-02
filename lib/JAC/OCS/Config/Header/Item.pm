@@ -507,6 +507,12 @@ sub stringify {
     $xml .= "<". $Source_Info{$self->source}{XML}. " ";
     for my $a (@{$Source_Info{$self->source}{Attrs}}) {
       my $method = lc($a);
+
+      # special case MULT=1 since this has no useful meaning
+      # but is inserted by the parser via the DTD. Some subsystems
+      # get upset if it turns up for CHARACTER headers.
+      next if ($a eq 'MULT' && $self->$method == 1);
+
       $xml .= "$a=\"" . $self->$method . '" ' if $self->$method;
     }
     $xml .= "/>\n";
