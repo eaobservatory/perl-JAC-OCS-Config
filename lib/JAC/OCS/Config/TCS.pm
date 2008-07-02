@@ -100,6 +100,7 @@ sub new {
                                                                     SLEW => {},
                                                                     ROTATOR => {},
                                                                     ApertureCoords => [],
+                                                                    DomeAzel => [],
                                                                    }
                           );
 }
@@ -225,6 +226,56 @@ sub aperture_xy {
   return @{$self->{ApertureCoords}};
 }
 
+=item B<dome_mode>
+
+Determines whether the dome is tracking the current telescope demand
+position ("TELESCOPE") or the current telescope base position ("CURRENT").
+
+Undef will cause the telescope to use default behaviour.
+
+=cut
+
+sub dome_mode {
+  my $self = shift;
+  if (@_) {
+    my $mode = shift;
+    if (defined $mode) {
+      $mode = uc($mode);
+      my $match;
+      for my $test (qw/ CURRENT TELESCOPE STOPPED NEXT/ ) {
+        if ($mode eq $test) {
+          $match = 1;
+          last;
+        }
+      }
+      if (!$match) {
+        JAC::OCS::Config::Error::BadArgs->throw( "Supplied dome mode '$mode' does not match allowed values");
+      }
+    }
+    $self->{DOME_MODE} = $mode;
+  }
+  return $self->{DOME_MODE};
+}
+
+=item B<dome_azel>
+
+AZ and EL dome position aperture offsets. Only used if the dome mode
+is set to STOPPED.
+
+  ($az, $el) = $tcs->dome_azel();
+  $tcs->dome_azel( $az, $el );
+
+=cut
+
+sub dome_azel {
+  my $self = shift;
+  if (@_) {
+    JAC::OCS::Config::Error::BadArgs->throw( "Must supply 2 arguments to dome_azel() not ".scalar(@_) )
+        unless @_ == 2;
+    @{$self->{DomeAzEl}} = @_;
+  }
+  return @{$self->{DomeAzEl}};
+}
 
 =item B<tags>
 
@@ -894,22 +945,14 @@ sub stringify {
   # Version declaration
   $xml .= $self->_introductory_xml();
 
-  # Aperture name
-  if (defined $self->aperture_name) {
-    $xml .= "<INST_AP NAME=\"".$self->aperture_name."\" ";
-    my @xy = $self->aperture_xy();
-    if (@xy) {
-      $xml .= "X=\"$xy[0]\" Y=\"$xy[1]\" ";
-    }
-    $xml .= "/>\n";
-  }
-
   # Now add the constituents in turn
   $xml .= $self->_toString_base;
   $xml .= $self->_toString_slew;
   $xml .= $self->_toString_obsArea;
   $xml .= $self->_toString_secondary;
   $xml .= $self->_toString_rotator;
+  $xml .= $self->_toString_aperture;
+  $xml .= $self->_toString_dome;
 
   $xml .= "</$roottag>\n";
 
@@ -1051,6 +1094,9 @@ sub _process_dom {
   # Beam rotator configuration
   $self->_find_rotator();
 
+  # Dome control
+  $self->_find_dome();
+
   return;
 }
 
@@ -1119,6 +1165,31 @@ sub _find_slew {
     $self->slew( %sopt );
   }
 
+}
+
+=item B<_find_dome>
+
+Find the DOME options.
+
+The object state is updated.
+
+=cut
+
+sub _find_dome {
+  my $self = shift;
+  my $el = $self->_rootnode;
+
+  # DOME is optional
+  my $dome = find_children( $el, "DOME", min => 0, max => 1);
+  if ($dome) {
+    my %dopt= find_attr( $dome, "MODE", "AZ", "EL" );
+    $self->dome_mode( $dopt{MODE} );
+    if ($dopt{MODE} eq 'STOPPED') {
+      if (defined $dopt{AZ} && defined $dopt{EL}) {
+        $self->dome_azel( $dopt{AZ}, $dopt{EL} );
+      }
+    }
+  }
 }
 
 =item B<_find_base_posns>
@@ -1341,6 +1412,53 @@ sub _toString_secondary {
   my $sec = $self->getSecondary;
   return "\n<!-- Set up Secondary mirror behaviour here -->\n\n".
     (defined $sec ? $sec->stringify(NOINDENT => 1) : "" );
+}
+
+=item B<_toString_aperture>
+
+Create string representation of aperture information.
+
+ $xml = $tcs->_toString_aperture();
+
+=cut
+
+sub _toString_aperture {
+  my $self = shift;
+  my $xml = '';
+  if (defined $self->aperture_name) {
+    $xml .= "<INST_AP NAME=\"".$self->aperture_name."\" ";
+    my @xy = $self->aperture_xy();
+    if (@xy) {
+      $xml .= "X=\"$xy[0]\" Y=\"$xy[1]\" ";
+    }
+    $xml .= "/>\n";
+  }
+  return $xml;
+}
+
+=item B<_toString_dome>
+
+Create string representation of the DOME information (if present).
+
+ $xml = $tcs->_toString_dome();
+
+=cut
+
+sub _toString_dome {
+  my $self = shift;
+  my $xml = '';
+  my $dmode = $self->dome_mode;
+  if (defined $dmode) {
+    $xml = "<DOME MODE=\"$dmode\" ";
+    if ($dmode eq 'STOPPED') {
+      my @azel = $self->dome_azel;
+      if (@azel) {
+        $xml .= "AZ=\"$azel[0]\" EL=\"$azel[1]\" ";
+      }
+    }
+    $xml .= "/>\n";
+  }
+  return $xml;
 }
 
 =item _toString_rotator
