@@ -631,14 +631,14 @@ sub steps_per_cal {
 
 Returns the names of any associated configurations required for this
 configuration to be used in a full OCS_CONFIG. The JOS requires
-'instrument_setup'.
+'instrument_setup' and observation summary.
 
   @requires = $cfg->dtdrequires();
 
 =cut
 
 sub dtdrequires {
-  return ('instrument_setup');
+  return ('obs_summary', 'instrument_setup');
 }
 
 =item B<getRootElementName>
