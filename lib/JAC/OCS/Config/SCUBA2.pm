@@ -90,6 +90,16 @@ sub tasks {
   return "SCUBA2";
 }
 
+=item B<requires_full_config>
+
+SCUBA-2 needs to be given all configuration information.
+
+=cut
+
+sub requires_full_config {
+  return "SCUBA2";
+}
+
 =item B<active_subarrays>
 
 Retursn the list of active subarrays (those that are not "OFF").
