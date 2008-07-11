@@ -103,7 +103,8 @@ A telescope can be supplied directly to the constructor if it is
 known and if there is a chance that the telescope may not be specified
 in the TCS_CONFIG.
 
-Returns C<undef> if an object can not be constructed.
+Throws L<JAC::OCS::Config::Error> exception if an object can not be
+constructed.
 
 =cut
 
