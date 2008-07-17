@@ -278,6 +278,134 @@ sub read_source_definitions {
   return;
 }
 
+=item B<read_header_exclusion_file>
+
+Read the header exclusion file and return an array of all headers that
+should be excluded.  Returns empty list if the file can not be found.
+
+  @toexclude = $hdr->read_header_exclusion_file($file);
+
+It takes two optional arguments: a truth value to indicat to print
+messages at all; and an output handle to which to print verbose
+messages.  If no output handle is defined, then currently selected
+handle is used.
+
+  @toexclude = $hdr->read_header_exclusion_file($file, my $verbose = 1, \*STDERR );
+
+=cut
+
+sub read_header_exclusion_file {
+
+  my $self = shift;
+  my ( $xfile, $verbose, $outh ) = @_;
+
+  return unless -e $xfile;
+
+  $verbose 
+    and __PACKAGE__->_print_fh( "Processing header exclusion file '$xfile'.\n", $outh );
+
+  # Get the directory path for INCLUDE handling
+  my ($vol, $rootdir, $barefile) = File::Spec->splitpath( $xfile );
+
+  # this exclusion file has header cards that should be undeffed
+  open my $fh, '<', $xfile
+    or throw OMP::Error::FatalError("Error opening exclusion file '$xfile': $!");
+
+  # use a hash to make it easy to remove entries
+  my %toexclude;
+  while (defined (my $line = <$fh>)) {
+
+    for ( $line ) {
+
+      # remove comments
+      s/#.*//;
+      # and trailing/leading whitespace
+      s/^\s+//;
+      s/\s+$//;
+    }
+
+    next unless $line =~ /\w/;
+
+    # A "+" indicates that the keyword should be removed from toexclude
+    my $addback = 0;
+    if ($line =~ /^\+/) {
+
+      $addback = 1;
+      $line =~ s/^\+//;
+    }
+
+    # Keys that are associated with this line
+    my @newkeys;
+
+    # INCLUDE directive
+    if ($line =~ /^INCLUDE\s+(.*)$/) {
+
+      my $fullpath = File::Spec->catpath( $vol, $rootdir, $1 );
+      push(@newkeys, $self->read_header_exclusion_file( $fullpath ) );
+    } else {
+
+      push(@newkeys, $line);
+    }
+
+    if ($addback) {
+
+      delete $toexclude{$_} for @newkeys;
+    } else {
+
+      # put them on the list of keys to remove
+      $toexclude{$_}++ for @newkeys;
+    }
+
+  }
+
+  return sort keys %toexclude;
+}
+
+=item B<remove_excluded_headers>
+
+Removes the excluded headers (from a C<JAC::OCS::Config::Header>
+object) given in an array reference.
+
+  $hdr->remove_excluded_headers( [ 'header_A', 'header_B' ] );
+
+It takes two optional arguments: a truth value to indicat to print
+messages at all; and an output handle to which to print verbose
+messages.  If no output handle is defined, then currently selected
+handle is used.
+
+  #  Print messages.
+  $hdr->remove_excluded_headers( $array_ref, 1 );
+
+  #  Print messages to standard error.
+  $hdr->remove_excluded_headers( $array_ref, 1, \*STDERR );
+
+=cut
+
+sub remove_excluded_headers {
+
+  my ( $self, $toexclude, $verbose, $outh ) = @_;
+
+  # Message formats.
+  my $found = "\tClearing header %s\n";
+  my $invisible = "\tAsked to exclude header card '%s' but it is not part of the header\n";
+
+  for my $ex ( @{ $toexclude } ) {
+
+    my $item = $self->item( $ex );
+    if ( defined $item ) {
+
+      $verbose and __PACKAGE__->_print_fh( sprintf( $found, $ex ), $outh );
+      $item->undefine;
+    }
+    else {
+
+      $verbose and __PACKAGE__->_print_fh( sprintf( $invisible, $ex ), $outh );
+    }
+  }
+
+  return;
+}
+
 =back
 
 =head2 Class Methods
@@ -514,6 +642,30 @@ sub _parse_source_defs {
   }
 
   return %modifiers;
+}
+
+=item B<_print_fh>
+
+Prints a message to a file handle if the message is defined.  File
+handle is optional; if not given, then message is printed to the
+currently selected file handle.
+
+  JAC::OCS::Config::Header->_print_fh( 'some message' );
+
+  #  Send message to standard error.
+  JAC::OCS::Config::Header->_print_fh( 'some message', \*STDERR );
+
+=cut
+
+sub _print_fh {
+
+  my ( $self, $msg, $fh ) = @_;
+
+  return unless defined $msg ;
+
+  $fh = defined $fh ? $fh : select;
+  print $fh $msg;
+  return;
 }
 
 =back
