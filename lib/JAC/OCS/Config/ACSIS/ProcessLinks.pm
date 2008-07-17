@@ -166,18 +166,20 @@ sub getRootElementName {
 =item B<createFromNumbers>
 
 Factorymethod to create a ProcessLinks object from a given number of
-sync_tasks, reducers and gridders. The number and names of monitors
-are hard coded and there is always one specwriter.
+sync_tasks, reducers and gridders and the names of the corr_monitors. 
+The number and names of the other monitors are hard coded and there 
+is always one specwriter.
 
   my $numSynctasks = 8;
   my $numReducers = 8;
   my $numGridders = 1;
-  my $pl = JAC::OCS::Config::ACSIS::ProcessLinks::createFromNumbers($numSynctasks, $numReducers, $numGridders);
+  my @corr_monitors = qw/ corr_monitor5 corr_monitor7 /;
+  my $pl = JAC::OCS::Config::ACSIS::ProcessLinks::createFromNumbers($numSynctasks, $numReducers, $numGridders, @corr_monitors);
 
 =cut
 
 sub createFromNumbers {
-  my ($numSynctasks, $numReducers, $numGridders) = @_;
+  my ($numSynctasks, $numReducers, $numGridders, @corr_monitors) = @_;
 
   my $pls = new JAC::OCS::Config::ACSIS::ProcessLinks();
   my $linkCl = "JAC::OCS::Config::ACSIS::ProcessLink";
@@ -205,10 +207,12 @@ sub createFromNumbers {
     };
 
     # create a link from one corr_monitor to this sync_task
-    $pls->addLink($linkCl->new(from_ref   => 'corr_monitor' . $i,
-			       from_event => 'corr_data',
-			       to_ref     => $sync,
-			       to_event   => 'corr_data'));
+    if ($i <= @corr_monitors) {
+      $pls->addLink($linkCl->new(from_ref   => $corr_monitors[$i - 1],
+				 from_event => 'corr_data',
+				 to_ref     => $sync,
+				 to_event   => 'corr_data'));
+    }
 
     # create a link to the correct number of reducers
     # there is usually one reducer per sync_task, but it can be two
