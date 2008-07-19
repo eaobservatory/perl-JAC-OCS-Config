@@ -285,7 +285,7 @@ should be excluded.  Returns empty list if the file can not be found.
 
   @toexclude = $hdr->read_header_exclusion_file($file);
 
-It takes two optional arguments: a truth value to indicat to print
+It takes two optional arguments: a truth value to indicate to print
 messages at all; and an output handle to which to print verbose
 messages.  If no output handle is defined, then currently selected
 handle is used.
@@ -404,6 +404,78 @@ sub remove_excluded_headers {
   }
 
   return;
+}
+
+=item B<verify_header_types>
+
+Returns a truth value to indicate successful verification, given an
+C<OMP::Info::Obs> object as value to I<obs> key.
+
+  my $ok = $hdr->verify_header_types( 'obs' => $obs );
+
+
+By default, a calibration observation assumed to have correct headers.
+Checking of a calibration observation can be enabled by giving a true
+value to I<check-cal> key.
+
+  my $ok =
+    $hdr->verify_header_types( 'obs' => $obs, 'check-cal' => 1 );
+
+
+Raw verification result can be obtained by giving a true value to
+I<raw> key. Result returned is a hash with header names as the keys
+and a hash references as the values. A hash reference value consists
+of 'expected' & 'actual' as keys & respective values as values.
+
+  my %mismatch =
+    $hdr->verify_header_types( 'obs' => $obs, 'raw' => 1);
+
+
+L<OMP::Info::Obs> object's headers (of type L<Astro::FITS::Header>)
+are compared against the header specification, assuming header
+exclusion has already taken place (see I<read_header_exclusion_file>
+and I<remove_excluded_headers> methods).
+
+
+=cut
+
+sub verify_header_types {
+
+  my ( $self, %args ) = @_;
+
+  my %mismatch;
+
+  my $cal = !! ( $args{'obs'}->isGenCal || $args{'obs'}->isSciCal );
+  if ( $cal && ! $args{'check-cal'} ) {
+
+    return $args{'raw'} ? %mismatch : 1;
+  }
+
+  my $fits_h = $args{'obs'}->fits;
+
+  for my $ocs_h ( $self->items ) {
+
+    my $name = $ocs_h->keyword;
+
+    #  In case of 'BLANKFIELD' or 'COMMENT' types (see
+    #  /jac_sw/hlsroot/scuba2_wireDir/header/scuba2/scuba2.ent).
+    next unless defined $name;
+
+    my $expected = uc $ocs_h->type;
+
+    for my $fh ( $fits_h->itembyname( $name ) ) {
+
+      my $actual = uc $fh->type;
+      next if $expected eq $actual;
+
+      $mismatch{ $name } =
+        { 'expected' => $expected,
+          'actual' => $actual,
+        };
+    }
+  }
+
+  return $args{'raw'} ? %mismatch : 0 == scalar keys %mismatch;
 }
 
 =back
