@@ -166,32 +166,25 @@ sub getRootElementName {
 =item B<createFromNumbers>
 
 Factorymethod to create a ProcessLinks object from a given number of
-sync_tasks, reducers and gridders and the names of the corr_monitors. 
-The number and names of the other monitors are hard coded and there 
-is always one specwriter.
+sync_tasks, reducers and gridders. The names of the regular monitors
+and corr_monitors also need to be specified. There is always one specwriter.
 
   my $numSynctasks = 8;
   my $numReducers = 8;
   my $numGridders = 1;
+  my @regular_monitors = qw/ if_monitor fe_monitor /;
   my @corr_monitors = qw/ corr_monitor5 corr_monitor7 /;
-  my $pl = JAC::OCS::Config::ACSIS::ProcessLinks::createFromNumbers($numSynctasks, $numReducers, $numGridders, @corr_monitors);
+  my $pl = JAC::OCS::Config::ACSIS::ProcessLinks::createFromNumbers($numSynctasks, $numReducers, $numGridders, \@regular_monitors, \@corr_monitors);
 
 =cut
 
 sub createFromNumbers {
-  my ($numSynctasks, $numReducers, $numGridders, @corr_monitors) = @_;
+  my ($numSynctasks, $numReducers, $numGridders, $monitorEvents, $corr_monitors) = @_;
 
   my $pls = new JAC::OCS::Config::ACSIS::ProcessLinks();
   my $linkCl = "JAC::OCS::Config::ACSIS::ProcessLink";
 
-  my %monitors = (
-      if_monitor    => 'if_data',
-      rts_monitor   => 'rts_data',
-      fe_monitor    => 'fe_data',
-      rover_monitor => 'rover_data',
-      ws_monitor    => 'weather_data',
-      ant_monitor   => 'ant_data',
-  );
+  my @monitors = grep {!/corr_monitor/} (keys %{$monitorEvents});
 
   my $reducercounter = 1;
   # For every sync_task: links to monitors and reducers
@@ -199,19 +192,20 @@ sub createFromNumbers {
     my $sync = 'sync' . $i;
 
     # create a link from every monitor to this sync_task
-    for my $monitor (keys %monitors) {
+    for my $monitor (@monitors) {
       $pls->addLink($linkCl->new(from_ref   => $monitor,
-				 from_event => $monitors{$monitor},
+				 from_event => $monitorEvents->{$monitor},
 				 to_ref     => $sync,
-				 to_event   => $monitors{$monitor}));
+				 to_event   => $monitorEvents->{$monitor}));
     };
 
     # create a link from one corr_monitor to this sync_task
-    if ($i <= @corr_monitors) {
-      $pls->addLink($linkCl->new(from_ref   => $corr_monitors[$i - 1],
-				 from_event => 'corr_data',
+    if ($i <= @{$corr_monitors}) {
+      my $monitor = ${$corr_monitors}[$i - 1];
+      $pls->addLink($linkCl->new(from_ref   => $monitor,
+				 from_event => $monitorEvents->{$monitor},
 				 to_ref     => $sync,
-				 to_event   => 'corr_data'));
+				 to_event   => $monitorEvents->{$monitor}));
     }
 
     # create a link to the correct number of reducers
