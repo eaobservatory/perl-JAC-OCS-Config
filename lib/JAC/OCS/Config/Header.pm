@@ -409,52 +409,29 @@ sub remove_excluded_headers {
 =item B<verify_header_types>
 
 Returns a truth value to indicate successful verification, given an
-C<Astro::FITS::Header> object as value to I<fits> key.
+C<Astro::FITS::Header> object.
 
 L<Astro::FITS::Header> types are compared against the header
 specification, assuming header exclusion has already taken place (see
 I<read_header_exclusion_file> and I<remove_excluded_headers> methods).
 
+  $hdr->verify_header_types( $fits );
 
-  my $ok = $hdr->verify_header_types( 'fits' => $fits );
-
-
-Raw verification result can be obtained by giving a true value to
-I<raw> key. Result returned is a hash with header names as the keys
-and a hash references as the values. A hash reference value consists
-of 'expected' & 'actual' as keys & respective values as values.
-
-  my %mismatch =
-    $hdr->verify_header_types( 'fits' => $fits, 'raw' => 1);
-
-
-An error string can be otained for all the mismatches by providing a
-true value to I<err-string> key.  It overrides the C<raw> attribute.
-
-  my $err =
-    $hdr->verify_header_types( 'fits' => $fits, 'err-string' => 1);
-
-  die $err if $err;
+Throws I<JAC::OCS::Config::Error> exception if any of the header types cannot be
+verified.
 
 =cut
 
 sub verify_header_types {
 
-  my ( $self, %args ) = @_;
+  my ( $self, $fits ) = @_;
 
   return
-    unless $args{'fits'} && ref $args{'fits'}
-        && $args{'fits'}->isa( 'Astro::FITS::Header' );
+    unless $fits && ref $fits
+        && $fits->isa( 'Astro::FITS::Header' );
   
-  my ( $err, %err );
-  my $save_err =
-    $args{'err-string'}
-      ? sub {
-          $err .=
-            sprintf "For header '%s', type expected '%s' but found '%s'.\n", @_[0..2];
-        }
-      : sub { $err{ $_[0] } = { 'expected' => $_[1], 'actual' => $_[2] }; }
-      ;
+  my ( $format, $err ) =
+    ( "For header '%s', type expected '%s' but found '%s'.\n" );
 
   for my $ocs_h ( $self->items ) {
 
@@ -466,18 +443,17 @@ sub verify_header_types {
 
     my $expected = uc $ocs_h->type;
 
-    for my $fh ( $args{'fits'}->itembyname( $name ) ) {
+    for my $fh ( $fits->itembyname( $name ) ) {
 
       my $actual = uc $fh->type;
       next if $expected eq $actual;
 
-      $save_err->( $name, $expected, $actual );
+      $err .= sprintf $format, $name, $expected, $actual;
     }
   }
 
-  return $err if $args{'err-string'};
-  return %err if $args{'raw'};
-  return 0 == scalar keys %err;
+  throw JAC::OCS::Config::Error $err if $err;
+  return;
 }
 
 =back
