@@ -409,17 +409,14 @@ sub remove_excluded_headers {
 =item B<verify_header_types>
 
 Returns a truth value to indicate successful verification, given an
-C<OMP::Info::Obs> object as value to I<obs> key.
+C<Astro::FITS::Header> object as value to I<fits> key.
 
-  my $ok = $hdr->verify_header_types( 'obs' => $obs );
+L<Astro::FITS::Header> types are compared against the header
+specification, assuming header exclusion has already taken place (see
+I<read_header_exclusion_file> and I<remove_excluded_headers> methods).
 
 
-By default, a calibration observation assumed to have correct headers.
-Checking of a calibration observation can be enabled by giving a true
-value to I<check-cal> key.
-
-  my $ok =
-    $hdr->verify_header_types( 'obs' => $obs, 'check-cal' => 1 );
+  my $ok = $hdr->verify_header_types( 'fits' => $fits );
 
 
 Raw verification result can be obtained by giving a true value to
@@ -428,14 +425,16 @@ and a hash references as the values. A hash reference value consists
 of 'expected' & 'actual' as keys & respective values as values.
 
   my %mismatch =
-    $hdr->verify_header_types( 'obs' => $obs, 'raw' => 1);
+    $hdr->verify_header_types( 'fits' => $fits, 'raw' => 1);
 
 
-L<OMP::Info::Obs> object's headers (of type L<Astro::FITS::Header>)
-are compared against the header specification, assuming header
-exclusion has already taken place (see I<read_header_exclusion_file>
-and I<remove_excluded_headers> methods).
+An error string can be otained for all the mismatches by providing a
+true value to I<err-string> key.  It overrides the C<raw> attribute.
 
+  my $err =
+    $hdr->verify_header_types( 'fits' => $fits, 'err-string' => 1);
+
+  die $err if $err;
 
 =cut
 
@@ -443,15 +442,19 @@ sub verify_header_types {
 
   my ( $self, %args ) = @_;
 
-  my %mismatch;
-
-  my $cal = !! ( $args{'obs'}->isGenCal || $args{'obs'}->isSciCal );
-  if ( $cal && ! $args{'check-cal'} ) {
-
-    return $args{'raw'} ? %mismatch : 1;
-  }
-
-  my $fits_h = $args{'obs'}->fits;
+  return
+    unless $args{'fits'} && ref $args{'fits'}
+        && $args{'fits'}->isa( 'Astro::FITS::Header' );
+  
+  my ( $err, %err );
+  my $save_err =
+    $args{'err-string'}
+      ? sub {
+          $err .=
+            sprintf "For header '%s', type expected '%s' but found '%s'.\n", @_[0..2];
+        }
+      : sub { $err{ $_[0] } = { 'expected' => $_[1], 'actual' => $_[2] }; }
+      ;
 
   for my $ocs_h ( $self->items ) {
 
@@ -463,19 +466,18 @@ sub verify_header_types {
 
     my $expected = uc $ocs_h->type;
 
-    for my $fh ( $fits_h->itembyname( $name ) ) {
+    for my $fh ( $args{'fits'}->itembyname( $name ) ) {
 
       my $actual = uc $fh->type;
       next if $expected eq $actual;
 
-      $mismatch{ $name } =
-        { 'expected' => $expected,
-          'actual' => $actual,
-        };
+      $save_err->( $name, $expected, $actual );
     }
   }
 
-  return $args{'raw'} ? %mismatch : 0 == scalar keys %mismatch;
+  return $err if $args{'err-string'};
+  return %err if $args{'raw'};
+  return 0 == scalar keys %err;
 }
 
 =back
