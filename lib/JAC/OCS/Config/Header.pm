@@ -65,8 +65,8 @@ sub new {
 
   # Now call base class with all the supplied options +
   # extra initialiser
-  return $self->SUPER::new( @_, 
-                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+  return $self->SUPER::new( @_,
+                            $JAC::OCS::Config::CfgBase::INITKEY => {
                                                                     ITEMS => [],
                                                                    }
                           );
@@ -111,7 +111,7 @@ sub nitems {
 
 Retrieve a specific Item object by index (if the argument looks like
 an integer), by keyword, by keyword pattern (if qr// object) or by
-code reference. 
+code reference.
 
  $item = $hdr->item( 5 );
  $item = $hdr->item( 'PROJECT' );
@@ -155,8 +155,8 @@ sub item {
     } elsif (ref($arg) eq 'CODE') {
       @match = grep { $arg->( $_ ) } @items;
     } else {
-      @match = grep { 
-        defined $_->keyword && 
+      @match = grep {
+        defined $_->keyword &&
         $_->keyword eq $arg } @items;
     }
 
@@ -301,7 +301,7 @@ sub read_header_exclusion_file {
 
   return unless -e $xfile;
 
-  $verbose 
+  $verbose
     and __PACKAGE__->_print_fh( "Processing header exclusion file '$xfile'.\n", $outh );
 
   # Get the directory path for INCLUDE handling
@@ -429,7 +429,7 @@ sub verify_header_types {
   return
     unless $fits && ref $fits
         && $fits->isa( 'Astro::FITS::Header' );
-  
+
   my ( %err );
   for my $ocs_h ( $self->items ) {
 
@@ -592,7 +592,7 @@ sub _read_source_defs {
   close($fh) or
     JAC::OCS::Config::Error::IOError->throw("Error closing file '$file': $!" );
   chomp(@lines);
-  
+
   return $self->_parse_source_defs( \@lines, $taskmap );
 }
 
@@ -626,7 +626,7 @@ sub _parse_source_defs {
     $l =~ s/<//;
     $l =~ s/\/>//;
 
-    # split on whitespace (we assume the key=val pairs do not 
+    # split on whitespace (we assume the key=val pairs do not
     # include whitespace)
     my @parts = split(/\s+/, $l );
 
@@ -765,7 +765,7 @@ and
 
 is also supported. Any text at the end that is not Keyword=Value
 will be treated as a comment that will be inserted into the header.
-This is used if an instrument requires a slightly different comment 
+This is used if an instrument requires a slightly different comment
 to appear in a file.
 
 =item KEYWORD UNDEF
