@@ -426,7 +426,7 @@ sub verify_header_types {
 
   my ( $self, $fits ) = @_;
 
-  return
+  throw JAC::OCS::Config::Error "No Astro::FITS::Header obeject given."
     unless $fits && ref $fits
         && $fits->isa( 'Astro::FITS::Header' );
 
