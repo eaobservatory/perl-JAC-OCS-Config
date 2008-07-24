@@ -718,8 +718,15 @@ sub _print_fh {
 
   return unless defined $msg ;
 
-  $fh = defined $fh ? $fh : select;
-  print $fh $msg;
+  if ( defined $fh ) {
+  
+    print $fh $msg;
+  }
+  else {
+  
+    print $msg;
+  }
+
   return;
 }
 
