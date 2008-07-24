@@ -430,9 +430,7 @@ sub verify_header_types {
     unless $fits && ref $fits
         && $fits->isa( 'Astro::FITS::Header' );
   
-  my ( $format, $err ) =
-    ( "For header '%s', type expected '%s' but found '%s'.\n" );
-
+  my ( %err );
   for my $ocs_h ( $self->items ) {
 
     my $name = $ocs_h->keyword;
@@ -448,11 +446,18 @@ sub verify_header_types {
       my $actual = uc $fh->type;
       next if $expected eq $actual;
 
-      $err .= sprintf $format, $name, $expected, $actual;
+      $err{ $name } = { 'expected' => $expected, 'actual' => $actual };
     }
   }
 
+  my $err = '';
+  for ( sort keys %err ) {
+
+    $err .= sprintf "For header '%s', type expected '%s' but found '%s'.\n",
+              $_, $err{ $_ }->{'expected'}, $err{ $_ }->{'actual'}
+  }
   throw JAC::OCS::Config::Error $err if $err;
+
   return;
 }
 
