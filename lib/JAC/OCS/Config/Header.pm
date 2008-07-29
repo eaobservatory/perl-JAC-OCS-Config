@@ -439,6 +439,10 @@ sub verify_header_types {
     #  /jac_sw/hlsroot/scuba2_wireDir/header/scuba2/scuba2.ent).
     next unless defined $name;
 
+    my $v = $ocs_h->value;
+    next
+      unless defined $ocs_h->source || ( defined $v && length $v ) ;
+
     my $expected = uc $ocs_h->type;
 
     for my $fh ( $fits->itembyname( $name ) ) {
