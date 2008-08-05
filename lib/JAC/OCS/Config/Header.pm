@@ -737,11 +737,11 @@ sub _print_fh {
   return unless defined $msg ;
 
   if ( defined $fh ) {
-  
+
     print $fh $msg;
   }
   else {
-  
+
     print $msg;
   }
 
