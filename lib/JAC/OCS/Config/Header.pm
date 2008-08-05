@@ -21,6 +21,7 @@ use 5.006;
 use strict;
 use Carp;
 use warnings;
+use List::Util qw[ first ];
 use XML::LibXML;
 
 use JAC::OCS::Config::Error qw| :try |;
@@ -417,19 +418,26 @@ I<read_header_exclusion_file> and I<remove_excluded_headers> methods).
 
   $hdr->verify_header_types( $fits );
 
-Throws I<JAC::OCS::Config::Error> exception if any of the header types cannot be
-verified.
+Throws I<JAC::OCS::Config::Error> exception if any of the header types
+cannot be verified.
+
+A header skip list may be specified as optional array reference.  Any
+header persent in the list which happens to be I<UNDEF> type for a
+obsvervation will considered as valid header.
+
+  $hdr->verify_header_types( $fits, \@skip_undef_headers );
 
 =cut
 
 sub verify_header_types {
 
-  my ( $self, $fits ) = @_;
+  my ( $self, $fits, $skip ) = @_;
 
   throw JAC::OCS::Config::Error "No Astro::FITS::Header obeject given."
     unless $fits && ref $fits
         && $fits->isa( 'Astro::FITS::Header' );
 
+  my @skip = defined $skip && ref $skip ? @{ $skip } : ();
   my ( %err );
   for my $ocs_h ( $self->items ) {
 
@@ -449,6 +457,12 @@ sub verify_header_types {
 
       my $actual = uc $fh->type;
       next if $expected eq $actual;
+
+      if ( 'UNDEF' eq $actual && first { $name eq $_ } @skip ) {
+
+        #warn "'$name' is skippable";
+        next;
+      }
 
       $err{ $name } = { 'expected' => $expected, 'actual' => $actual };
     }
