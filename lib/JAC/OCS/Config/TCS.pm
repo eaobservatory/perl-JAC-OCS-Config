@@ -229,7 +229,7 @@ sub aperture_xy {
 =item B<dome_mode>
 
 Determines whether the dome is tracking the current telescope demand
-position ("TELESCOPE") or the current telescope base position ("CURRENT").
+position ("TELESCOPE") or the current telescope base position ("BASE").
 
 Undef will cause the telescope to use default behaviour.
 
@@ -242,7 +242,7 @@ sub dome_mode {
     if (defined $mode) {
       $mode = uc($mode);
       my $match;
-      for my $test (qw/ CURRENT TELESCOPE STOPPED NEXT/ ) {
+      for my $test (qw/ CURRENT TELESCOPE STOPPED NEXT BASE/ ) {
         if ($mode eq $test) {
           $match = 1;
           last;
@@ -260,7 +260,8 @@ sub dome_mode {
 =item B<dome_azel>
 
 AZ and EL dome position aperture offsets. Only used if the dome mode
-is set to STOPPED.
+is set to STOPPED. The dome AZEL values are accepted even if mode is not
+STOPPED. Mode is not updated.
 
   ($az, $el) = $tcs->dome_azel();
   $tcs->dome_azel( $az, $el );
