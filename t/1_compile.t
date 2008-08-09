@@ -71,10 +71,9 @@ sub wanted {
 
   # is it a module
   return unless $pm =~ /\.pm$/;
+  return if $pm =~ /\/._/;
 
   print "pm is $pm\n";
-
-
 
   # Remove the blib/lib (assumes unix!)
   $pm =~ s|^blib/lib/||;
