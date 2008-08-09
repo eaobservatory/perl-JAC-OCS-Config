@@ -41,9 +41,15 @@ $VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names
 our @PARAMS = (qw/
+                   BB_TEMP_START
+                   BB_TEMP_STEP
+                   BB_TEMP_WAIT
                    FOCUS_AXIS
                    FOCUS_STEP
                    FREQUENCY
+                   HEAT_CUR_START
+                   HEAT_CUR_STEP
+                   HEAT_CUR_REF
                    JOS_MIN
                    JOS_MULT
                    NUM_CYCLES
@@ -58,6 +64,7 @@ our @PARAMS = (qw/
                    PITCH_START
                    PITCH_STEP
                    SHAREOFF
+                   SHUT_FRAC
                    START_INDEX
                    STEPS_BTWN_CALS
                    STEPS_BTWN_DARK
@@ -194,6 +201,48 @@ sub parameters {
   return %output;
 }
 
+=item B<bb_temp_start>
+
+Black body start tempeature (deg C).
+
+=cut
+
+sub bb_temp_start {
+  my $self = shift;
+  if (@_) {
+    $self->{BB_TEMP_START} = shift;
+  }
+  return $self->{BB_TEMP_START};
+}
+
+=item B<bb_temp_step>
+
+Black body step size each cycle (deg C).
+
+=cut
+
+sub bb_temp_step {
+  my $self = shift;
+  if (@_) {
+    $self->{BB_TEMP_STEP} = shift;
+  }
+  return $self->{BB_TEMP_STEP};
+}
+
+=item B<bb_temp_wait>
+
+Time to wait for black body to stabilize temperature.
+
+=cut
+
+sub bb_temp_wait {
+  my $self = shift;
+  if (@_) {
+    $self->{BB_TEMP_WAIT} = shift;
+  }
+  return $self->{BB_TEMP_WAIT};
+}
+
 =item B<focus_axis>
 
 Focus axis to move (X, Y, Z)
@@ -234,6 +283,48 @@ sub frequency {
     $self->{FREQUENCY} = shift;
   }
   return $self->{FREQUENCY};
+}
+
+=item B<heat_cur_start>
+
+The starting heater current setting.
+
+=cut
+
+sub heat_cur_start {
+  my $self = shift;
+  if (@_) {
+    $self->{HEAT_CUR_START} = shift;
+  }
+  return $self->{HEAT_CUR_START};
+}
+
+=item B<heat_cur_step>
+
+The step size of heater current settings.
+
+=cut
+
+sub heat_cur_step {
+  my $self = shift;
+  if (@_) {
+    $self->{HEAT_CUR_STEP} = shift;
+  }
+  return $self->{HEAT_CUR_STEP};
+}
+
+=item B<heat_cur_ref>
+
+The reference heater current setting.
+
+=cut
+
+sub heat_cur_ref {
+  my $self = shift;
+  if (@_) {
+    $self->{HEAT_CUR_REF} = shift;
+  }
+  return $self->{HEAT_CUR_REF};
 }
 
 =item B<jos_min>
@@ -435,6 +526,20 @@ sub shareoff {
     $self->{SHAREOFF} = shift;
   }
   return $self->{SHAREOFF};
+}
+
+=item B<shut_frac>
+
+How open should the shutter be. Used for flatfield. 0=closed. 1=open
+
+=cut
+
+sub shut_frac {
+  my $self = shift;
+  if (@_) {
+    $self->{SHUT_FRAC} = shift;
+  }
+  return $self->{SHUT_FRAC};
 }
 
 =item B<start_index>
