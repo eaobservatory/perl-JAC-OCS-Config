@@ -17,7 +17,7 @@ my $sci = $cfg->getTarget( "SCIENCE" );
 my $ref = $cfg->getTarget( "REFERENCE" );
 
 my $distance = $sci->distance( $ref );
-is($distance, 0, "Distance between science and reference position");
+is($distance->radians, 0, "Distance between science and reference position");
 
 # Simple test snippet
 __DATA__
