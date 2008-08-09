@@ -663,6 +663,14 @@ sub duration_scuba2 {
 
   } elsif ($obs_type eq 'flatfield') {
 
+    # no darks
+    $ndarks = 0;
+
+    # time per sequence is in calsamples
+    $time_per_seq = $jos->n_calsamples;
+
+    # number of sequences is twice the number of steps + 1 at the end
+    $nseq = ($jos->num_cycles() * 2) + 1;
 
   } elsif ($obs_type eq 'noise') {
 
