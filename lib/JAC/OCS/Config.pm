@@ -606,11 +606,12 @@ sub duration_scuba2 {
   my $map_mode = lc($obssum->mapping_mode);
   my $obs_type = lc($obssum->type);
 
-  # if this is a flatfield observation then we do not need a tcs
+  # if this is a noise/flatfield observation then we do not need a tcs
   my $tcs;
   my $oa;
 
-  if ($obs_type ne "flatfield" && $obs_type ne 'array_tests') {
+  if ($obs_type ne "flatfield" && $obs_type ne 'array_tests' &&
+     $obs_type ne 'noise') {
 
     # Need the TCS configuration
     $tcs = $self->tcs;
@@ -665,6 +666,14 @@ sub duration_scuba2 {
 
   } elsif ($obs_type eq 'noise') {
 
+    # number of sequences 
+    $nseq = $jos->num_cycles;
+
+    # integration time per non-dark
+    $time_per_seq = $jos->jos_min();
+
+    # always interleave darks so number of darks
+    $ndarks = $nseq;
 
   } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
 
