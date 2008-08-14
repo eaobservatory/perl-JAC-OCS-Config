@@ -427,14 +427,8 @@ sub write_file {
   my $ut = gmtime( $sec );
 
   # get backend
-  my $backend;
-  if (defined $self->acsis) {
-    $backend = "acsis";
-  } elsif (defined $self->scuba2) {
-    $backend = "scuba2";
-  } else {
-    $backend = "unknown";
-  }
+  my $backend = $self->backend;
+  $backend = "unknown" unless defined $backend;
 
   # Rather than worry that the computer is so fast in looping that we might
   # reuse milli-seconds (and therefore have to check that we are not opening
@@ -1236,6 +1230,28 @@ sub duration_acsis {
   return Time::Seconds->new( $duration );
 }
 
+=item B<backend>
+
+Acquisition system or correlator hardware.
+
+  $backend = $cfg->backend();
+
+Returns undef if there is insufficient information in the configuration.
+
+=cut
+
+sub backend {
+  my $self = shift;
+  my $backend;
+  if (defined $self->acsis) {
+    $backend = "acsis";
+  } elsif (defined $self->scuba2) {
+    $backend = "scuba2";
+  }
+  return $backend;
+}
+
+
 =item B<telescope>
 
 Return the telescope name associated with this Config.
@@ -1247,6 +1263,9 @@ the current value if specified.
 
 Returned as a string rather than an C<Astro::Telescope> object.
 The TCS_CONFIG value takes precedence if both are defined.
+
+If the TCS configuration is not defined we rely on the instrument
+backend.
 
 =cut
 
@@ -1264,6 +1283,12 @@ sub telescope {
     my $tcstel = $tcs->telescope;
     if (defined $tcstel) {
       return $tcstel;
+    }
+  } elsif (defined $self->backend) {
+    # Flatfield and noise observations may not use the telescope
+    my $backend = $self->backend;
+    if ($backend eq 'scuba2' || $backend eq 'acsis') {
+      $self->{Telescope} = "JCMT";
     }
   }
   return $self->{Telescope};
