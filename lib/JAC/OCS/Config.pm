@@ -1445,8 +1445,8 @@ sub verify {
   # get the observing mode and make sure that we need a target
   my $obs = $self->obsmode;
 
-  # Skydip does not need a target
-  return if $obs =~ /skydip/;
+  # Noise, Flatfield and Skydip do not need a target
+  return if $obs =~ /skydip|noise|flatfield/;
 
   if ($obs =~ /(scan|dream|stare|raster|jiggle|grid)/i) {
 
