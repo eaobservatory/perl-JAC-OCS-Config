@@ -747,15 +747,14 @@ sub _find_skydip {
   $self->skydip_mode( $attrs{TYPE} );
   $self->skydip_velocity( $attrs{VELOCITY} );
 
-  my @elevation_nodes = find_children( $skydip, "ELEVATION", min => 2 );
+  # Can have a single elevation for zenith observations
+  my @elevation_nodes = find_children( $skydip, "ELEVATION", min => 1 );
   my @el;
   for my $element (@elevation_nodes) {
     my $value = $element->firstChild();
     next unless $value;
     push(@el, Astro::Coords::Angle->new( $value->toString, units => 'deg' ) );
   }
-  throw JAC::OCS::Config::Error::FatalError( "Must provide at least 2 elevations to SKYDIP" )
-    unless scalar(@el) > 1;
 
   $self->skydip( @el );
 }
