@@ -47,9 +47,7 @@ our @PARAMS = (qw/
                    FOCUS_AXIS
                    FOCUS_STEP
                    FREQUENCY
-                   HEAT_CUR_START
                    HEAT_CUR_STEP
-                   HEAT_CUR_REF
                    JOS_MIN
                    JOS_MULT
                    NUM_CYCLES
@@ -285,20 +283,6 @@ sub frequency {
   return $self->{FREQUENCY};
 }
 
-=item B<heat_cur_start>
-
-The starting heater current setting.
-
-=cut
-
-sub heat_cur_start {
-  my $self = shift;
-  if (@_) {
-    $self->{HEAT_CUR_START} = shift;
-  }
-  return $self->{HEAT_CUR_START};
-}
-
 =item B<heat_cur_step>
 
 The step size of heater current settings.
@@ -311,20 +295,6 @@ sub heat_cur_step {
     $self->{HEAT_CUR_STEP} = shift;
   }
   return $self->{HEAT_CUR_STEP};
-}
-
-=item B<heat_cur_ref>
-
-The reference heater current setting.
-
-=cut
-
-sub heat_cur_ref {
-  my $self = shift;
-  if (@_) {
-    $self->{HEAT_CUR_REF} = shift;
-  }
-  return $self->{HEAT_CUR_REF};
 }
 
 =item B<jos_min>
