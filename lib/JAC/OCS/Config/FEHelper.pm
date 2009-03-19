@@ -33,7 +33,7 @@ use JAC::OCS::Config::XMLHelper qw(
            find_attr
 				  );
 
-$VERSION = sprintf("%d", q$Revision: 14392 $ =~ /(\d+)/);
+$VERSION = 1.0;
 
 =head1 PUBLIC METHODS
 

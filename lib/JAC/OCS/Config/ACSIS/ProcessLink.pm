@@ -31,7 +31,7 @@ use JAC::OCS::Config::Error qw/ :try /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = sprintf("%d", q$Revision: 11312 $ =~ /(\d+)/);
+$VERSION = 1.0;
 
 =head1 METHODS
 

@@ -37,7 +37,7 @@ use base qw/ JAC::OCS::Config::CfgBase JAC::OCS::Config::FEHelper /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 # map real instrument name to frontend task name
 our %TASKMAP = (

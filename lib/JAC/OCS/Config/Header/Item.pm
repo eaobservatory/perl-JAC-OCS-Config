@@ -30,7 +30,7 @@ use JAC::OCS::Config::Error;
 # Overloading
 use overload '""' => "_stringify_overload";
 
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 # Allowed types
 my %Allowed_Types = ( 

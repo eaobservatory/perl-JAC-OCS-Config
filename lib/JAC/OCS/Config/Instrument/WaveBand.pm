@@ -34,7 +34,7 @@ use constant CLIGHT => 299792458;
 
 use vars qw/ $VERSION /;
 
-$VERSION = sprintf("%d", q$Revision: 15238 $ =~ /(\d+)/);
+$VERSION = 1.0;
 
 =head1 METHODS
 

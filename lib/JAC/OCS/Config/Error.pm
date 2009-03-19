@@ -270,7 +270,7 @@ use strict;
 
 use vars qw/$VERSION/;
 
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 # flush method added to the base class
 use base qw/ Error::Simple /;

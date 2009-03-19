@@ -33,7 +33,7 @@ use JAC::OCS::Config::Interval;
 use base qw/ Exporter /;
 use vars qw/ $VERSION @EXPORT_OK /;
 
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 @EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
 		  get_this_pcdata find_attr_child find_attrs_and_pcdata

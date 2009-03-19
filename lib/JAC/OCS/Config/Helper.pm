@@ -28,7 +28,7 @@ use JAC::OCS::Config::Error qw/ :try /;
 use base qw/ Exporter /;
 use vars qw/ $VERSION @EXPORT_OK /;
 
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 @EXPORT_OK = qw(
 		check_class

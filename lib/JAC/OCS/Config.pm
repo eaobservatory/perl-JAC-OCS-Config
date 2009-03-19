@@ -67,7 +67,7 @@ use JAC::OCS::Config::XMLHelper qw(
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION $DEBUG /;
-$VERSION = sprintf("%d", q$Revision$ =~ /(\d+)/);
+$VERSION = 1.0;
 
 # Debug messages
 $DEBUG = 0;
