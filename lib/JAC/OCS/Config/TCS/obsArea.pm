@@ -36,10 +36,10 @@ use Astro::Coords::Offset;
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::Helper qw/ check_class_fatal check_class /;
 use JAC::OCS::Config::XMLHelper qw/ find_children find_attr 
-				    indent_xml_string
-				    /;
+                                    indent_xml_string
+                                  /;
 use JAC::OCS::Config::TCS::Generic qw/ find_pa find_offsets 
-				       pa_to_xml offset_to_xml /;
+                                       pa_to_xml offset_to_xml /;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -55,7 +55,7 @@ my @SCAN_PATTERNS = qw/ RASTER
                         ROUNDED_PONG
                         CURVY_PONG
                         LISSAJOUS
-                        /;
+                      /;
 # hash for easy checks
 my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
 
@@ -88,14 +88,14 @@ sub new {
 
   # Now call base class with all the supplied options
   return $self->SUPER::new( @_,
-			    $JAC::OCS::Config::CfgBase::INITKEY => { 
-								    MAPAREA => {},
-								    OFFSETS => [],
+                            $JAC::OCS::Config::CfgBase::INITKEY => { 
+                                                                    MAPAREA => {},
+                                                                    OFFSETS => [],
                                                                     MS_OFFSETS => [],
                                                                     ELEVATIONS => [],
-								    SCAN => {},
-								   }
-			  );
+                                                                    SCAN => {},
+                                                                   }
+                          );
 }
 
 =back
@@ -143,9 +143,9 @@ sub microsteps {
   if (@_) {
     my @valid = check_class( "Astro::Coords::Offset", @_ );
     warnings::warnif("No micro steps passed validation.")
-	unless @valid;
+        unless @valid;
     @{$self->{MS_OFFSETS}} = @valid;
-    $self->old_dtd(0); # this is modern DTD
+    $self->old_dtd(0);          # this is modern DTD
   }
   if (wantarray) {
     return @{$self->{MS_OFFSETS}};
@@ -184,7 +184,7 @@ sub offsets {
   if (@_) {
     my @valid = check_class( "Astro::Coords::Offset", @_ );
     warnings::warnif("No offsets passed validation.")
-	unless @valid;
+        unless @valid;
     @{$self->{OFFSETS}} = @valid;
   }
   if (wantarray) {
@@ -333,7 +333,7 @@ sub skydip {
   if (@_) {
     my @valid = check_class( "Astro::Coords::Angle", @_ );
     warnings::warnif("No elevations passed validation.")
-	unless @valid;
+        unless @valid;
     # Check range
     for my $e (@valid) {
       my $deg = $e->degrees;
@@ -345,7 +345,7 @@ sub skydip {
     @valid = sort { $a->degrees <=> $b->degrees } @valid; 
 
     @{$self->{ELEVATIONS}} = @valid;
-    $self->old_dtd(0); # this is modern DTD
+    $self->old_dtd(0);          # this is modern DTD
   }
   if (wantarray) {
     return @{$self->{ELEVATIONS}};
@@ -435,7 +435,9 @@ Default is false.
 
 sub old_dtd {
   my $self = shift;
-  if (@_) { $self->{OLD_DTD} = shift; }
+  if (@_) {
+    $self->{OLD_DTD} = shift;
+  }
   return $self->{OLD_DTD};
 }
 
@@ -633,9 +635,9 @@ sub _find_posang {
 
   # Should only be one PA here
   my @pa = find_pa( $self->_rootnode,
-		    max => 1,
-		    min => 0,
-		  );
+                    max => 1,
+                    min => 0,
+                  );
 
   # store the angle
   $self->posang( $pa[0] ) if @pa;
@@ -712,8 +714,8 @@ sub _find_scan_area {
 
   # Attributes of scan
   my %scan_info = find_attr( $scan, 
-			     "VELOCITY","SYSTEM","DY","REVERSAL",
-			     "TYPE", "PATTERN");
+                             "VELOCITY","SYSTEM","DY","REVERSAL",
+                             "TYPE", "PATTERN");
 
   # Allowed position angles of scan
   # PONG does not need one
