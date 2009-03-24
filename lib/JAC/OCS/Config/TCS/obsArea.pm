@@ -315,6 +315,58 @@ sub scan_pattern {
   }
 }
 
+=item B<is_zenith_mode>
+
+Indicate that this is an observation at the zenith. The particular Zenith elevation
+can be controlled by using the zenith() method (Similar to skydip mode).
+
+  $is = $oa->is_zenith_mode();
+  $oa->is_zenith_mode( 1 );
+
+=cut
+
+sub is_zenith_mode {
+  my $self = shift;
+  if (@_) {
+    $self->{IS_ZENITH_MODE} = shift;
+  }
+  return $self->{IS_ZENITH_MODE};
+}
+
+=item B<zenith>
+
+Store the Zenith elevation as an Astro::Coords::Angle object. This is
+similar to a skydip specification except that a single elevation is
+mandated.
+
+  $oa->zenith( $el );
+  $el = $oa->zenith();
+
+An undefined value can be used to indicate a default zenith elevation.
+Angles are only accessed if is_zenith_mode() is true.
+
+Calling this method with arguments (even undefined value) will force
+is_zenith_mode() to true.
+
+=cut
+
+sub zenith {
+  my $self = shift;
+  if (@_) {
+    my $el = shift;
+    if (defined $el) {
+      my @valid = $self->_validate_elevations( $el );
+      $el = $valid[0];
+    }
+    @{$self->{ELEVATIONS}} = ( $el );
+    $self->old_dtd(0);          # this is modern DTD
+    $self->is_zenith_mode(1);
+  }
+  # Avoid creating an undef entry explicitly unless one is already present
+  my @el = @{ $self->{ELEVATIONS} };
+  return $el[0];
+}
+
 =item B<skydip>
 
 Store or retrieve the elevations that should be visited by the telescope during the skydip.
@@ -331,31 +383,15 @@ The elevation angles are sorted (the TCS requires that but will choose to scan i
 sub skydip {
   my $self = shift;
   if (@_) {
-    my @valid = check_class( "Astro::Coords::Angle", @_ );
-    warnings::warnif("No elevations passed validation.")
-        unless @valid;
-    # Check range
-    for my $e (@valid) {
-      my $deg = $e->degrees;
-      throw JAC::OCS::Config::Error::FatalError("Elevation must be in range 0 < el < 90 degrees (not '$deg' degrees)")
-        if ($deg <= 0 || $deg > 90);
-    }
-
-    # Sort
-    @valid = sort { $a->degrees <=> $b->degrees } @valid; 
-
-    @{$self->{ELEVATIONS}} = @valid;
+    @{$self->{ELEVATIONS}} = $self->_validate_elevations( @_ );
     $self->old_dtd(0);          # this is modern DTD
   }
   if (wantarray) {
     return @{$self->{ELEVATIONS}};
   } else {
     # do not want to create an undef entry
-    if (scalar @{$self->{ELEVATIONS}}) {
-      return $self->{ELEVATIONS}->[0];
-    } else {
-      return undef;
-    }
+    my @el = @{$self->{ELEVATIONS}};
+    return $el[0];
   }
 }
 
@@ -393,10 +429,28 @@ sub skydip_velocity {
   return $self->{SKYDIP_VELOCITY};
 }
 
+=item B<is_sky_mode>
+
+If true, this is a simple observing area instructing the telescope to continue tracking
+its current position. It should be used when the telescope position is to be read but
+where the actual position is not important.
+
+=cut
+
+sub is_sky_mode {
+  my $self = shift;
+  if (@_) {
+    $self->{IS_SKY_MODE} = shift;
+    $self->old_dtd(0);          # this is modern DTD
+  }
+  return $self->{IS_SKY_MODE};
+}
+
+
 =item B<mode>
 
 Return the type of observing area that has been specified.
-Can be either "offsets", "skydip" or "area". Offsets and 
+Can be either "sky", "zenith", "offsets", "skydip" or "area". Offsets and
 micro-steps can be provided for "area" mode (only the first
 of each are used).
 
@@ -406,14 +460,18 @@ sub mode {
   my $self = shift;
 
   my $mode = '';
-  if ($self->maparea) {
+  if ($self->is_sky_mode) {
+    $mode = "sky";
+  } elsif ($self->is_zenith_mode) {
+    $mode = "zenith";
+  } elsif ($self->maparea) {
     $mode = "area";
   } elsif ($self->skydip) {
     $mode = "skydip";
   } elsif ($self->offsets || $self->microsteps) {
     $mode = "offsets";
   } else {
-    croak "obsArea must be either offsets, skydip or map area";
+    croak "obsArea must be sky, zenith, offsets, skydip or (map) area";
   }
   return $mode;
 }
@@ -541,6 +599,21 @@ sub stringify {
 
     $xml .= "</SKYDIP>\n";
 
+  } elsif ($mode eq 'sky') {
+
+    $xml .= "<SKY/>\n";
+
+  } elsif ($mode eq 'zenith') {
+
+    my $el = $self->zenith();
+    if (defined $el) {
+      use Data::Dumper; print Dumper($el);
+      $xml .= "<ZENITH>\n";
+      $xml .= "<ELEVATION>". $el->degrees ."</ELEVATION>\n";
+      $xml .= "</ZENITH>\n";
+    } else {
+      $xml .= "<ZENITH/>\n";
+    }
 
   } else {
     croak "Unrecognized obsArea mode '$mode'";
@@ -619,6 +692,12 @@ sub _process_dom {
 
   # Look for a skydip
   $self->_find_skydip();
+
+  # Look for sky
+  $self->_find_sky();
+
+  # Look for Zenith
+  $self->_find_zenith();
 
   return;
 }
@@ -749,16 +828,108 @@ sub _find_skydip {
   $self->skydip_mode( $attrs{TYPE} );
   $self->skydip_velocity( $attrs{VELOCITY} );
 
-  # Can have a single elevation for zenith observations
-  my @elevation_nodes = find_children( $skydip, "ELEVATION", min => 1 );
+  # Must have 2 elements in mode SCAN, 2 or more in discrete
+  my %minmax = ( min => 2 );
+  if ($attrs{TYPE} eq 'CONTINUOUS') {
+    $minmax{max} = 2;
+  }
+
+  my @el = $self->_find_elevations( $skydip, %minmax );
+  $self->skydip( @el );
+}
+
+=item B<_find_skydip>
+
+Look for evidence of zenith in the XML.
+
+The object is updated.
+
+=cut
+
+sub _find_zenith {
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  my $zen = find_children( $root, "ZENITH", max => 1 );
+  return unless defined $zen;
+
+  # must have 0 or 1 elevations for Zenith
+  my @el = $self->_find_elevations( $zen, min => 0, max => 1 );
+  # force a single value which can be undef
+  $self->zenith( $el[0] );
+}
+
+=item B<_find_sky>
+
+Look for evidence of SKY in the XML.
+
+The object is updated.
+
+=cut
+
+sub _find_sky {
+  my $self = shift;
+  my $root = $self->_rootnode;
+
+  my $sky = find_children( $root, "SKY", max => 1 );
+  $self->is_sky_mode(1) if defined $sky;
+  return;
+}
+
+=item B<_find_elevations>
+
+Returns any elevation elements as a list of Astro::Coords::Angle objects.
+
+  @el = $self->_find_elevations( $el, min => 1, max => 2 );
+
+First argument is a node that should contain ELEVATION elements. The remaining
+arguments are hash items that will be passed to find_children to constrain error
+conditions.
+
+Does not modify the object.
+
+=cut
+
+sub _find_elevations {
+  my $self = shift;
+  my $root = shift;
+  my %opt = @_;
+  my @elevation_nodes = find_children( $root, "ELEVATION", %opt );
+
   my @el;
   for my $element (@elevation_nodes) {
     my $value = $element->firstChild();
     next unless $value;
     push(@el, Astro::Coords::Angle->new( $value->toString, units => 'deg' ) );
   }
+  return @el;
+}
 
-  $self->skydip( @el );
+=item B<_validate_elevations>
+
+Verify arguments are valid elevations (Astro::Coords::Angle objects of
+the correct range. The elevations are returned.
+
+  @valid = $self->_validate_elevations( @el );
+
+=cut
+
+sub _validate_elevations {
+  my $self = shift;
+  my @valid = check_class( "Astro::Coords::Angle", @_ );
+  warnings::warnif("No elevations passed validation.")
+      unless @valid;
+  # Check range
+  for my $e (@valid) {
+    my $deg = $e->degrees;
+    throw JAC::OCS::Config::Error::FatalError("Elevation must be in range 0 < el < 90 degrees (not '$deg' degrees)")
+      if ($deg <= 0 || $deg > 90);
+  }
+
+  # Sort
+  @valid = sort { $a->degrees <=> $b->degrees } @valid; 
+
+  return @valid;
 }
 
 =back
@@ -769,7 +940,7 @@ sub _find_skydip {
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright (C) 2007 Science and Technology Facilities Council.
+Copyright (C) 2007 - 2009 Science and Technology Facilities Council.
 Copyright (C) 2004 - 2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
