@@ -505,15 +505,16 @@ sub stringify {
         unless exists $Source_Info{$self->source};
 
     $xml .= "<". $Source_Info{$self->source}{XML}. " ";
-    for my $a (@{$Source_Info{$self->source}{Attrs}}) {
-      my $method = lc($a);
+    for my $attr (@{$Source_Info{$self->source}{Attrs}}) {
+      my $method = lc($attr);
 
       # special case MULT=1 since this has no useful meaning
       # but is inserted by the parser via the DTD. Some subsystems
       # get upset if it turns up for CHARACTER headers.
-      next if ($a eq 'MULT' && $self->$method == 1);
+      my $value = $self->$method;
+      next if ($attr eq 'MULT' && defined $value && $value == 1);
 
-      $xml .= "$a=\"" . $self->$method . '" ' if $self->$method;
+      $xml .= "$attr=\"" . $value . '" ' if defined $value;
     }
     $xml .= "/>\n";
     $xml .= "</$head_elem>\n";

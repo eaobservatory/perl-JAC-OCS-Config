@@ -88,6 +88,7 @@ sub new {
 								    XYPOS => [],
 								    POINTING_OFF => {},
 								    SMU_OFF => [],
+								    WaveBands => {},
 								   }
 			  );
 }

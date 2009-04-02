@@ -124,6 +124,7 @@ sub restfreq {
 
 sub _cleanup {
   my $x = shift;
+  return unless defined $x;
   $x =~ s/^\s*//;
   $x =~ s/\s*$//;
   return $x;
