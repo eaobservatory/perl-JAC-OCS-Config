@@ -57,6 +57,42 @@ my %RecepSubArray = (
                      continuum => [qw/ mceport chipId flatfile task dreamweightfile /],
 );
 
+# Default waveBand information if the waveBand element is missing
+# Indexed by SERIAL.
+
+my %DefaultWaveBand = (
+                       RXA3 => {
+                                band => "Aband",
+                                label => "A",
+                                units => "Hz",
+                                centre => 244E9,
+                                width => 66E9,
+                                etal => 0.90,
+                               },
+                       HARP => {
+                                band => "B",
+                                label => "Hz",
+                                centre => 350E9,
+                                width => 52E9,
+                                etal => 0.85,
+                               },
+                       RXB3 => {
+                                band => "B",
+                                label => "Hz",
+                                centre => 350E9,
+                                width => 52E9,
+                                etal => 0.85,
+                               },
+                       RXWD2 => {
+                                band => "D",
+                                label => "Hz",
+                                centre => 667.5E9,
+                                width => 85E9,
+                                etal => 0.5,
+                               },
+);
+
+
 =head1 METHODS
 
 =head2 Constructor
@@ -776,31 +812,46 @@ sub _process_dom {
   }
 
   # Wave Band (older files will not have this)
+  my $defaultWB;
   my @wb = find_children( $el, "waveBand", min => 0);
   my %WaveBand;
-  for my $w (@wb) {
-    my %wbattr = find_attr( $w, "band", "label", "units", "centre", "width" );
-    JAC::OCS::Config::Error::XMLBadStructure->throw("No band attribute in waveBand element") unless exists $wbattr{band};
-    $WaveBand{$wbattr{band}} = JAC::OCS::Config::Instrument::WaveBand->new( %wbattr );
+  if (@wb) {
+    for my $w (@wb) {
+      my %wbattr = find_attr( $w, "band", "label", "units", "centre", "width" );
+      JAC::OCS::Config::Error::XMLBadStructure->throw("No band attribute in waveBand element")
+          unless exists $wbattr{band};
+      $WaveBand{$wbattr{band}} = JAC::OCS::Config::Instrument::WaveBand->new( %wbattr );
 
-    # ETAL
-    my @etal_elem = find_children( $w, "etal", min=>1);
-    my %etal;
-    for my $e (@etal_elem) {
-      my $freq = find_attr( $e, "freq");
-      if (!defined $freq && @etal_elem > 1) {
-        JAC::OCS::Config::Error::XMLBadStructure->throw("Multiple etal entries require mandatory freq attributes");
-      } elsif (!defined $freq) {
-        $freq = 0;
+      # ETAL
+      my @etal_elem = find_children( $w, "etal", min=>1);
+      my %etal;
+      for my $e (@etal_elem) {
+        my $freq = find_attr( $e, "freq");
+        if (!defined $freq && @etal_elem > 1) {
+          JAC::OCS::Config::Error::XMLBadStructure->throw("Multiple etal entries require mandatory freq attributes");
+        } elsif (!defined $freq) {
+          $freq = 0;
+        }
+        if (!exists $etal{$freq}) {
+          my $etal = get_this_pcdata( $e );
+          $etal{$freq} = $etal;
+        } else {
+          JAC::OCS::Config::Error::XMLBadStructure->throw("etal element refers to previous frequency");
+        }
       }
-      if (!exists $etal{$freq}) {
-        my $etal = get_this_pcdata( $e );
-        $etal{$freq} = $etal;
-      } else {
-        JAC::OCS::Config::Error::XMLBadStructure->throw("etal element refers to previous frequency");
-      }
+      $WaveBand{$wbattr{band}}->etal( %etal );
     }
-    $WaveBand{$wbattr{band}}->etal( %etal );
+  } else {
+    # Fill in missing waveband information based on serial
+    my $serial = uc($self->serial);
+    if (exists $DefaultWaveBand{$serial}) {
+      my %bandinfo = %{$DefaultWaveBand{$serial}};
+      $defaultWB = JAC::OCS::Config::Instrument::WaveBand->new( %bandinfo);
+      $WaveBand{$bandinfo{band}} = $defaultWB; 
+      $defaultWB->etal( 0 => $bandinfo{etal} );
+    } else {
+      JAC::OCS::Config::Error::XMLBadStructure->throw( "Unable to locate default waveband information for $serial");
+    }
   }
   $self->wavebands( %WaveBand );
 
@@ -856,7 +907,10 @@ sub _process_dom {
     # Deal with waveband - replace with object
     my $band = $attr{band};
     if (!defined $band) {
-      delete $attr{band};
+      # use the default value from above if it is all missing
+      if (defined $defaultWB) {
+        $attr{band} = $defaultWB;
+      }
     } else {
       JAC::OCS::Config::Error::XMLBadStructure->throw("Band '".(defined $band ? $band : "<undef>").
                                                       "' not listed in waveBand element")
