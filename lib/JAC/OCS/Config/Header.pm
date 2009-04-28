@@ -293,6 +293,8 @@ handle is used.
 
   @toexclude = $hdr->read_header_exclusion_file($file, my $verbose = 1, \*STDERR );
 
+A class method.
+
 =cut
 
 sub read_header_exclusion_file {
