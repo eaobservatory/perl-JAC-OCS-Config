@@ -274,6 +274,56 @@ sub smu_mode {
   return $mode;
 }
 
+=item B<chop_frequency>
+
+Provide an estimate of the chop frequency if this configuration corresponds
+to a chopped observation. Returns undef if not chopping.
+
+  $freq = $smu->chop_frequency();
+
+By default, returns the frequency in steps^-1. If a step time is provided as
+an argument (in seconds) the frequency is returned in Hz.
+
+DREAM not currently supported.
+
+=cut
+
+# The algorithm is defined inside the SMU in smu_setup_sequence.c
+# The aim is to match that algorithm but it can not be guaranteed that
+# it won't change.
+
+sub chop_frequency {
+  my $self = shift;
+  my $steptime = (shift || 1.0);
+
+  # The calculation use a nominal chop blanking time (see smu_setup_sequence.c)
+  my $nominal_chop_blank_time = 0.025; # seconds
+
+  my $mode = $self->smu_mode();
+  my $freq;
+  if ($mode =~ /chop/) {
+    if ($mode eq 'chop' || $mode eq 'chop_jiggle') {
+      my $nsteps = 1 + 1; # chop each step
+      $freq = 1.0 / ( $nsteps * ( $steptime + $nominal_chop_blank_time ) );
+
+    } elsif ($mode eq 'jiggle_chop') {
+      my %timing = $self->timing;
+      if (!exists $timing{N_JIGS_ON} && !exists $timing{N_CYC_OFF}) {
+        JAC::OCS::Config::Error::FatalError->throw("Meant to be jiggle/chop but not enough information");
+      }
+      my $nsteps = $timing{N_JIGS_ON} + $timing{N_CYC_OFF};
+      $freq = 1.0 / (( $nsteps * $steptime ) +
+                     ( 2.0 * $nominal_chop_blank_time ) +
+                     ( ($timing{N_JIGS_ON} - 1) * $nominal_chop_blank_time ));
+
+    } else {
+      JAC::OCS::Config::Error::FatalError->throw("Unrecognized SMU mode '$mode'");
+    }
+  }
+  return $freq;
+}
+
+
 =item B<stringify>
 
 Convert the class into XML form. This is either achieved simply by
