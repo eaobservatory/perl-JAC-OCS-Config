@@ -987,7 +987,7 @@ sub duration_acsis {
     # Number of sequences is number of rows plus number of refs
     $nseq = $nrefs + $nscans;
 
-  } elsif ($map_mode eq 'jiggle' && ($sw_mode eq 'chop' || $sw_mode eq 'freqsw')) {
+  } elsif ($map_mode eq 'jiggle' && $sw_mode =~ /^(chop|freqsw)$/ ) {
 
     # ABBA nodding except for focus (AB)
     # No position switch
@@ -1055,9 +1055,30 @@ sub duration_acsis {
       print "No nodding\n" if $DEBUG;
       $nseq = $jos->num_cycles;
 
+      # 2 switches for frequency switch
+      $nsteps *= 2 * $jos->num_cycles;
+
     } else {
       throw JAC::OCS::Config::Error::FatalError("Unable to determine duration since there is an unexpected switch mode in jiggle: $sw_mode");
     }
+
+  } elsif ($map_mode eq 'grid' && $sw_mode eq 'freqsw') {
+    # Just offsets. No chopping or nodding
+
+    # consistency check
+    my $mode = $oa->mode;
+    throw JAC::OCS::Config::Error::FatalError("Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
+      unless $mode =~ /offsets/i;
+
+    # Work out how many offsets we have
+    my @offsets = $oa->offsets;
+    my $noffsets = scalar(@offsets);
+
+    # Number of steps in a single sequence times the number of cycles
+    $nsteps = $jos->jos_mult * 2 * $jos->num_cycles;
+
+    # Number of sequence starts is just the number of offsets
+    $nseq = $jos->num_cycles * $noffsets;
 
   } elsif ($map_mode eq 'grid' && $sw_mode eq 'chop') {
 
