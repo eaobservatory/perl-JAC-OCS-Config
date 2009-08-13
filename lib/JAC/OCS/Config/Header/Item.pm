@@ -514,7 +514,7 @@ sub stringify {
       my $value = $self->$method;
       next if ($attr eq 'MULT' && defined $value && $value == 1);
 
-      $xml .= "$attr=\"" . $value . '" ' if defined $value;
+      $xml .= "$attr=\"" . $value . '" ' if $value;
     }
     $xml .= "/>\n";
     $xml .= "</$head_elem>\n";
