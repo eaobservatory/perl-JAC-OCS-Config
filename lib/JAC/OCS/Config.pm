@@ -44,6 +44,7 @@ use JCMT::SMU::Jiggle;
 use JCMT::TCS::Pong;
 
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Version;
 
 use JAC::OCS::Config::ObsSummary;
 use JAC::OCS::Config::TCS;
@@ -1635,6 +1636,9 @@ sub stringify {
   # Make sure that we have the correct task names
   $self->_sync_cont_status();
 
+  # Get the repository version information
+  my $repover = JAC::OCS::Config::Version::version();
+
   # Standard declaration plus DTD
   $xml .= '<?xml version="1.0" encoding="US-ASCII"?>' .
     '<!DOCTYPE OCS_CONFIG  SYSTEM  "/jac_sw/itsroot//ICD/001/ocs.dtd">' .
@@ -1644,7 +1648,8 @@ sub stringify {
 
   # Insert any comment. Including a default comment.
   my $comment = "Rendered as XML on ". gmtime() . "UT using Perl module\n";
-  $comment .= ref($self) . " version $VERSION Perl version $]\n";
+  $comment .= ref($self) . " version $VERSION ($repover)\nPerl version $]\n";
+  $comment .= "\@INC =\n". join("\n  ", @INC);
   if ($self->comment) {
     # prepend
     $comment = $self->comment ."\n" . $comment;

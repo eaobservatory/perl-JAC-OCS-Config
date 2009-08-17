@@ -25,6 +25,7 @@ use File::Basename qw/ dirname /;
 use Cwd qw/ getcwd /;
 
 use JAC::OCS::Config::Error qw/ :try /;
+use JAC::OCS::Config::Version;
 
 use vars qw/ $VERSION $INITKEY /;
 
@@ -613,10 +614,13 @@ name and version number.
 sub _introductory_xml {
   my $self = shift;
 
+  # Get the repository version information
+  my $repover = JAC::OCS::Config::Version::version();
+
   # Use the VERSION method inherited from UNIVERSAL
   my $version = $self->VERSION;
 
-  my $xml = "<!--\nCreated using class ".ref($self). " V$version\n";
+  my $xml = "<!--\nCreated using class ".ref($self). "V$version\n($repover)\n";
 
   # for debugging of translations, we really need to know the
   # inheritance version numbers. This is hairy code using symbolic
