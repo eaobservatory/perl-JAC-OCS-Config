@@ -68,7 +68,7 @@ use JAC::OCS::Config::XMLHelper qw(
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION $DEBUG /;
-$VERSION = 1.0;
+$VERSION = "1.01";
 
 # Debug messages
 $DEBUG = 0;

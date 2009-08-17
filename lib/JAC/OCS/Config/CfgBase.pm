@@ -36,7 +36,7 @@ use overload '""' => "_stringify_overload";
 # to supply additional init values to the constructor
 $INITKEY = '__init';
 
-$VERSION = 1.0;
+$VERSION = "1.01";
 
 =head1 METHODS
 

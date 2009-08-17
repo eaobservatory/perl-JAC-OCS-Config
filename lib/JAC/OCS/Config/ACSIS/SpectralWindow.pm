@@ -57,7 +57,7 @@ use JAC::OCS::Config::Helper qw/ check_class_fatal check_class_hash_fatal /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = 1.0;
+$VERSION = "1.01";
 
 =head1 METHODS
 

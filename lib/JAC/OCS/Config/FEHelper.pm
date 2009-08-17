@@ -33,7 +33,7 @@ use JAC::OCS::Config::XMLHelper qw(
            find_attr
 				  );
 
-$VERSION = 1.0;
+$VERSION = "1.01";
 
 =head1 PUBLIC METHODS
 

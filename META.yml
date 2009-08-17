@@ -1,6 +1,6 @@
 ---
 name: JAC-OCS-Config
-version: 1
+version: 1.01
 author:
   - 'Tim X. Jenness <t.jenness@jach.hawaii.edu>'
 abstract: JCMT OCS Configuration file parsing and writing
@@ -20,76 +20,76 @@ configure_requires:
 provides:
   JAC::OCS::Config:
     file: lib/JAC/OCS/Config.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS:
     file: lib/JAC/OCS/Config/ACSIS.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ACSIS_CORR:
     file: lib/JAC/OCS/Config/ACSIS/ACSIS_CORR.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ACSIS_IF:
     file: lib/JAC/OCS/Config/ACSIS/ACSIS_IF.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ACSIS_MAP:
     file: lib/JAC/OCS/Config/ACSIS/ACSIS_MAP.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::Cube:
     file: lib/JAC/OCS/Config/ACSIS/Cube.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::CubeList:
     file: lib/JAC/OCS/Config/ACSIS/CubeList.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::GridderConfig:
     file: lib/JAC/OCS/Config/ACSIS/GridderConfig.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::IFCoord:
     file: lib/JAC/OCS/Config/ACSIS/IFCoord.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::InterfaceList:
     file: lib/JAC/OCS/Config/ACSIS/InterfaceList.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::Line:
     file: lib/JAC/OCS/Config/ACSIS/Line.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::LineList:
     file: lib/JAC/OCS/Config/ACSIS/LineList.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ProcessLayout:
     file: lib/JAC/OCS/Config/ACSIS/ProcessLayout.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ProcessLink:
     file: lib/JAC/OCS/Config/ACSIS/ProcessLink.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::ProcessLinks:
     file: lib/JAC/OCS/Config/ACSIS/ProcessLinks.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::RTDConfig:
     file: lib/JAC/OCS/Config/ACSIS/RTDConfig.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::RedConfigList:
     file: lib/JAC/OCS/Config/ACSIS/RedConfigList.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::SPWList:
     file: lib/JAC/OCS/Config/ACSIS/SPWList.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::SWriterConfig:
     file: lib/JAC/OCS/Config/ACSIS/SWriterConfig.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::SemanticLinks:
     file: lib/JAC/OCS/Config/ACSIS/SemanticLinks.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::Simulation:
     file: lib/JAC/OCS/Config/ACSIS/Simulation.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ACSIS::SpectralWindow:
     file: lib/JAC/OCS/Config/ACSIS/SpectralWindow.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::CfgBase:
     file: lib/JAC/OCS/Config/CfgBase.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Error:
     file: lib/JAC/OCS/Config/Error.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Error::Authentication:
     file: lib/JAC/OCS/Config/Error.pm
   JAC::OCS::Config::Error::BadArgs:
@@ -114,66 +114,66 @@ provides:
     file: lib/JAC/OCS/Config/Error.pm
   JAC::OCS::Config::FEHelper:
     file: lib/JAC/OCS/Config/FEHelper.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Frontend:
     file: lib/JAC/OCS/Config/Frontend.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Header:
     file: lib/JAC/OCS/Config/Header.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Header::Item:
     file: lib/JAC/OCS/Config/Header/Item.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Helper:
     file: lib/JAC/OCS/Config/Helper.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Instrument:
     file: lib/JAC/OCS/Config/Instrument.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Instrument::WaveBand:
     file: lib/JAC/OCS/Config/Instrument/WaveBand.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Interval:
     file: lib/JAC/OCS/Config/Interval.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::JOS:
     file: lib/JAC/OCS/Config/JOS.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::ObsSummary:
     file: lib/JAC/OCS/Config/ObsSummary.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::POL:
     file: lib/JAC/OCS/Config/POL.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::RTS:
     file: lib/JAC/OCS/Config/RTS.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::SCUBA2:
     file: lib/JAC/OCS/Config/SCUBA2.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::TCS:
     file: lib/JAC/OCS/Config/TCS.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::TCS::BASE:
     file: lib/JAC/OCS/Config/TCS/BASE.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::TCS::Generic:
     file: lib/JAC/OCS/Config/TCS/Generic.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::TCS::Secondary:
     file: lib/JAC/OCS/Config/TCS/Secondary.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::TCS::obsArea:
     file: lib/JAC/OCS/Config/TCS/obsArea.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Units:
     file: lib/JAC/OCS/Config/Units.pm
-    version: 1
+    version: 1.01
   JAC::OCS::Config::Version:
     file: lib/JAC/OCS/Config/Version.pm
   JAC::OCS::Config::XMLHelper:
     file: lib/JAC/OCS/Config/XMLHelper.pm
-    version: 1
+    version: 1.01
 generated_by: Module::Build version 0.3306
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html

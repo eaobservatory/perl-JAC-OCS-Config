@@ -37,7 +37,7 @@ use base qw/ JAC::OCS::Config::CfgBase JAC::OCS::Config::FEHelper /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = 1.0;
+$VERSION = "1.01";
 
 =head1 METHODS
 
