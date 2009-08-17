@@ -1,4 +1,8 @@
 Makefile
 blib/
 pm_to_blib
-
+_build/
+lib/JAC/OCS/Config/Version.pm
+*.bak
+Makefile.old
+Build
