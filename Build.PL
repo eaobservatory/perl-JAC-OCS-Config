@@ -17,7 +17,7 @@ my $build = $class->new
    module_name => 'JAC::OCS::Config',
    license  => 'gpl',
    dist_abstract => 'JCMT OCS Configuration file parsing and writing',
-   dist_author => 'Tim X. Jenness <t.jenness@jach.hawaii.edu>',
+   dist_author => 'Tim Jenness <t.jenness@jach.hawaii.edu>',
    meta_merge => {
                resources =>  {repository => "git:///jac_sw/gitroot/perl-JAC-OCS-Config.git"},
                 },
