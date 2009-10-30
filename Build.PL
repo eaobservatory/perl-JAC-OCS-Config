@@ -26,6 +26,9 @@ my $build = $class->new
                 'XML::LibXML'  => 0,
                 'Astro::Coords' => 0.05,
                 'Astro::Coords::Offset' => 0,
+                'JCMT::SMU::Jiggle' => 0,
+                'JCMT::TCS::Pong' => 0,
+                'JCMT::ACSIS::HWMap' => 0,
                },
    build_requires => {
                       'Test::More' => 0,
