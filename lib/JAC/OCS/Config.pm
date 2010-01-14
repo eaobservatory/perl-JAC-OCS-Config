@@ -711,7 +711,6 @@ sub duration_scuba2 {
     my %scan = $oa->scan;
     my %map = $oa->maparea;
 
-
     # Variable for duration of a single map area
     my $steps_per_map = 0;
 
@@ -746,6 +745,16 @@ sub duration_scuba2 {
 
       my $time_per_map = JCMT::TCS::Pong::get_pong_dur( %map, %scan );
       $steps_per_map = $time_per_map / $jos->step_time;
+
+    } elsif ( $pattern =~ /ellipse/i) {
+      use Math::Trig ':pi';
+      my $rx = $map{WIDTH};
+      my $ry = $map{HEIGHT};
+      # Calculate an approximate "radius" for the ellipse
+      my $r = sqrt( ( $rx*$rx + $ry*$ry ) / 2.0 );
+      my $perimeter = 2.0 * pi * $r;
+      my $duration_per_area = $perimeter / $scan{VELOCITY};
+      $steps_per_map = int( $duration_per_area / $jos->step_time + 0.5) + 1;
 
     } else {
       JAC::OCS::Config::Error::FatalError->throw("Scan pattern '$pattern' not recognized");

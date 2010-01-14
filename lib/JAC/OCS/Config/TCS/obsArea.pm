@@ -55,6 +55,7 @@ my @SCAN_PATTERNS = qw/ RASTER
                         ROUNDED_PONG
                         CURVY_PONG
                         LISSAJOUS
+                        ELLIPSE
                       /;
 # hash for easy checks
 my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
@@ -294,6 +295,7 @@ Recognized patterns are:
   ROUNDED_PONG
   CURVY_PONG
   LISSAJOUS   (curvy_pong with nterms=1)
+  ELLIPSE
 
 If no pattern has been specified, the default is DISCRETE_BOUSTROPHEDON.
 
@@ -569,7 +571,7 @@ sub stringify {
 
     $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
     $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n" if defined $scan{SYSTEM};
-    $xml .= "      DY=\"$scan{DY}\"\n";
+    $xml .= "      DY=\"$scan{DY}\"\n" if defined $scan{DY};
     $xml .= "      REVERSAL=\"$reversal\"\n" if defined $reversal;
     $xml .= "      TYPE=\"$scan{TYPE}\"\n" if defined $scan{TYPE};
     $xml .= "      PATTERN=\"$scan{PATTERN}\"\n" if defined $pattern;
