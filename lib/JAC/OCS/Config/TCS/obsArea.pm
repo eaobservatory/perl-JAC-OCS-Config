@@ -56,6 +56,7 @@ my @SCAN_PATTERNS = qw/ RASTER
                         CURVY_PONG
                         LISSAJOUS
                         ELLIPSE
+                        DAISY
                       /;
 # hash for easy checks
 my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
@@ -296,6 +297,7 @@ Recognized patterns are:
   CURVY_PONG
   LISSAJOUS   (curvy_pong with nterms=1)
   ELLIPSE
+  DAISY
 
 If no pattern has been specified, the default is DISCRETE_BOUSTROPHEDON.
 

@@ -756,6 +756,14 @@ sub duration_scuba2 {
       my $duration_per_area = $perimeter / $scan{VELOCITY};
       $steps_per_map = int( $duration_per_area / $jos->step_time + 0.5) + 1;
 
+    } elsif ( $pattern =~ /daisy/i) {
+      use Math::Trig ':pi';
+      # From Per Friberg
+      my $r0 = ($map{WIDTH}+$map{HEIGHT}) / 4;
+      my $o = $map{VELOCITY} / $map{DY} / $r0;
+      my $O = $o / 10.1;
+      my $duration_per_area = 2.0 * pi / $O;
+      $steps_per_map = int( $duration_per_area / $jos->step_time + 0.5) + 1;
     } else {
       JAC::OCS::Config::Error::FatalError->throw("Scan pattern '$pattern' not recognized");
     }
