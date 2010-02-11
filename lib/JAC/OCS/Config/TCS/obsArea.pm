@@ -801,10 +801,10 @@ sub _find_scan_area {
                              "TYPE", "PATTERN");
 
   # Allowed position angles of scan
-  # PONG does not need one
+  # PONG/ELLIPSE/DAISY/LISSAJOUS do not need one
   my $minpa = 1;
   if (exists $scan_info{PATTERN} && 
-      $scan_info{PATTERN} =~ /(pong|liss)/i) {
+      $scan_info{PATTERN} =~ /(pong|liss|daisy|ellipse)/i) {
     $minpa = 0;
   }
   my @spa = find_pa( $scan, min => $minpa);
