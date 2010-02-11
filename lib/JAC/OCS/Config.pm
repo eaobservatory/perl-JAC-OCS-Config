@@ -942,7 +942,7 @@ sub duration_acsis {
       $ysize = $mapdims{WIDTH};
     } else {
 
-      # Map position angle
+      # Map position angle (pick the first angle if there are multiples)
       my $map_pa = $oa->posang->degrees;
 
       # Scan angles (relative to map position angle) normalised to

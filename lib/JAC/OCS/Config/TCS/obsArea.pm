@@ -96,6 +96,7 @@ sub new {
                                                                     MS_OFFSETS => [],
                                                                     ELEVATIONS => [],
                                                                     SCAN => {},
+                                                                    POSANG => [],
                                                                    }
                           );
 }
@@ -112,8 +113,11 @@ The global position angle associated with this observing area.
 
  $tag = $cfg->posang;
  $cfg->posang( 52.4 );
+ @angs = $oa->posang;
+ $oa->posang( @angs );
 
-Stored as an C<Astro::Coords::Angle> object.
+Stored as an C<Astro::Coords::Angle> object. Multiple angles can be stored
+or retrieved. In scalar context the first angle is returned.
 
 Can be undefined if no position angle has been specified.
 
@@ -122,9 +126,18 @@ Can be undefined if no position angle has been specified.
 sub posang {
   my $self = shift;
   if (@_) {
-    $self->{POSANG} = check_class_fatal( "Astro::Coords::Angle", shift);
+    @{$self->{POSANG}} = map { check_class_fatal( "Astro::Coords::Angle", $_) } @_;
   }
-  return $self->{POSANG};
+  if (wantarray) {
+    return @{$self->{POSANG}};
+  } else {
+    if (@{$self->{POSANG}}) {
+      return $self->{POSANG}->[0];
+    } else {
+      # do not create element zero
+      return;
+    }
+  }
 }
 
 =item B<microsteps>
@@ -521,13 +534,18 @@ sub stringify {
   # Version declaration
   $xml .= $self->_introductory_xml();
 
-  # position angle for the area
-  if (defined $self->posang) {
-    $xml .= pa_to_xml( $self->posang );
-  }
-
   # get the mode
   my $mode = $self->mode;
+
+  # position angle for the area
+  my @angs = $self->posang;
+  if (@angs) {
+    # force a single PA in non-area mode
+    @angs = ($angs[0]) if $mode ne 'area';
+    for my $pa (@angs) {
+      $xml .= pa_to_xml( $pa );
+    }
+  }
 
   if ($mode eq 'offsets') {
     for my $o ($self->offsets) {
@@ -680,9 +698,6 @@ sub _process_dom {
 
   # parse obsArea
 
-  # Find the position angle
-  $self->_find_posang();
-
   # Find any microsteps
   $self->_find_microsteps();
 
@@ -703,6 +718,9 @@ sub _process_dom {
   # Look for Zenith
   $self->_find_zenith();
 
+  # Find the position angle after we know the mode
+  $self->_find_posang();
+
   return;
 }
 
@@ -716,14 +734,17 @@ exists and store them in the object.
 sub _find_posang {
   my $self = shift;
 
-  # Should only be one PA here
+  # max number of angles depends on mode
+  my $mode = $self->mode;
+
+  # Scan mode can allow multiple PAs
   my @pa = find_pa( $self->_rootnode,
-                    max => 1,
+                    ( $mode eq 'area' ? () : (max => 1) ),
                     min => 0,
                   );
 
   # store the angle
-  $self->posang( $pa[0] ) if @pa;
+  $self->posang( @pa ) if @pa;
 
 }
 
