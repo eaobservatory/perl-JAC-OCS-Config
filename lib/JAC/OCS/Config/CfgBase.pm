@@ -620,7 +620,7 @@ sub _introductory_xml {
   # Use the VERSION method inherited from UNIVERSAL
   my $version = $self->VERSION;
 
-  my $xml = "<!--\nCreated using class ".ref($self). "V$version\n($repover)\n";
+  my $xml = "<!--\nCreated using class ".ref($self). " V$version\n($repover)\n";
 
   # for debugging of translations, we really need to know the
   # inheritance version numbers. This is hairy code using symbolic
