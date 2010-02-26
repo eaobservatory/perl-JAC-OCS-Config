@@ -48,7 +48,7 @@ use vars qw/ $VERSION /;
 $VERSION = "1.01";
 
 # Supported keys for POINTING_OFFSET element
-my @POINTING_MODEL = qw/ CA IE /;
+my @POINTING_MODEL = qw/ CA IE IA NPAE AW AN TF /;
 
 # Attributes used for heterodyne or continuum
 my %RecepSubArray = (
@@ -315,7 +315,7 @@ sub position {
 =item B<pointing>
 
 Hash containing the pointing model offsets (in arcsec) for this instrument.
-Recognized parameters are: CA, IE
+Recognized parameters are: CA, IE, IA, NPAE, AW, AN, TF
 
   %pnt = $ins->pointing;
   $ins->pointing( %pnt );
