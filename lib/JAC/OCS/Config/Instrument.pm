@@ -45,10 +45,10 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = "1.01";
+$VERSION = "1.02";
 
 # Supported keys for POINTING_OFFSET element
-my @POINTING_MODEL = qw/ CA IE IA NPAE AW AN TF /;
+my @POINTING_MODEL = qw/ CA IE IA NPAE AW AN TF CE /;
 
 # Attributes used for heterodyne or continuum
 my %RecepSubArray = (
@@ -315,7 +315,7 @@ sub position {
 =item B<pointing>
 
 Hash containing the pointing model offsets (in arcsec) for this instrument.
-Recognized parameters are: CA, IE, IA, NPAE, AW, AN, TF
+Recognized parameters are: CA, IE, IA, NPAE, AW, AN, TF, CE
 
   %pnt = $ins->pointing;
   $ins->pointing( %pnt );
