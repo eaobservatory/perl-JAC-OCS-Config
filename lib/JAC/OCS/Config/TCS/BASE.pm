@@ -494,10 +494,13 @@ sub _extract_coord_info {
   my $type;
   if ($sysname eq 'spherSystem') {
     $type = $system->getAttribute("SYSTEM");
-  } elsif (defined $system->getAttribute("type")) {
-    $type = $system->getAttribute("type");
   } else {
-    $type = $system->getAttribute("TYPE");
+    my $lc = $system->getAttribute("type");
+    my $uc = $system->getAttribute("TYPE");
+
+    # for old files if we have TYPE and "type"
+    # we should use "TYPE" to stop the DTD defaulting for "type"
+    $type = ( defined $uc ? $uc : $lc );
   }
 
   throw JAC::OCS::Config::Error::FatalError("Unable to determine the coordinate system. Have you included a reference to the TCS DTD?")

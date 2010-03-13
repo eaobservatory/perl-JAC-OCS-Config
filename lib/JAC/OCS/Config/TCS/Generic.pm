@@ -312,7 +312,7 @@ sub coords_to_xml {
       throw JAC::OCS::Config::Error::FatalError("Unable to determine element type from elements!");
     }
 
-    $xml .= "  <conicSystem TYPE=\"$eltype\">\n";
+    $xml .= "  <conicSystem type=\"$eltype\">\n";
     $xml .= "    <epoch>$el{EPOCH}</epoch>\n";
     $xml .= "    <inclination>".rad2deg($el{ORBINC})."</inclination>\n";
     $xml .= "    <anode>".rad2deg($el{ANODE})."</anode>\n";
