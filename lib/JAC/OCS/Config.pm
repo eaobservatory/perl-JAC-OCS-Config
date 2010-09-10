@@ -606,7 +606,7 @@ sub duration_scuba2 {
   my $oa;
 
   if ($obs_type ne "flatfield" && $obs_type ne 'array_tests' &&
-     $obs_type ne 'noise') {
+     $obs_type ne 'noise' && $obs_type ne 'setup') {
 
     # Need the TCS configuration
     $tcs = $self->tcs;
@@ -677,6 +677,13 @@ sub duration_scuba2 {
 
     # always interleave darks so number of darks
     $ndarks = $nseq;
+
+  } elsif ($obs_type eq 'setup') {
+
+    # We do not know how long a setup will take
+    $nseq = 1;
+    $time_per_seq = 30;
+    $ndarks = 1;
 
   } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
 
@@ -1484,8 +1491,8 @@ sub verify {
   # get the observing mode and make sure that we need a target
   my $obs = $self->obsmode;
 
-  # Noise, Flatfield and Skydip do not need a target
-  return if $obs =~ /skydip|noise|flatfield/;
+  # Noise, Setup, Flatfield and Skydip do not need a target
+  return if $obs =~ /skydip|noise|flatfield|setup/;
 
   if ($obs =~ /(scan|dream|stare|raster|jiggle|grid)/i) {
 
