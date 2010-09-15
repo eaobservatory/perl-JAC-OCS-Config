@@ -550,6 +550,23 @@ sub instrument {
   return $instrument->name;
 }
 
+=item B<instrument_serial>
+
+Return the instrument (aka Front End) serial name associated with this
+configuration.  This is usually the common name that most people know
+of as the front end (as opposed to the task name returned by the
+"instrument" method).  Can return empty string if the Instrment has
+not been defined.
+
+=cut
+
+sub instrument_serial {
+  my $self = shift;
+  my $instrument = $self->instrument_setup;
+  return '' unless defined $instrument;
+  return $instrument->serial;
+}
+
 =item B<duration>
 
 Estimated duration of the observation resulting from this configuration.
@@ -1452,7 +1469,7 @@ sub waveband {
   my $fe = $self->frontend;
   my $s2 = $self->scuba2;
 
-  my $inst = $self->instrument;
+  my $inst = $self->instrument_serial;
 
   if (defined $fe) {
     my $rfreq = $fe->rest_frequency;
@@ -1910,7 +1927,7 @@ Will not include the project ID or estimated duration.
 sub qsummary {
   my $self = shift;
   my $obsmode = $self->obsmode;
-  my $instrument = $self->instrument;
+  my $instrument = $self->instrument_serial;
 
   # target name
   my $targ = 'NONE';
