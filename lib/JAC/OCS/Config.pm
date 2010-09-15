@@ -1446,14 +1446,37 @@ sub obsmode {
   my $obssum = $self->obs_summary;
   return "UNKNOWN" unless defined $obssum;
 
-  my $mode = join("_", 
-                  (defined $obssum->mapping_mode ? $obssum->mapping_mode
-                   : "unknown"),
-                  (defined $obssum->switching_mode ? $obssum->switching_mode
-                   : "unknown"),
-                  (defined $obssum->type ? $obssum->type : "unknown")
-                 );
-  return $mode;
+  my @components;
+
+  my $mapmode = $obssum->mapping_mode;
+  my $swmode  = $obssum->switching_mode;
+  my $obstype = $obssum->type;
+
+  # in conjunction with the instrument information we should be able to make
+  # things more targetted than blindly concatenating. For now drop "none"
+  # from the switch description and drop "science" from the obs type since
+  # these are default behaviours. Also drop "stare" from non-science
+  # observations since it's only really news if it isn't stare.
+
+  if (defined $mapmode) {
+    # Not stare OR we are stare but the obstype is science.
+    # Otherwise a "stare/science" observation comes out unknown.
+    if ($mapmode ne 'stare' ||
+       ( defined $obstype && $obstype eq 'science' ) ) {
+      push(@components, $mapmode );
+    }
+  }
+  if (defined $swmode) {
+    if ( $swmode ne 'self' && $swmode ne 'none' ) {
+      push(@components, $swmode )
+    }
+  }
+  push(@components, $obstype) if (defined $obstype && $obstype ne 'science');
+
+  # Put something in if we still have no idea
+  push(@components, "unknown") unless @components;
+
+  return join("_", @components);
 }
 
 =item B<waveband>
