@@ -1965,7 +1965,7 @@ sub qsummary {
   my $str;
 
   $obsmode =~ s/_/ /g;
-  $str = sprintf("%-10s %-7s %s",$targ, $instrument,$obsmode);
+  $str = sprintf("%-10s %-7s %-16s",$targ, $instrument,$obsmode);
   return $str;
 }
 
