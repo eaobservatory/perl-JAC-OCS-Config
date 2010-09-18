@@ -1535,10 +1535,11 @@ sub verify {
   # get the observing mode and make sure that we need a target
   my $obs = $self->obsmode;
 
-  # Noise, Setup, Flatfield and Skydip do not need a target
-  return if $obs =~ /skydip|noise|flatfield|setup/;
-
-  if ($obs =~ /(scan|dream|stare|raster|jiggle|grid)/i) {
+  # We set things up so that Skydips do require a target
+  # even if it is a "do at current position"
+  # target. Setups will be missing a TCS_CONFIG if current location
+  # is used. Other setups require an explicit target.
+  if ($obs =~ /(scan|dream|stare|raster|jiggle|grid|skydip|setup|noise)/i) {
 
     # Get the TCS object
     my $tcs = $self->tcs;
@@ -1546,9 +1547,24 @@ sub verify {
 
       # Get the target information
       my $c = $tcs->getTarget;
-      throw JAC::OCS::Config::Error::MissingTarget("No science target defined in configuration") unless defined $c;
+      if ( !defined $c) {
+        if ($obs =~ /(setup|skydip|noise)/i ) {
+          # Skydips and setups can be setup with dummy target indicating
+          # we need to fill in something or else can be configured with
+          # no target information at all (which is fine)
+          my %tags = $tcs->tags;
 
-    } else {
+          # if we have tags but did not have a SCIENCE coordinate then we assume
+          # we are missing a target but need the next target
+          if (keys %tags) {
+            throw JAC::OCS::Config::Error::NeedNextTarget("No science target defined in configuration");
+          }
+
+        } else {
+          throw JAC::OCS::Config::Error::MissingTarget("No science target defined in configuration");
+        }
+      }
+    } elsif ($obs !~ /setup|noise/i) {
       throw JAC::OCS::Config::Error::FatalError( "No TCS definition available in this configuration");
     }
   }
