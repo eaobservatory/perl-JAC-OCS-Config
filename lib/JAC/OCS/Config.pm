@@ -1451,6 +1451,7 @@ sub obsmode {
   my $mapmode = $obssum->mapping_mode;
   my $swmode  = $obssum->switching_mode;
   my $obstype = $obssum->type;
+  my @inbeam = $obssum->inbeam;
 
   # in conjunction with the instrument information we should be able to make
   # things more targetted than blindly concatenating. For now drop "none"
@@ -1472,6 +1473,9 @@ sub obsmode {
     }
   }
   push(@components, $obstype) if (defined $obstype && $obstype ne 'science');
+
+  # Something in the beam is very important
+  push(@components, @inbeam);
 
   # Put something in if we still have no idea
   push(@components, "unknown") unless @components;
@@ -1957,9 +1961,51 @@ sub qsummary {
   my $tcs = $self->tcs;
   if (defined $tcs) {
     my $c = $tcs->getTarget;
-    $targ = $c->name if (defined $c && defined $c->name);
-    $targ =~ s/\s+$//;
-    $targ = "EMPTY" if !$targ;  # empty string test
+    my $tcstarg;
+    $tcstarg= $c->name if (defined $c && defined $c->name);
+    if ($tcstarg) {
+      $tcstarg =~ s/\s+$//;
+      $targ = $tcstarg;
+    } else {
+      # in the special case of skydip or setup we need to distinguish
+      # current AZ from next target. For NOISE we want to keep
+      # an eye out for Zenith or Sky noise at current AZ
+      my $follow = $tcs->getCoords( "FOLLOWINGAZ" );
+      if ($obsmode =~ /setup|skydip/i || defined $follow ) {
+        if (defined $follow) {
+          $targ = "TBD";
+        } else {
+          # No dummy so we want to observe HERE
+          $targ = "CurrentAz";
+        }
+      } else {
+        # Check for zenith mode
+        my $oa = $tcs->getObsArea;
+        if ($oa->is_zenith_mode) {
+          $targ = "Zenith";
+        } elsif ( $oa->is_sky_mode ) {
+          $targ = "CurrentAz";
+        } else {
+          # No target yet but we will need to fill one in
+          $targ = "TBD";
+        }
+      }
+    }
+  } elsif ($obsmode =~ /setup/i) {
+    # We really mean current Azimuth if we don't have a target
+    $targ = "CurrentAz";
+  } elsif ($obsmode =~ /blackbody/i) {
+    # move the black body to the target name
+    $targ = "BlackBody";
+    $obsmode =~ s/\s*blackbody//;
+  } else {
+    my $jos = $self->jos;
+    my $shutter = $jos->shut_frac;
+    if (defined $shutter) {
+      if ($shutter == 0) {
+        $targ = "Dark";
+      }
+    }
   }
 
   my $str;
