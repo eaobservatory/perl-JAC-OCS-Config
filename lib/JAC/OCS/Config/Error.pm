@@ -219,6 +219,12 @@ An error occurred during I/O.
 The configuration does not specify a science target but a science
 target is required.
 
+=item B<JAC::OCS::Config::Error::NeedNextTarget>
+
+The configuration does not specify a science target but a science
+target is required and it needs to be the actual coordinate
+of the science target and not a nearby object.
+
 =item B<JAC::OCS::Config::Error::XMLBadStructure>
 
 The configuration XML was not valid.
@@ -294,6 +300,9 @@ package JAC::OCS::Config::Error::IOError;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::MissingTarget;
+use base qw/ JAC::OCS::Config::Error /;
+
+package JAC::OCS::Config::Error::NeedNextTarget;
 use base qw/ JAC::OCS::Config::Error /;
 
 package JAC::OCS::Config::Error::XMLBadStructure;
