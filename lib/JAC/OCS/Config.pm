@@ -1571,6 +1571,46 @@ sub verify {
 
 }
 
+=item B<targetIsCurrentAz>
+
+Returns true if there is a TCS config associated with the configuration
+and it corresponds to the current location of the telescope rather than
+a particular coordinate.
+
+ $iscur = $cfg->targetIsCurrentAz;
+
+Returns true if current azimuth. Otherwise returns false. Only relevant
+for skydip, setup and noise observations. All other obs types return false.
+
+Not a TCS method because the obs type is required.
+
+=cut
+
+sub targetIsCurrentAz {
+  my $self = shift;
+
+  # Do we have a TCS?
+  my $tcs = $self->tcs;
+  return 0 unless defined $tcs;
+
+  # get the observing mode and make sure that we need a target
+  my $obs = $self->obsmode;
+
+  # Special case for these. Current Az if there are no tags
+  # associated with the TCS configuration. Any tags at all
+  # implies we either have a target or we have stored a dummy
+  # FOLLOWINGAZ tag.
+  if ($obs =~ /skydip|setup|noise/i) {
+    my %tags = $tcs->tags;
+    if (keys %tags) {
+      return 0;
+    } else {
+      return 1;
+    }
+  }
+}
+
+
 =item B<fixup>
 
 Correct any run time problems with the configuration. Assumes the
