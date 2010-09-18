@@ -722,6 +722,10 @@ sub setTargetSync {
   # Get all the available BASE positions
   my %tags = $self->getAllTargetInfo();
 
+  # If we have the dummy FOLLOWINGAZ tag we delete it here since it only
+  # exists for the queue
+  delete $tags{FOLLOWINGAZ};
+
   # Get the SCIENCE position first (which is mandatory unless no tags exist)
   if (keys %tags) {
     my $scitag = $self->_translate_tag_name( "SCIENCE" );
