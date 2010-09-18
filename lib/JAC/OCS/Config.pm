@@ -1562,6 +1562,8 @@ modifications are for the current time.
 
   $cfg->fixup;
 
+No config modifications are done at this time.
+
 =cut
 
 sub fixup {
