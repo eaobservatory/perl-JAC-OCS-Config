@@ -280,8 +280,26 @@ sub stringify {
   if (defined $ts) {
     $xml .= "  <!-- Select a tracking coordinate system -->\n";
     if ($ts eq 'TRACKING') {
-      $xml .= "<!-- Tracking system was TRACKING but translator does not yet choose anything other than J2000. Need to fix -->\n";
-      $ts = 'J2000';
+      # We can not have a tracking system of TRACKING so we have to choose
+      # one based on the system used to initially populate the Astro::Coords
+      # object
+      my %syslut = ( # Map "native" to TCS
+                    apparent => "APP",
+                    radec => "ICRS",      # Use this rather than J2000
+                    radec1950 => "B1950",
+                    glonglat => "GAL",
+                    hadec => "HADEC",
+                    azel => "AZEL",
+                   );
+
+      my $native = $c->native;
+      if (exists $syslut{$native}) {
+        $ts = $syslut{$native};
+      } else {
+        $xml .= "<!-- Tracking system was TRACKING and native coord system was ".
+          (defined $native ? $native : "undefind") . " but the translator does not understand this so choosing J2000 -->\n";
+        $ts = 'J2000';
+      }
     }
     $xml .= "  <TRACKING_SYSTEM SYSTEM=\"$ts\" />\n";
   }
