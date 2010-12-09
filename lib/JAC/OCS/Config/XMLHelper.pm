@@ -299,7 +299,12 @@ sub indent_xml_string {
       chomp($xml);
       $xml .= " >\n";
     } else {
-      $xml .= ("   " x $this_indent) . $l ."\n";
+      if (length($l)) {
+        $xml .= ("   " x $this_indent) . $l ."\n";
+      } else {
+        # do not indent a blank line
+        $xml .= "\n";
+      }
     }
   }
 
