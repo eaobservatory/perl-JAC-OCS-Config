@@ -2031,7 +2031,7 @@ sub qsummary {
       my $follow = $tcs->getCoords( "FOLLOWINGAZ" );
       if ($obsmode =~ /setup|skydip/i || defined $follow ) {
         if (defined $follow) {
-          $targ = "TBD";
+          $targ = "FollowingAz";
         } else {
           # No dummy so we want to observe HERE
           $targ = "CurrentAz";
