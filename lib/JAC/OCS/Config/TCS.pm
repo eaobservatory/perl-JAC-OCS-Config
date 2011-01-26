@@ -719,12 +719,12 @@ sub setTargetSync {
   throw JAC::OCS::Config::Error::FatalError("Error converting supplied argument to BASE object")
     unless defined $new;
 
-  # Get all the available BASE positions
-  my %tags = $self->getAllTargetInfo();
-
   # If we have the dummy FOLLOWINGAZ tag we delete it here since it only
   # exists for the queue
-  delete $tags{FOLLOWINGAZ};
+  $self->removeTag( "FOLLOWINGAZ" );
+
+  # Get all the available BASE positions
+  my %tags = $self->getAllTargetInfo();
 
   # Get the SCIENCE position first (which is mandatory unless no tags exist)
   if (keys %tags) {
@@ -899,6 +899,25 @@ with this object.
 sub clearAllCoords {
   my $self = shift;
   $self->tags( undef );
+}
+
+=item B<removeTag>
+
+Removes the tag and associated coordinate information from the object.
+
+  $tcs->removeTag( $tag );
+
+Returns the contents of the tag that was removed.
+
+=cut
+
+sub removeTag {
+  my $self = shift;
+  my $tag = shift;
+
+  # Need the hash ref
+  my $href = $self->tags;
+  return delete $href->{$tag};
 }
 
 =item B<tasks>
@@ -1541,7 +1560,7 @@ and so the C<TOML> namespace was deprecated.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2002-2005 Particle Physics and Astronomy Research Council.
+Copyright 2002-2011 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
