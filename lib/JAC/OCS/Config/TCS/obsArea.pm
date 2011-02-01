@@ -635,7 +635,6 @@ sub stringify {
 
     my $el = $self->zenith();
     if (defined $el) {
-      use Data::Dumper; print Dumper($el);
       $xml .= "<ZENITH>\n";
       $xml .= "<ELEVATION>". $el->degrees ."</ELEVATION>\n";
       $xml .= "</ZENITH>\n";
