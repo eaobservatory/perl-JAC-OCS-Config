@@ -273,14 +273,19 @@ sub scan {
     }
 
     # Make sure it is a valid pattern
+    my @extras;
     if (exists $args{PATTERN}) {
       throw JAC::OCS::Config::Error::FatalError("Supplied pattern '".
                                                 $args{PATTERN} .
                                                 "' is not from the supported list")
         unless exists $SCAN_PATTERNS{$args{PATTERN}};
+
+      # Curvy pong can have terms
+      push(@extras, qw/ NTERMS / ) if $args{PATTERN} =~ /^curvy_pong$/;
+
     }
 
-    for my $k (qw/ VELOCITY SYSTEM DY TYPE PA PATTERN /) {
+    for my $k (qw/ VELOCITY SYSTEM DY TYPE PA PATTERN /, @extras) {
       # upper case patterns and type
       next unless exists $args{$k};
       my $val = $args{$k};
@@ -573,9 +578,8 @@ sub stringify {
     my %scan = $self->scan;
 
     # DTD switching
-    my $reversal;
-    my $pattern;
     if ($self->old_dtd) {
+      my $reversal;
       if (defined $scan{PATTERN}) {
         if ($scan{PATTERN} eq 'RASTER') {
           $reversal = "NO";
@@ -585,17 +589,14 @@ sub stringify {
           throw JAC::OCS::Config::Error::FatalError("Required to use old DTD but REVERSAL is not derivable from pattern '$scan{PATTERN}'");
         }
       }
-    } else {
-      $pattern = $scan{PATTERN};
+      $scan{REVERSAL} = $reversal;
+      delete $scan{PATTERN};
     }
 
     $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
-    $xml .= "      SYSTEM=\"$scan{SYSTEM}\"\n" if defined $scan{SYSTEM};
-    $xml .= "      DY=\"$scan{DY}\"\n" if defined $scan{DY};
-    $xml .= "      REVERSAL=\"$reversal\"\n" if defined $reversal;
-    $xml .= "      TYPE=\"$scan{TYPE}\"\n" if defined $scan{TYPE};
-    $xml .= "      PATTERN=\"$scan{PATTERN}\"\n" if defined $pattern;
-    $xml .= "      NTERMS=\"$scan{NTERMS}\"\n" if defined $scan{NTERMS};
+    for my $key (keys %scan) {
+      $xml .= "      $key=\"$scan{$key}\"\n" if defined $scan{$key};
+    }
     $xml .= " >\n";
 
     for my $pa (@{ $scan{PA} }) {
@@ -819,7 +820,8 @@ sub _find_scan_area {
   # Attributes of scan
   my %scan_info = find_attr( $scan, 
                              "VELOCITY","SYSTEM","DY","REVERSAL",
-                             "TYPE", "PATTERN");
+                             "TYPE", "PATTERN", "NTERMS",
+                           );
 
   # Allowed position angles of scan
   # PONG/ELLIPSE/DAISY/LISSAJOUS do not need one
