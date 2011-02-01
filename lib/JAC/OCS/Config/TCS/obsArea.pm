@@ -598,7 +598,7 @@ sub stringify {
       delete $scan{PATTERN};
     }
 
-    $xml .= "<SCAN VELOCITY=\"$scan{VELOCITY}\"\n";
+    $xml .= "<SCAN\n";
     for my $key (keys %scan) {
       $xml .= "      $key=\"$scan{$key}\"\n" if defined $scan{$key};
     }
