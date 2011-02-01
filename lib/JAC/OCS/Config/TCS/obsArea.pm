@@ -57,6 +57,7 @@ my @SCAN_PATTERNS = qw/ RASTER
                         LISSAJOUS
                         ELLIPSE
                         DAISY
+                        CV_DAISY
                       /;
 # hash for easy checks
 my %SCAN_PATTERNS = map { $_ => undef } @SCAN_PATTERNS;
@@ -283,6 +284,9 @@ sub scan {
       # Curvy pong can have terms
       push(@extras, qw/ NTERMS / ) if $args{PATTERN} =~ /^curvy_pong$/;
 
+      # CV daisy requires more information
+      push(@extras, qw/ XSTART YSTART VX VY TURN_RADIUS /) if $args{PATTERN} =~ /^cv_daisy$/i;
+
     }
 
     for my $k (qw/ VELOCITY SYSTEM DY TYPE PA PATTERN /, @extras) {
@@ -316,6 +320,7 @@ Recognized patterns are:
   LISSAJOUS   (curvy_pong with nterms=1)
   ELLIPSE
   DAISY
+  CV_DAISY
 
 If no pattern has been specified, the default is DISCRETE_BOUSTROPHEDON.
 
@@ -821,6 +826,7 @@ sub _find_scan_area {
   my %scan_info = find_attr( $scan, 
                              "VELOCITY","SYSTEM","DY","REVERSAL",
                              "TYPE", "PATTERN", "NTERMS",
+                             "XSTART", "YSTART", "VX", "VY", "TURN_RADIUS",
                            );
 
   # Allowed position angles of scan
