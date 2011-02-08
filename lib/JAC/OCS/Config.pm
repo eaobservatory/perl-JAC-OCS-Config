@@ -68,7 +68,7 @@ use JAC::OCS::Config::XMLHelper qw(
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION $DEBUG /;
-$VERSION = "1.01";
+$VERSION = "1.02";
 
 # Debug messages
 $DEBUG = 0;
@@ -2002,17 +2002,17 @@ sub write_entry {
   return $self->write_file( @_ );
 }
 
-=item B<qsummary>
+=item B<qtarget>
 
-Provide a simple one line summary suitable for display by the queue.
-Will not include the project ID or estimated duration.
+The summary target string associated with the queue entry.
+
+  $targstr = $ocs->qtarget();
 
 =cut
 
-sub qsummary {
+sub qtarget {
   my $self = shift;
   my $obsmode = $self->obsmode;
-  my $instrument = $self->instrument_serial;
 
   # target name
   my $targ = 'NONE';
@@ -2065,6 +2065,22 @@ sub qsummary {
       }
     }
   }
+
+  return $targ;
+}
+
+=item B<qsummary>
+
+Provide a simple one line summary suitable for display by the queue.
+Will not include the project ID or estimated duration.
+
+=cut
+
+sub qsummary {
+  my $self = shift;
+  my $obsmode = $self->obsmode;
+  my $instrument = $self->instrument_serial;
+  my $targ = $self->qtarget;
 
   my $str;
 
