@@ -699,7 +699,7 @@ sub duration_scuba2 {
 
     # We do not know how long a setup will take
     $nseq = 1;
-    $time_per_seq = 30;
+    $time_per_seq = 240 / $jos->step_time; # in steps
     $ndarks = 1;
 
   } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
