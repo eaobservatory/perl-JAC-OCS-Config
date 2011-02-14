@@ -600,6 +600,7 @@ sub stringify {
 
     $xml .= "<SCAN\n";
     for my $key (keys %scan) {
+      next if $key eq 'PA';
       $xml .= "      $key=\"$scan{$key}\"\n" if defined $scan{$key};
     }
     $xml .= " >\n";
