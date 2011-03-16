@@ -285,7 +285,7 @@ sub scan {
       push(@extras, qw/ NTERMS / ) if $args{PATTERN} =~ /^curvy_pong$/;
 
       # CV daisy requires more information
-      push(@extras, qw/ XSTART YSTART VX VY TURN_RADIUS /) if $args{PATTERN} =~ /^cv_daisy$/i;
+      push(@extras, qw/ XSTART YSTART VX VY TURN_RADIUS ACCEL/) if $args{PATTERN} =~ /^cv_daisy$/i;
 
     }
 
@@ -827,6 +827,7 @@ sub _find_scan_area {
                              "VELOCITY","SYSTEM","DY","REVERSAL",
                              "TYPE", "PATTERN", "NTERMS",
                              "XSTART", "YSTART", "VX", "VY", "TURN_RADIUS",
+                             "ACCEL",
                            );
 
   # Allowed position angles of scan
