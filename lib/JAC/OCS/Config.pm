@@ -68,7 +68,7 @@ use JAC::OCS::Config::XMLHelper qw(
 use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION $DEBUG /;
-$VERSION = "1.02";
+$VERSION = "1.03";
 
 # Debug messages
 $DEBUG = 0;
@@ -1371,15 +1371,8 @@ This method does assume a specific FITS header defines the project ID.
 
 sub projectid {
   my $self = shift;
-  my $header = $self->header;
-
-  if (defined $header) {
-    my @items = $header->item( "PROJECT" );
-    if (@items) {
-      return $items[0]->value;
-    }
-  }
-  return undef;
+  # Can not modify
+  return $self->_get_set_header_value( "PROJECT" );
 }
 
 =item B<msbid>
@@ -1391,19 +1384,13 @@ The MSB ID associated with this configuration. If none is defined
 
 This method does assume a specific FITS header defines the MSB ID.
 
+Can be used to set the value.
+
 =cut
 
 sub msbid {
   my $self = shift;
-  my $header = $self->header;
-
-  if (defined $header) {
-    my @items = $header->item( "MSBID" );
-    if (@items) {
-      return $items[0]->value;
-    }
-  }
-  return undef;
+  return $self->_get_set_header_value( "MSBID", @_ );
 }
 
 =item B<msbtid>
@@ -1418,11 +1405,19 @@ Can only be set if the MSBTID header entry pre-exists.
 
 sub msbtid {
   my $self = shift;
+  return $self->_get_set_header_value( "MSBTID", @_ );
+}
+
+# Generic function for read something from the Header
+
+sub _get_set_header_value {
+  my $self = shift;
   my $header = $self->header;
   return undef unless defined $header;
 
   # get the item or items
-  my @items = $header->item( "MSBTID" );
+  my $name = shift;
+  my @items = $header->item( $name );
   return undef unless @items;
 
   if (@_) {
