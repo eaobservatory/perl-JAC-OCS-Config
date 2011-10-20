@@ -50,7 +50,11 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = "1.01";
+$VERSION = "1.02";
+
+# Tag name to use to indicate to the queue that we are to insert
+# a new target at the following azimuth.
+our $FOLLOWINGTAG = "FOLLOWINGAZ";
 
 =head1 METHODS
 
@@ -189,6 +193,20 @@ sub telescope {
     $self->{Telescope} = shift;
   }
   return $self->{Telescope};
+}
+
+=item B<wasFollowingAz>
+
+True if this object has a FollowingAz tag that was cleared when the target
+was most recently synced from a reference. Controls what state the target
+returns to if the coordinates are subsequently cleared.
+
+=cut
+
+sub wasFollowingAz {
+  my $self = shift;
+  if (@_) { $self->{WasFollowingAz} = shift; }
+  return $self->{WasFollowingAz};
 }
 
 =item B<aperture_name>
@@ -720,8 +738,11 @@ sub setTargetSync {
     unless defined $new;
 
   # If we have the dummy FOLLOWINGAZ tag we delete it here since it only
-  # exists for the queue
-  $self->removeTag( "FOLLOWINGAZ" );
+  # exists for the queue. We track whether an entry was removed so that
+  # we can replace it properly if the target is subsequently cleared
+  if ($self->removeTag( $FOLLOWINGTAG )) {
+    $self->wasFollowingAz(1);
+  }
 
   # Get all the available BASE positions
   my %tags = $self->getAllTargetInfo();
@@ -854,17 +875,44 @@ sub setCoords {
 
 }
 
+=item B<insertDummyFollowingAzTag>
+
+Insert a tag into the target component indicating that the
+should insert a target position based on the next entry in
+the queue.
+
+ $tcs->insertDummyFollowingAzTag;
+
+=cut
+
+sub insertDummyFollowingAzTag {
+  my $self = shift;
+  my $b = JAC::OCS::Config::TCS::BASE->new();
+  $b->tag( $FOLLOWINGTAG );
+  $b->tracking_system( "TRACKING" );
+  $b->coords( Astro::Coords::Fixed->new( az => 0, el => -90,
+                                         units => "degrees",
+                                         name => "Following" ) );
+  $self->tags( $FOLLOWINGTAG => $b );
+  return;
+}
+
 =item B<clearTarget>
 
 Removes the SCIENCE/BASE target.
 
   $tcs->clearTarget();
 
+If the target information was set using C<setTargetSync> and before that
+contained a FOLLOWINGAZ tag, that FOLLOWINGAZ tag will be restored.
+
 =cut
 
 sub clearTarget {
   my $self = shift;
-  return $self->clearCoords( "SCIENCE" );
+  my $retval = $self->clearCoords( "SCIENCE" );
+  $self->insertDummyFollowingAzTag() if $self->wasFollowingAz;
+  return $retval;
 }
 
 =item B<clearCoords>
