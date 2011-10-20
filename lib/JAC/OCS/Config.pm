@@ -1738,6 +1738,42 @@ sub _cal_flags {
 
 }
 
+=item B<isMissingTarget>
+
+An observation that would require a target but is currently missing one.
+
+ $ismiss = $cfg->isMissingTarget();
+
+Returns false if there is no TCS information at all or if a target
+is specified. FollowingAz, CurrentAz and Zenith targets also return
+false.
+
+=cut
+
+sub isMissingTarget {
+  my $self = shift;
+  my $obsmode = $self->obsmode;
+  my $tcs = $self->tcs;
+  if (defined $tcs) {
+    my $c = $tcs->getTarget;
+    return 0 if defined $c;
+
+    my $follow = $tcs->getCoords( $JAC::OCS::Config::TCS::FOLLOWINGTAG );
+    if ($obsmode =~ /setup|skydip/i || defined $follow ) {
+      return 0;
+    } else {
+      # Check for zenith mode
+      my $oa = $tcs->getObsArea;
+      if ($oa->is_zenith_mode || $oa->is_sky_mode ) {
+        return 0;
+      } else {
+        # No target yet but we will need to fill one in
+        return 1;
+      }
+    }
+  }
+  return 0;
+}
 
 =item B<stringify>
 
