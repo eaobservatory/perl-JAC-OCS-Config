@@ -2057,7 +2057,7 @@ sub qtarget {
       # in the special case of skydip or setup we need to distinguish
       # current AZ from next target. For NOISE we want to keep
       # an eye out for Zenith or Sky noise at current AZ
-      my $follow = $tcs->getCoords( "FOLLOWINGAZ" );
+      my $follow = $tcs->getCoords( $JAC::OCS::Config::TCS::FOLLOWINGTAG );
       if ($obsmode =~ /setup|skydip/i || defined $follow ) {
         if (defined $follow) {
           $targ = "FollowingAz";
