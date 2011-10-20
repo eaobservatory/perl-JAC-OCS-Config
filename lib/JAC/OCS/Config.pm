@@ -1613,6 +1613,32 @@ sub targetIsCurrentAz {
   }
 }
 
+=item B<targetIsFollowingAz>
+
+Returns true if there is a TCS config associated with the configuration
+and it corresponds to a hint to use the azimuth of some target yet
+undetermined.
+
+ $isfoll = $cfg->targetIsFollowingAz;
+
+Returns true if following azimuth. Otherwise returns false. Only relevant
+for skydip, setup and noise observations although the observing mode
+is not tested. The only requirement is the presence of the special
+FOLLOWINGAZ tag.
+
+Calls the TCS hasFollowingTag() method.
+
+=cut
+
+sub targetIsFollowingAz {
+  my $self = shift;
+
+  # Do we have a TCS?
+  my $tcs = $self->tcs;
+  return 0 unless defined $tcs;
+  return $tcs->hasFollowingTag;
+}
+
 
 =item B<fixup>
 

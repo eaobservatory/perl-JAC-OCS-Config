@@ -449,6 +449,20 @@ sub getSciTag {
   return $tags{$tag};
 }
 
+=item B<hasFollowingTag>
+
+Includes the special "FOLLOWINGAZ" tag.
+
+  $hasfoll = $tcs->hasFollowingTag();
+
+=cut
+
+sub hasFollowingTag {
+  my $self = shift;
+  my %tags = $self->tags;
+  return exists $tags{$FOLLOWINGTAG};
+}
+
 =item B<getTarget>
 
 Retrieve the Base or Science position as an C<Astro::Coords> object.
