@@ -618,6 +618,14 @@ sub duration_scuba2 {
   my $map_mode = lc($obssum->mapping_mode);
   my $obs_type = lc($obssum->type);
 
+  # Get the effective step time. This is to compensate for the requested step time
+  # not being the same as the step time you actually get. We only adjust the 5ms step
+  # time.
+  my $eff_step_time = $jos->step_time;
+  if ($eff_step_time < 0.0051) {
+    $eff_step_time *= 1.16;
+  }
+
   # if this is a noise/flatfield observation then we do not need a tcs
   my $tcs;
   my $oa;
@@ -662,7 +670,7 @@ sub duration_scuba2 {
       $time_per_seq = $delta_el / $scanvel;
 
       # convert to steps
-      $time_per_seq = $time_per_seq / $jos->step_time;
+      $time_per_seq = $time_per_seq / $eff_step_time;
 
     } elsif ($map_mode eq 'stare') {
       $time_per_seq = $jos->jos_min();
@@ -699,7 +707,7 @@ sub duration_scuba2 {
 
     # We do not know how long a setup will take
     $nseq = 1;
-    $time_per_seq = 240 / $jos->step_time; # in steps
+    $time_per_seq = 240 / $eff_step_time; # in steps
     $ndarks = 1;
 
   } elsif ($map_mode eq 'stare' || $map_mode eq 'dream') {
@@ -760,7 +768,7 @@ sub duration_scuba2 {
       my $maparea = $minwidth * $maxwidth;
 
       # work out the sample size
-      my $sample_area = $scan{DY} * ( $scan{VELOCITY} * $jos->step_time);
+      my $sample_area = $scan{DY} * ( $scan{VELOCITY} * $eff_step_time);
 
       # number of samples is the number of steps
       $steps_per_map = $maparea / $sample_area;
@@ -768,7 +776,7 @@ sub duration_scuba2 {
     } elsif ($pattern =~ /lissajous|pong/i) {
 
       my $time_per_map = JCMT::TCS::Pong::get_pong_dur( %map, %scan );
-      $steps_per_map = $time_per_map / $jos->step_time;
+      $steps_per_map = $time_per_map / $eff_step_time;
 
     } elsif ( $pattern =~ /ellipse/i) {
       use Math::Trig ':pi';
@@ -778,7 +786,7 @@ sub duration_scuba2 {
       my $r = sqrt( ( $rx*$rx + $ry*$ry ) / 2.0 );
       my $perimeter = 2.0 * pi * $r;
       my $duration_per_area = $perimeter / $scan{VELOCITY};
-      $steps_per_map = int( $duration_per_area / $jos->step_time + 0.5) + 1;
+      $steps_per_map = int( $duration_per_area / $eff_step_time + 0.5) + 1;
 
     } elsif ( $pattern =~ /daisy/i) {
       use Math::Trig ':pi';
@@ -787,7 +795,7 @@ sub duration_scuba2 {
       my $o = $map{VELOCITY} / $map{DY} / $r0;
       my $O = $o / 10.1;
       my $duration_per_area = 2.0 * pi / $O;
-      $steps_per_map = int( $duration_per_area / $jos->step_time + 0.5) + 1;
+      $steps_per_map = int( $duration_per_area / $eff_step_time + 0.5) + 1;
     } else {
       JAC::OCS::Config::Error::FatalError->throw("Scan pattern '$pattern' not recognized");
     }
@@ -819,7 +827,7 @@ sub duration_scuba2 {
     $nseq *= $jos->num_focus_steps();
   }
 
-  print "NDARKS=$ndarks  NSEQ= $nseq  TIME/SEQ=".($jos->step_time*$time_per_seq)."\n"
+  print "NDARKS=$ndarks  NSEQ= $nseq  TIME/SEQ=".($eff_step_time*$time_per_seq)."\n"
     if $DEBUG;
 
   # calculate the duration
@@ -831,10 +839,10 @@ sub duration_scuba2 {
   my $seq_start_overhead = 2.0;
 
   # length of dark. A dark is a sequence.
-  my $darklen = $jos->n_calsamples * $jos->step_time;
+  my $darklen = $jos->n_calsamples * $eff_step_time;
 
   # Convert time per sequence into seconds rather than steps
-  $time_per_seq *= $jos->step_time;
+  $time_per_seq *= $eff_step_time;
 
   my $duration = $startup_overhead + (($ndarks + $nseq) * $seq_start_overhead)
     + ($time_per_seq * $nseq) + ($ndarks * $darklen);
