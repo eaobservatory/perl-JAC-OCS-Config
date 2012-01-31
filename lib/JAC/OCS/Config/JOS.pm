@@ -54,6 +54,8 @@ our @PARAMS = (qw/
                    NUM_FOCUS_STEPS
                    NUM_NOD_SETS
                    N_CALSAMPLES
+                   N_DARKSAMPLES
+                   N_FLATSAMPLES
                    N_REFSAMPLES
                    PISTON_NUM
                    PISTON_START
@@ -372,6 +374,9 @@ sub num_nod_sets {
 
 Number of samples to integrate for the cal observation.
 
+For older SCUBA-2 observations N_CALSAMPLES was used for
+both N_FLATSAMPLES and N_DARKSAMPLES.
+
 =cut
 
 sub n_calsamples {
@@ -380,6 +385,34 @@ sub n_calsamples {
     $self->{N_CALSAMPLES} = shift;
   }
   return $self->{N_CALSAMPLES};
+}
+
+=item B<n_darksamples>
+
+Number of steps to observe the dark.
+
+=cut
+
+sub n_darksamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_DARKSAMPLES} = shift;
+  }
+  return $self->{N_DARKSAMPLES};
+}
+
+=item B<n_flatsamples>
+
+Number of steps to observe the flatfield ramp.
+
+=cut
+
+sub n_flatsamples {
+  my $self = shift;
+  if (@_) {
+    $self->{N_FLATSAMPLES} = shift;
+  }
+  return $self->{N_FLATSAMPLES};
 }
 
 =item B<n_refsamples>
@@ -789,7 +822,8 @@ http://docs.jach.hawaii.edu/JCMT/OCS/ICD/018/jos.dtd.
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>
 
-Copyright 2004-2005 Particle Physics and Astronomy Research Council.
+Copyright 2008-2012 Science and Technology Facilities Council.
+Copyright 2004-2007 Particle Physics and Astronomy Research Council.
 All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
