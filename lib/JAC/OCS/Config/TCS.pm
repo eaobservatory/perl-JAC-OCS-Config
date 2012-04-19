@@ -30,7 +30,6 @@ use Carp;
 use warnings;
 use XML::LibXML;
 use Scalar::Util qw/ blessed /;
-use Astro::SLA;
 use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;

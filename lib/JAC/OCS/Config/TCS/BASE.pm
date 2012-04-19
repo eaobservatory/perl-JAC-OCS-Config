@@ -29,10 +29,10 @@ use Carp;
 use warnings;
 use XML::LibXML;
 use Scalar::Util qw/ blessed /;
-use Astro::SLA;
 use Astro::Telescope;
 use Astro::Coords;
 use Astro::Coords::Offset;
+use Astro::Coords::Angle;
 use Data::Dumper;
 
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr
@@ -605,7 +605,7 @@ sub _extract_coord_info {
     # Orbital elements. We need to get the (up to) 8 numbers
     # and store them in an Astro::Coords.
 
-    # Lookup table for XML to SLALIB
+    # Lookup table for XML to PAL
     # should probably put this in Astro::Coords::Elements
     # and default to knowledge of units if, for example,
     # supplied as 'inclination' rather than 'orbinc'
@@ -637,7 +637,8 @@ sub _extract_coord_info {
       # Convert to radians
       if ($el =~ /^(ORBINC|ANODE|PERIH|AORL|DM)$/) {
         # Convert to radians
-        $value *= Astro::SLA::DD2R;
+        my $ang = Astro::Coords::Angle->new( $value, units => "deg" );
+        $value = $ang->radians;
       }
 
       # Store the value
