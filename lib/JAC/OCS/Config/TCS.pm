@@ -1095,6 +1095,24 @@ sub _fixup_pong_high_el {
   my $self = shift;
   my $duration = shift;
   my $jos = shift;
+
+  # Parameters:
+  #
+  # Elevation above which to adjust the scan parameters.
+  my $elevation_limit = 70;
+
+  # Time of each sequence step.
+  my $eff_step_time = $jos->step_time * 1.16;
+
+  # Maximum amout by which the JOS_MIN parameter may increase.
+  my $max_sequence_steps_factor = 1.05;
+
+  # List of new scan parameters to apply.
+  my %override = (
+    900 => {VELOCITY => 190, DY => 60},
+  );
+
+
   my $obsArea = $self->getObsArea();
 
   my $target = $self->getTarget();
@@ -1112,7 +1130,6 @@ sub _fixup_pong_high_el {
   # Restore original datetime
   $target->datetime($datetime_orig);
 
-  my $elevation_limit = 70;
   return unless $el_deg_start > $elevation_limit
              || $el_deg_end   > $elevation_limit;
 
@@ -1121,10 +1138,6 @@ sub _fixup_pong_high_el {
   return unless defined $area{'HEIGHT'} && defined $area{'HEIGHT'};
 
   my $time_per_map_orig = JCMT::TCS::Pong::get_pong_dur(%area, %scan);
-
-  my %override = (
-    900 => {VELOCITY => 190, DY => 60},
-  );
 
   my $changed = 0;
 
@@ -1137,6 +1150,7 @@ sub _fixup_pong_high_el {
 
   return unless $changed;
 
+  # Scan parameters have changed, so need to re-calculate the timing.
   %area = $obsArea->maparea();
   %scan = $obsArea->scan();
   my $time_per_map_final = JCMT::TCS::Pong::get_pong_dur(%area, %scan);
@@ -1151,11 +1165,26 @@ sub _fixup_pong_high_el {
 
   $npatterns = 1 if 1 > $npatterns;
 
-  my $eff_step_time = $jos->step_time * 1.16;
-  $jos->jos_min(_nint($npatterns * $time_per_map_final / $eff_step_time));
+  my $jos_min_old = $jos->jos_min();
+  my $jos_min_new = undef;
+
+  # Need to recalculate $jos_min_new either if we never calculated it,
+  # or it got too big, in which case we try to sort it out by
+  # reducing the number of patterns.
+  while ((! defined $jos_min_new)
+         or $jos_min_new > $jos_min_old * $max_sequence_steps_factor
+            && $npatterns > 1) {
+    # Do not adjust if we didn't try calculating $jos_min_new yet.
+    $npatterns -- if defined $jos_min_new;
+
+    $jos_min_new = _nint($npatterns * $time_per_map_final / $eff_step_time);
+  }
+  $jos->jos_min($jos_min_new);
 
   return unless $npatterns != $npatterns_orig;
 
+  # Number of times round the pong map has changed, so regenerate
+  # the list of position angles.
   my $delta = 90 / $npatterns;
 
   # Code copied from the translator
