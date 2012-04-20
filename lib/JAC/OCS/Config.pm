@@ -1647,12 +1647,16 @@ modifications are for the current time.
 
   $cfg->fixup;
 
-No config modifications are done at this time.
+No config modifications are done at this time, other than those
+implemented by the JAC::OCS::Config::TCS object.
 
 =cut
 
 sub fixup {
+  my $self = shift;
 
+  my $tcs = $self->tcs;
+  $tcs->fixup($self->duration(), $self->jos()) if defined $tcs;
 }
 
 =item B<iscal>

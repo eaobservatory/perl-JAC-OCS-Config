@@ -1047,6 +1047,138 @@ sub stringify {
 
 =back
 
+=head2 General Methods
+
+=over 4
+
+=item B<fixup>
+
+Correct any run time problems with the configuration. Assumes the
+modifications are for the current time.
+
+  $tcs->fixup($duration, $jos);
+
+The modifications performed are:
+
+=over 4
+
+=item Pong 900
+
+Alter parameters for a slower scan at high elevation.
+
+=back
+
+=cut
+
+sub fixup {
+  my $self = shift;
+  my $duration = shift;
+  my $jos = shift;
+
+  my $tel = $self->telescope();
+  return unless defined $tel;
+
+  if (uc($tel) eq 'JCMT') {
+    my $obsArea = $self->getObsArea();
+    if (defined $obsArea) {
+      my $scanPattern = $obsArea->scan_pattern();
+
+      $self->_fixup_pong_high_el($duration, $jos)
+        if (defined $scanPattern
+            and uc($scanPattern) eq 'CURVY_PONG');
+    }
+  }
+}
+
+# Adjust parameters for pong 900 at high elevation
+sub _fixup_pong_high_el {
+  my $self = shift;
+  my $duration = shift;
+  my $jos = shift;
+  my $obsArea = $self->getObsArea();
+
+  my $target = $self->getTarget();
+  return unless defined $target;
+
+  my $el_deg_start = $target->el()->degrees();
+
+  my $datetime_dur  = new DateTime::Duration(seconds => $duration->seconds());
+  my $datetime_orig = $target->datetime();
+  my $datetime_end  = $datetime_orig + $datetime_dur;
+
+  $target->datetime($datetime_end);
+  my $el_deg_end = $target->el()->degrees();
+
+  # Restore original datetime
+  $target->datetime($datetime_orig);
+
+  my $elevation_limit = 70;
+  return unless $el_deg_start > $elevation_limit
+             || $el_deg_end   > $elevation_limit;
+
+  my %area = $obsArea->maparea();
+  my %scan = $obsArea->scan();
+  return unless defined $area{'HEIGHT'} && defined $area{'HEIGHT'};
+
+  my $time_per_map_orig = JCMT::TCS::Pong::get_pong_dur(%area, %scan);
+
+  my %override = (
+    900 => {VELOCITY => 190, DY => 60},
+  );
+
+  my $changed = 0;
+
+  foreach my $size (keys %override) {
+    next unless $size == $area{'HEIGHT'} && $size == $area{'WIDTH'};
+    $obsArea->scan(PATTERN => 'CURVY_PONG', %{$override{$size}});
+    $changed = 1;
+    last;
+  }
+
+  return unless $changed;
+
+  %area = $obsArea->maparea();
+  %scan = $obsArea->scan();
+  my $time_per_map_final = JCMT::TCS::Pong::get_pong_dur(%area, %scan);
+
+  my @posang = $obsArea->posang();
+
+  my $ref_pa = $posang[0]->degrees();
+  my $npatterns_orig = scalar @posang;
+
+  my $npatterns = _nint($npatterns_orig * $time_per_map_orig 
+                                        / $time_per_map_final);
+
+  $npatterns = 1 if 1 > $npatterns;
+
+  my $eff_step_time = $jos->step_time * 1.16;
+  $jos->jos_min(_nint($npatterns * $time_per_map_final / $eff_step_time));
+
+  return unless $npatterns != $npatterns_orig;
+
+  my $delta = 90 / $npatterns;
+
+  # Code copied from the translator
+  @posang = map {$ref_pa + ($_ * $delta)} (0 .. $npatterns - 1);
+  $obsArea->posang(map {
+                         Astro::Coords::Angle->new($_, units => 'degrees')
+                   } @posang);
+}
+
+# copied from OMP::General because that is not available here.
+sub _nint {
+  my $value = shift;
+
+  if ($value >= 0) {
+    return (int($value + 0.5));
+  } else {
+    return (int($value - 0.5));
+  }
+}
+
+
+=back
+
 =head2 Class Methods
 
 =over 4
