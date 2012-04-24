@@ -1056,7 +1056,7 @@ sub stringify {
 Correct any run time problems with the configuration. Assumes the
 modifications are for the current time.
 
-  $tcs->fixup($duration, $jos);
+  my @messages = $tcs->fixup($duration, $jos);
 
 The modifications performed are:
 
@@ -1074,6 +1074,7 @@ sub fixup {
   my $self = shift;
   my $duration = shift;
   my $jos = shift;
+  my @messages= ();
 
   my $tel = $self->telescope();
   return unless defined $tel;
@@ -1083,11 +1084,13 @@ sub fixup {
     if (defined $obsArea) {
       my $scanPattern = $obsArea->scan_pattern();
 
-      $self->_fixup_pong_high_el($duration, $jos)
+      push @messages, $self->_fixup_pong_high_el($duration, $jos)
         if (defined $scanPattern
             and uc($scanPattern) eq 'CURVY_PONG');
     }
   }
+
+  return @messages;
 }
 
 # Adjust parameters for pong 900 at high elevation
@@ -1095,6 +1098,7 @@ sub _fixup_pong_high_el {
   my $self = shift;
   my $duration = shift;
   my $jos = shift;
+  my @messages = ();
 
   # Parameters:
   #
@@ -1116,7 +1120,7 @@ sub _fixup_pong_high_el {
   my $obsArea = $self->getObsArea();
 
   my $target = $self->getTarget();
-  return unless defined $target;
+  return @messages unless defined $target;
 
   my $el_deg_start = $target->el()->degrees();
 
@@ -1130,12 +1134,12 @@ sub _fixup_pong_high_el {
   # Restore original datetime
   $target->datetime($datetime_orig);
 
-  return unless $el_deg_start > $elevation_limit
+  return @messages unless $el_deg_start > $elevation_limit
              || $el_deg_end   > $elevation_limit;
 
   my %area = $obsArea->maparea();
   my %scan = $obsArea->scan();
-  return unless defined $area{'HEIGHT'} && defined $area{'HEIGHT'};
+  return @messages unless defined $area{'HEIGHT'} && defined $area{'HEIGHT'};
 
   my $time_per_map_orig = JCMT::TCS::Pong::get_pong_dur(%area, %scan);
 
@@ -1145,10 +1149,12 @@ sub _fixup_pong_high_el {
     next unless $size == $area{'HEIGHT'} && $size == $area{'WIDTH'};
     $obsArea->scan(PATTERN => 'CURVY_PONG', %{$override{$size}});
     $changed = 1;
+    push @messages, 'Rewrote scan parameters for pong ' . $size
+                  . ' because elevation above ' . $elevation_limit;
     last;
   }
 
-  return unless $changed;
+  return @messages unless $changed;
 
   # Scan parameters have changed, so need to re-calculate the timing.
   %area = $obsArea->maparea();
@@ -1181,7 +1187,7 @@ sub _fixup_pong_high_el {
   }
   $jos->jos_min($jos_min_new);
 
-  return unless $npatterns != $npatterns_orig;
+  return @messages unless $npatterns != $npatterns_orig;
 
   # Number of times round the pong map has changed, so regenerate
   # the list of position angles.
@@ -1192,6 +1198,11 @@ sub _fixup_pong_high_el {
   $obsArea->posang(map {
                          Astro::Coords::Angle->new($_, units => 'degrees')
                    } @posang);
+
+  push @messages, 'Rewrote pong position angles for ' . $npatterns
+                . ' times round map instead of ' . $npatterns_orig;
+
+  return @messages;
 }
 
 # copied from OMP::General because that is not available here.

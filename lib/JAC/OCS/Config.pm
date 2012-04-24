@@ -1645,7 +1645,7 @@ sub targetIsFollowingAz {
 Correct any run time problems with the configuration. Assumes the
 modifications are for the current time.
 
-  $cfg->fixup;
+  my @messages = $cfg->fixup;
 
 No config modifications are done at this time, other than those
 implemented by the JAC::OCS::Config::TCS object.
@@ -1654,9 +1654,12 @@ implemented by the JAC::OCS::Config::TCS object.
 
 sub fixup {
   my $self = shift;
+  my @messages = ();
 
   my $tcs = $self->tcs;
-  $tcs->fixup($self->duration(), $self->jos()) if defined $tcs;
+  push @messages, $tcs->fixup($self->duration(), $self->jos()) if defined $tcs;
+
+  return @messages;
 }
 
 =item B<iscal>
