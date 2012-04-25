@@ -1123,6 +1123,8 @@ sub _fixup_pong_high_el {
   return @messages unless defined $target;
 
   my $el_deg_start = $target->el()->degrees();
+  my $ha_hrs_start = $target->ha()->hours();
+  my $el_transit   = $target->transit_el()->degrees();
 
   my $datetime_dur  = new DateTime::Duration(seconds => $duration->seconds());
   my $datetime_orig = $target->datetime();
@@ -1130,12 +1132,16 @@ sub _fixup_pong_high_el {
 
   $target->datetime($datetime_end);
   my $el_deg_end = $target->el()->degrees();
+  my $ha_hrs_end = $target->ha()->hours();
 
   # Restore original datetime
   $target->datetime($datetime_orig);
 
   return @messages unless $el_deg_start > $elevation_limit
-             || $el_deg_end   > $elevation_limit;
+                       || $el_deg_end   > $elevation_limit
+                       || ($el_transit  > $elevation_limit
+                           and $ha_hrs_start < 0
+                           and $ha_hrs_end   > 0);
 
   my %area = $obsArea->maparea();
   my %scan = $obsArea->scan();
