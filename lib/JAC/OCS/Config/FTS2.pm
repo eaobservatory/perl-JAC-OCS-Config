@@ -227,13 +227,22 @@ sub stringify {
 
   # Required Elements:
   # Scan Mode
-  $xml .= '<SCAN_MODE VALUE="' . $self->scan_mode() . '" />' . "\n";
+  my $mode = $self->scan_mode();
+  throw JAC::OCS::Config::Error::FatalError('FTS2 SCAN_MODE is not defined')
+      unless defined $mode;
+  $xml .= '<SCAN_MODE VALUE="' . $mode . '" />' . "\n";
 
   # Scan Direction
-  $xml .= '<SCAN_DIR VALUE="' . $self->scan_dir() . '" />' . "\n";
+  my $dir = $self->scan_dir();
+  throw JAC::OCS::Config::Error::FatalError('FTS2 SCAN_DIR is not defined')
+      unless defined $dir;
+  $xml .= '<SCAN_DIR VALUE="' . $dir . '" />' . "\n";
 
   # Scan Origin
-  $xml .= '<SCAN_ORIGIN UNIT="mm">' . $self->scan_origin() . "</SCAN_ORIGIN>\n";
+  my $origin = $self->scan_origin();
+  throw JAC::OCS::Config::Error::FatalError('FTS2 SCAN_ORIGIN is not defined')
+      unless defined $origin;
+  $xml .= '<SCAN_ORIGIN UNIT="mm">' . $origin . "</SCAN_ORIGIN>\n";
 
   # Optional Elements:
   # Scan Speed

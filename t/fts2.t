@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 34;
+use Test::More tests => 35;
 use strict;
 
 # This test script uses 3 sample pieces of XML, one for each of
@@ -93,6 +93,28 @@ is($cfg->scan_length(), undef, 'ZPD mode length');
 is($cfg->step_dist(), undef, 'ZPD mode step distance');
 
 
+
+my $construct_rapid = '<FTS2_CONFIG>
+   <SCAN_MODE VALUE="RAPID_SCAN" />
+   <SCAN_DIR VALUE="DIR_LEFT" />
+   <SCAN_ORIGIN UNIT="mm">65</SCAN_ORIGIN>
+   <SCAN_SPD UNIT="mm/s">7</SCAN_SPD>
+   <SCAN_LENGTH UNIT="mm">170.0</SCAN_LENGTH>
+   <STEP_DIST UNIT="mm">0.25</STEP_DIST>
+</FTS2_CONFIG>';
+
+$cfg = new JAC::OCS::Config::FTS2();
+
+$cfg->scan_mode('RAPID_SCAN');
+$cfg->scan_dir('DIR_LEFT');
+$cfg->scan_origin(65);
+$cfg->scan_spd(7);
+$cfg->scan_length('170.0');
+$cfg->step_dist('0.25');
+
+$xml_out = "$cfg";
+
+is(strip_xml($xml_out), $construct_rapid, 'Rapid scan constructed');
 
 
 
