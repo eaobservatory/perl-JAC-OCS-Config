@@ -54,6 +54,7 @@ use JAC::OCS::Config::Instrument;
 use JAC::OCS::Config::Header;
 use JAC::OCS::Config::RTS;
 use JAC::OCS::Config::POL;
+use JAC::OCS::Config::FTS2;
 use JAC::OCS::Config::JOS;
 use JAC::OCS::Config::ACSIS;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
@@ -298,7 +299,27 @@ sub pol {
   return $self->{POL_CONFIG};
 }
 
+=item B<fts2>
 
+FTS-2 configuration.
+
+SCUBA-2 Fourier Transform Spectrometer configuration.  Can be undefined
+if FTS-2 is not required for the observation.  Should not be set without
+SCUBA-2.
+
+=cut
+
+sub fts2 {
+  my $self = shift;
+  if (@_) {
+      throw JAC::OCS::Config::Error::FatalError(
+          'FTS-2 configuration without SCUBA-2')
+        unless defined $self->scuba2();
+
+    $self->{'FTS2_CONFIG'} = check_class_fatal('JAC::OCS::Config::FTS2', shift);
+  }
+  return $self->{'FTS2_CONFIG'};
+}
 
 =item B<instrument_setup>
 
@@ -2299,6 +2320,9 @@ sub _process_dom {
 
   $cfg = find_children( $el, "POL_CONFIG", min => 0, max => 1);
   $self->pol( new JAC::OCS::Config::POL( DOM => $cfg) ) if $cfg;
+
+  $cfg = find_children( $el, "FTS2_CONFIG", min => 0, max => 1);
+  $self->fts2( new JAC::OCS::Config::FTS2( DOM => $cfg) ) if $cfg;
 
   # we have finished the parse so set continuum status
   $self->_sync_cont_status();
