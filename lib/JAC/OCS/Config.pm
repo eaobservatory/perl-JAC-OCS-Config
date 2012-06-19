@@ -78,7 +78,7 @@ $DEBUG = 0;
 use overload '""' => "_stringify_overload";
 
 # Order in which the individual configs must be written to the file
-our @CONFIGS = qw/obs_summary jos header rts scuba2 frontend pol
+our @CONFIGS = qw/obs_summary jos header rts scuba2 frontend pol fts2
                   instrument_setup tcs acsis /;
 
 
