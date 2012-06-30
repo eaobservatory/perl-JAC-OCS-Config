@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 35;
+use Test::More tests => 41;
 use strict;
 
 # This test script uses 3 sample pieces of XML, one for each of
@@ -17,6 +17,8 @@ my $sample_rapid = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="RAPID_SCAN" />
    <SCAN_DIR VALUE="DIR_ARBITRARY" />
    <SCAN_ORIGIN UNIT="mm">30</SCAN_ORIGIN>
+   <SHUT8C VALUE="OUTOFBEAM" />
+   <SHUT8D VALUE="OUTOFBEAM" />
    <SCAN_SPD UNIT="mm/s">10</SCAN_SPD>
    <SCAN_LENGTH UNIT="mm">170.0</SCAN_LENGTH>
 </FTS2_CONFIG>';
@@ -33,6 +35,8 @@ ok(!$cfg->is_zpd_mode(), 'Rapid scan is not ZPD mode');
 ok(!$cfg->is_left_direction(), 'Rapid scan is not to the left');
 ok( $cfg->is_arbitrary_direction(), 'Rapid scan has arbitrary direction');
 ok(!$cfg->is_right_direction(), 'Rapid scan is not to the right');
+ok(!$cfg->is_shutter_8c_in_beam(), 'Rapid scan shutter 8C not in beam');
+ok(!$cfg->is_shutter_8d_in_beam(), 'Rapid scan shutter 8D not in beam');
 
 is($cfg->scan_origin(), 30, 'Rapid scan origin');
 is($cfg->scan_spd(), 10, 'Rapid scan speed');
@@ -45,6 +49,8 @@ my $sample_step = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="STEP_AND_INTEGRATE" />
    <SCAN_DIR VALUE="DIR_LEFT" />
    <SCAN_ORIGIN UNIT="mm">31</SCAN_ORIGIN>
+   <SHUT8C VALUE="OUTOFBEAM" />
+   <SHUT8D VALUE="INBEAM" />
    <STEP_DIST UNIT="mm">0.2</STEP_DIST>
 </FTS2_CONFIG>';
 
@@ -60,6 +66,9 @@ ok(!$cfg->is_zpd_mode(), 'Step and integrate is not ZPD mode');
 ok( $cfg->is_left_direction(), 'Step and integrate is to the left');
 ok(!$cfg->is_arbitrary_direction(), 'Step and integrate not arbitrary');
 ok(!$cfg->is_right_direction(), 'Step and integrate is not to the right');
+ok(!$cfg->is_shutter_8c_in_beam(), 'Step and integrate shutter 8C not in beam');
+ok( $cfg->is_shutter_8d_in_beam(), 'Step and integrate shutter 8D not in beam');
+
 
 is($cfg->scan_origin(), 31, 'Step and integrate origin');
 is($cfg->scan_spd(), undef, 'Step and integrate speed');
@@ -72,6 +81,8 @@ my $sample_zpd = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="ZPD_MODE" />
    <SCAN_DIR VALUE="DIR_RIGHT" />
    <SCAN_ORIGIN UNIT="mm">314</SCAN_ORIGIN>
+   <SHUT8C VALUE="INBEAM" />
+   <SHUT8D VALUE="OUTOFBEAM" />
 </FTS2_CONFIG>';
 
 $cfg = new JAC::OCS::Config::FTS2(XML => $sample_zpd, validation => 0);
@@ -86,6 +97,9 @@ ok( $cfg->is_zpd_mode(), 'ZPD mode is ZPD mode');
 ok(!$cfg->is_left_direction(), 'ZPD mode is not to the left');
 ok(!$cfg->is_arbitrary_direction(), 'ZPD mode not arbitrary');
 ok( $cfg->is_right_direction(), 'ZPD mode is to the right');
+ok( $cfg->is_shutter_8c_in_beam(), 'ZPD mode shutter 8C not in beam');
+ok(!$cfg->is_shutter_8d_in_beam(), 'ZPD mode shutter 8D not in beam');
+
 
 is($cfg->scan_origin(), 314, 'ZPD mode origin');
 is($cfg->scan_spd(), undef, 'ZPD mode speed');
@@ -98,6 +112,8 @@ my $construct_rapid = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="RAPID_SCAN" />
    <SCAN_DIR VALUE="DIR_LEFT" />
    <SCAN_ORIGIN UNIT="mm">65</SCAN_ORIGIN>
+   <SHUT8C VALUE="OUTOFBEAM" />
+   <SHUT8D VALUE="INBEAM" />
    <SCAN_SPD UNIT="mm/s">7</SCAN_SPD>
    <SCAN_LENGTH UNIT="mm">170.0</SCAN_LENGTH>
    <STEP_DIST UNIT="mm">0.25</STEP_DIST>
@@ -111,6 +127,8 @@ $cfg->scan_origin(65);
 $cfg->scan_spd(7);
 $cfg->scan_length('170.0');
 $cfg->step_dist('0.25');
+$cfg->shutter_8c('OUTOFBEAM');
+$cfg->shutter_8d('INBEAM');
 
 $xml_out = "$cfg";
 

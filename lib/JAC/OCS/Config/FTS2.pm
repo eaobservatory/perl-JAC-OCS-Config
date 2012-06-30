@@ -43,7 +43,8 @@ use JAC::OCS::Config::TCS::Generic qw (
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
-use vars qw/ $VERSION @VALID_SCAN_MODES @VALID_SCAN_DIRECTIONS /;
+use vars qw/ $VERSION @VALID_SCAN_MODES @VALID_SCAN_DIRECTIONS
+             @VALID_SHUTTER_SETTINGS /;
 
 $VERSION = "0.01";
 
@@ -66,6 +67,14 @@ An array of scan directions as specified by the DTD.
 =cut
 
 @VALID_SCAN_DIRECTIONS = qw/DIR_LEFT DIR_ARBITRARY DIR_RIGHT/;
+
+=item B<@VALID_SHUTTER_SETTINGS>
+
+An array of possible shutter settings.
+
+=cut
+
+@VALID_SHUTTER_SETTINGS = qw/INBEAM OUTOFBEAM/;
 
 =back
 
@@ -166,6 +175,40 @@ sub scan_origin {
   return $self->{'ScanOrigin'};
 }
 
+=item B<shutter_8c>
+
+Configures the shutter for 8C (port 2).
+
+=cut
+
+sub shutter_8c {
+  my $self = shift;
+  if (@_) {
+    my $setting = shift;
+    throw JAC::OCS::Config::Error::FatalError('FTS2 SHUT8C ' . $setting . ' is not valid')
+      unless grep {$_ eq $setting} @VALID_SHUTTER_SETTINGS;
+    $self->{'Shut8C'} = $setting;
+  }
+  return $self->{'Shut8C'};
+}
+
+=item B<shutter_8d>
+
+Configures the shutter for 8D (port 1).
+
+=cut
+
+sub shutter_8d {
+  my $self = shift;
+  if (@_) {
+    my $setting = shift;
+    throw JAC::OCS::Config::Error::FatalError('FTS2 SHUT8D ' . $setting . ' is not valid')
+      unless grep {$_ eq $setting} @VALID_SHUTTER_SETTINGS;
+    $self->{'Shut8D'} = $setting;
+  }
+  return $self->{'Shut8D'};
+}
+
 =item B<scan_spd>
 
 The scan speed is in units of mm/s.
@@ -243,6 +286,14 @@ sub stringify {
   throw JAC::OCS::Config::Error::FatalError('FTS2 SCAN_ORIGIN is not defined')
       unless defined $origin;
   $xml .= '<SCAN_ORIGIN UNIT="mm">' . $origin . "</SCAN_ORIGIN>\n";
+
+  # Shutter Settings
+  my $shutter_8c = $self->shutter_8c();
+  my $shutter_8d = $self->shutter_8d();
+  throw JAC::OCS::Config::Error::FatalError('FTS2 shutter settings not defined')
+      unless defined $shutter_8c and defined $shutter_8d;
+  $xml .= '<SHUT8C VALUE="' . $shutter_8c . '" />' . "\n";
+  $xml .= '<SHUT8D VALUE="' . $shutter_8d . '" />' . "\n";
 
   # Optional Elements:
   # Scan Speed
@@ -363,6 +414,28 @@ sub is_right_direction {
   return $self->scan_dir() eq 'DIR_RIGHT';
 }
 
+=item B<is_shutter_8c_in_beam>
+
+Returns true if shutter 8C is in the beam.
+
+=cut
+
+sub is_shutter_8c_in_beam {
+  my $self = shift;
+  return $self->shutter_8c() eq 'INBEAM';
+}
+
+=item B<is_shutter_8d_in_beam>
+
+Returns true if shutter 8C is in the beam.
+
+=cut
+
+sub is_shutter_8d_in_beam {
+  my $self = shift;
+  return $self->shutter_8d() eq 'INBEAM';
+}
+
 =back
 
 =begin __PRIVATE_METHODS__
@@ -424,6 +497,24 @@ sub _process_dom {
     $self->scan_origin($origin);
   };
 
+  # Shutter Settings
+  my $shut_8c = find_children($el, 'SHUT8C', min => 1, max => 1);
+  do {
+    my %attr = find_attr($shut_8c, q/VALUE/);
+    throw JAC::OCS::Config::Error::FatalError('FTS2 SHUT8C requires a VALUE')
+      unless defined $attr{'VALUE'};
+
+    $self->shutter_8c($attr{'VALUE'});
+  };
+
+  my $shut_8d = find_children($el, 'SHUT8D', min => 1, max => 1);
+  do {
+    my %attr = find_attr($shut_8d, q/VALUE/);
+    throw JAC::OCS::Config::Error::FatalError('FTS2 SHUT8D requires a VALUE')
+      unless defined $attr{'VALUE'};
+
+    $self->shutter_8d($attr{'VALUE'});
+  };
 
   # Optional Elements:
   # Scan Speed
