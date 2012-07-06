@@ -195,7 +195,7 @@ sub stringify {
     (defined $self->type ? $self->type : '')
     . "</obs_type>\n";
   if ($self->inbeam) {
-    $xml .= "<in_beam>".join(" ",$self->inbeam)."</in_beam>\n";
+    $xml .= "<in_beam>" . $_ . "</in_beam>\n" foreach $self->inbeam();
   }
   $xml .= "<obs_comment>". $self->comment . "</obs_comment>"
     if $self->comment;
