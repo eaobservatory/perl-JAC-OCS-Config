@@ -23,6 +23,7 @@ my $build = $class->new
                 },
    requires => {
                 'perl'          => '5.8.0',
+                'IO::Tee'       => 0,
                 'XML::LibXML'  => 0,
                 'Astro::Coords' => 0.05,
                 'Astro::Coords::Offset' => 0,
@@ -33,6 +34,9 @@ my $build = $class->new
    build_requires => {
                       'Test::More' => 0,
                      },
+   configure_requires => {
+                          'Module::Build' => '0.30',
+                         },
    script_files => [ qw/ ocsconfig / ],
   );
 
