@@ -324,15 +324,14 @@ sub stringify {
 =item B<dtdrequires>
 
 Returns the names of any associated configurations required for this
-configuration to be used in a full OCS_CONFIG. The FTS2 configuration
-requires knowledge of the associated instrument setup.
+configuration to be used in a full OCS_CONFIG.
 
   @requires = $cfg->dtdrequires();
 
 =cut
 
 sub dtdrequires {
-  return ('instrument_setup');
+  return ();
 }
 
 =item B<getRootElementName>
