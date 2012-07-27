@@ -93,7 +93,7 @@ Name of the task that woulbde  involved in reading this config.
 
   @tasks = $tcs->tasks;
 
-Can be ROVER or POL-2 depending on the state of C<is_cont>
+Can be ROVER or POL2 depending on the state of C<is_cont>
 attribute (which can be set during stringification or read, or
 explicitly by the translator).
 
@@ -103,7 +103,7 @@ explicitly by the translator).
 
 sub tasks {
   my $self = shift;
-  return ( $self->is_cont ? "POL-2" : "ROVER" );
+  return ( $self->is_cont ? "POL2" : "ROVER" );
 }
 
 =item B<is_cont>
