@@ -150,7 +150,7 @@ sub is_spinning {
 
 =item B<spin_speed>
 
-Spin speed of the polarimeter in deg/sec. If set, the C<is_spinning>
+Spin speed of the polarimeter in rev/sec. If set, the C<is_spinning>
 flag is set to true automatically.
 
  $pol->spin_speed( 2 );
