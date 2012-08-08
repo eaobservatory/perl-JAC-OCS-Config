@@ -343,7 +343,7 @@ requires knowledge of the associated instrument setup.
 =cut
 
 sub dtdrequires {
-  return ('instrument_setup');
+  return ('obs_summary', 'instrument_setup');
 }
 
 =item B<getRootElementName>
