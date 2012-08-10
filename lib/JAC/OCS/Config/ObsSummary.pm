@@ -29,6 +29,8 @@ use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::XMLHelper qw(
 				   indent_xml_string
 				   get_pcdata
+                                   find_children
+                                   get_this_pcdata
 				  );
 
 
@@ -253,13 +255,14 @@ sub _process_dom {
   $self->type( get_pcdata( $el, "obs_type") );
   $self->comment( get_pcdata( $el, "comment") );
 
-  my $inbeam = get_pcdata($el, "in_beam");
-  if ($inbeam) {
+  my @in = ();
+  foreach my $inbeam_element (find_children($el, 'in_beam')) {
+    my $inbeam = get_this_pcdata($inbeam_element);
     $inbeam =~ s/^\s+//;
     $inbeam =~ s/\s+$//;
-    my @in = split(/\s+/, $inbeam);
-    $self->inbeam( @in );
+    push @in, split(/\s+/, $inbeam);
   }
+  $self->inbeam( @in );
 
   return;
 }
