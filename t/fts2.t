@@ -32,9 +32,9 @@ is(strip_xml($xml_out), $sample_rapid, 'Rapid scan sample re-XMLified');
 ok( $cfg->is_rapid_scan(), 'Rapid scan is rapid scan');
 ok(!$cfg->is_step_and_integrate(), 'Rapid scan is not step and integrate');
 ok(!$cfg->is_zpd_mode(), 'Rapid scan is not ZPD mode');
-ok(!$cfg->is_left_direction(), 'Rapid scan is not to the left');
+ok(!$cfg->is_negative_direction(), 'Rapid scan is not negative direction');
 ok( $cfg->is_arbitrary_direction(), 'Rapid scan has arbitrary direction');
-ok(!$cfg->is_right_direction(), 'Rapid scan is not to the right');
+ok(!$cfg->is_positive_direction(), 'Rapid scan is not positive direction');
 ok(!$cfg->is_shutter_8c_in_beam(), 'Rapid scan shutter 8C not in beam');
 ok(!$cfg->is_shutter_8d_in_beam(), 'Rapid scan shutter 8D not in beam');
 
@@ -47,7 +47,7 @@ is($cfg->step_dist(), undef, 'Rapid scan step distance');
 
 my $sample_step = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="STEP_AND_INTEGRATE" />
-   <SCAN_DIR VALUE="DIR_LEFT" />
+   <SCAN_DIR VALUE="DIR_NEGATIVE" />
    <SCAN_ORIGIN UNIT="mm">31</SCAN_ORIGIN>
    <SHUT8C VALUE="OUTOFBEAM" />
    <SHUT8D VALUE="INBEAM" />
@@ -63,9 +63,9 @@ is(strip_xml($xml_out), $sample_step, 'Step and integrate sample re-XMLified');
 ok(!$cfg->is_rapid_scan(), 'Step and integrate is not rapid scan');
 ok( $cfg->is_step_and_integrate(), 'Step and integrate is step and integrate');
 ok(!$cfg->is_zpd_mode(), 'Step and integrate is not ZPD mode');
-ok( $cfg->is_left_direction(), 'Step and integrate is to the left');
+ok( $cfg->is_negative_direction(), 'Step and integrate is negative direction');
 ok(!$cfg->is_arbitrary_direction(), 'Step and integrate not arbitrary');
-ok(!$cfg->is_right_direction(), 'Step and integrate is not to the right');
+ok(!$cfg->is_positive_direction(), 'Step and integrate is not positive direction');
 ok(!$cfg->is_shutter_8c_in_beam(), 'Step and integrate shutter 8C not in beam');
 ok( $cfg->is_shutter_8d_in_beam(), 'Step and integrate shutter 8D not in beam');
 
@@ -79,7 +79,7 @@ is($cfg->step_dist(), 0.2, 'Step and integrate step distance');
 
 my $sample_zpd = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="ZPD_MODE" />
-   <SCAN_DIR VALUE="DIR_RIGHT" />
+   <SCAN_DIR VALUE="DIR_POSITIVE" />
    <SCAN_ORIGIN UNIT="mm">314</SCAN_ORIGIN>
    <SHUT8C VALUE="INBEAM" />
    <SHUT8D VALUE="OUTOFBEAM" />
@@ -94,9 +94,9 @@ is(strip_xml($xml_out), $sample_zpd, 'ZPD sample re-XMLified');
 ok(!$cfg->is_rapid_scan(), 'ZPD mode is not rapid scan');
 ok(!$cfg->is_step_and_integrate(), 'ZPD mode is not step and integrate');
 ok( $cfg->is_zpd_mode(), 'ZPD mode is ZPD mode');
-ok(!$cfg->is_left_direction(), 'ZPD mode is not to the left');
+ok(!$cfg->is_negative_direction(), 'ZPD mode is not negative direction');
 ok(!$cfg->is_arbitrary_direction(), 'ZPD mode not arbitrary');
-ok( $cfg->is_right_direction(), 'ZPD mode is to the right');
+ok( $cfg->is_positive_direction(), 'ZPD mode is positive direction');
 ok( $cfg->is_shutter_8c_in_beam(), 'ZPD mode shutter 8C not in beam');
 ok(!$cfg->is_shutter_8d_in_beam(), 'ZPD mode shutter 8D not in beam');
 
@@ -110,7 +110,7 @@ is($cfg->step_dist(), undef, 'ZPD mode step distance');
 
 my $construct_rapid = '<FTS2_CONFIG>
    <SCAN_MODE VALUE="RAPID_SCAN" />
-   <SCAN_DIR VALUE="DIR_LEFT" />
+   <SCAN_DIR VALUE="DIR_NEGATIVE" />
    <SCAN_ORIGIN UNIT="mm">65</SCAN_ORIGIN>
    <SHUT8C VALUE="OUTOFBEAM" />
    <SHUT8D VALUE="INBEAM" />
@@ -122,7 +122,7 @@ my $construct_rapid = '<FTS2_CONFIG>
 $cfg = new JAC::OCS::Config::FTS2();
 
 $cfg->scan_mode('RAPID_SCAN');
-$cfg->scan_dir('DIR_LEFT');
+$cfg->scan_dir('DIR_NEGATIVE');
 $cfg->scan_origin(65);
 $cfg->scan_spd(7);
 $cfg->scan_length('170.0');

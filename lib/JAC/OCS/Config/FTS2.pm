@@ -66,7 +66,7 @@ An array of scan directions as specified by the DTD.
 
 =cut
 
-@VALID_SCAN_DIRECTIONS = qw/DIR_LEFT DIR_ARBITRARY DIR_RIGHT/;
+@VALID_SCAN_DIRECTIONS = qw/DIR_NEGATIVE DIR_ARBITRARY DIR_POSITIVE/;
 
 =item B<@VALID_SHUTTER_SETTINGS>
 
@@ -380,15 +380,15 @@ sub is_zpd_mode {
   return $self->scan_mode() eq 'ZPD_MODE';
 }
 
-=item B<is_left_direction>
+=item B<is_negative_direction>
 
-Returns true if the scan direction is DIR_LEFT.
+Returns true if the scan direction is DIR_NEGATIVE.
 
 =cut
 
-sub is_left_direction {
+sub is_negative_direction {
   my $self = shift;
-  return $self->scan_dir() eq 'DIR_LEFT';
+  return $self->scan_dir() eq 'DIR_NEGATIVE';
 }
 
 =item B<is_arbitrary_direction>
@@ -402,15 +402,15 @@ sub is_arbitrary_direction {
   return $self->scan_dir() eq 'DIR_ARBITRARY';
 }
 
-=item B<is_right_drection>
+=item B<is_positive_drection>
 
-Returns true if the scan direction is DIR_RIGHT.
+Returns true if the scan direction is DIR_POSITIVE.
 
 =cut
 
-sub is_right_direction {
+sub is_positive_direction {
   my $self = shift;
-  return $self->scan_dir() eq 'DIR_RIGHT';
+  return $self->scan_dir() eq 'DIR_POSITIVE';
 }
 
 =item B<is_shutter_8c_in_beam>
