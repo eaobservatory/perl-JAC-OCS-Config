@@ -2178,7 +2178,20 @@ sub qsummary {
   my $str;
 
   $obsmode =~ s/_/ /g;
-  $str = sprintf("%-10s %-7s %-16s",$targ, $instrument,$obsmode);
+
+  # List of JOS parameters which might be useful for people
+  # viewing the queue monitor.
+  my @josparams = qw/FOCUS_AXIS/;
+
+  # Append those JOS parameters to obsmode.
+  my $jos = $self->jos();
+  if ($jos) {
+    my %par = $jos->parameters();
+    my @par = grep {defined $_} @par{@josparams};
+    $obsmode .= ' (' . join(', ', @par) . ')' if scalar @par;
+  }
+
+  $str = sprintf("%-11s %-7s %-16s",$targ, $instrument,$obsmode);
   return $str;
 }
 
