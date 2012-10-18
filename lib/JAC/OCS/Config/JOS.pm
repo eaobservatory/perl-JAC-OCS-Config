@@ -36,7 +36,7 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = "1.02";
+$VERSION = "1.03";
 
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names
@@ -68,6 +68,7 @@ our @PARAMS = (qw/
                    START_INDEX
                    STEPS_BTWN_CALS
                    STEPS_BTWN_DARK
+                   STEPS_BTWN_FLAT
                    STEPS_BTWN_REFS
                    STEP_TIME
                    TUNE_FILENAME
@@ -587,6 +588,21 @@ sub steps_btwn_dark {
     $self->{STEPS_BTWN_DARK} = shift;
   }
   return $self->{STEPS_BTWN_DARK};
+}
+
+=item B<steps_btwn_flat>
+
+Number of steps that are allowed to occur before a new flatfield should
+be obtained.
+
+=cut
+
+sub steps_btwn_flat {
+  my $self = shift;
+  if (@_) {
+    $self->{STEPS_BTWN_FLAT} = shift;
+  }
+  return $self->{STEPS_BTWN_FLAT};
 }
 
 =item B<steps_btwn_refs>
