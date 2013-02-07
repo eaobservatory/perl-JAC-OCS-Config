@@ -33,6 +33,7 @@ use Scalar::Util qw/ blessed /;
 use Astro::Coords;
 use Astro::Coords::Offset;
 use Data::Dumper;
+use DateTime;
 
 use JAC::OCS::Config::Error qw| :try |;
 use JAC::OCS::Config::Helper qw/ check_class_fatal /;
@@ -1122,20 +1123,25 @@ sub _fixup_pong_high_el {
   my $target = $self->getTarget();
   return @messages unless defined $target;
 
+  # Configure start datetime of target object.
+  my $usenow_orig = $target->usenow();
+  my $datetime_start = DateTime->now();
+  $target->usenow(0);
+  $target->datetime($datetime_start);
+
   my $el_deg_start = $target->el()->degrees();
   my $ha_hrs_start = $target->ha()->hours();
   my $el_transit   = $target->transit_el()->degrees();
 
   my $datetime_dur  = new DateTime::Duration(seconds => $duration->seconds());
-  my $datetime_orig = $target->datetime();
-  my $datetime_end  = $datetime_orig + $datetime_dur;
+  my $datetime_end  = $datetime_start + $datetime_dur;
 
   $target->datetime($datetime_end);
   my $el_deg_end = $target->el()->degrees();
   my $ha_hrs_end = $target->ha()->hours();
 
-  # Restore original datetime
-  $target->datetime($datetime_orig);
+  # Restore original datetime usenow setting
+  $target->usenow($usenow_orig);
 
   return @messages unless $el_deg_start > $elevation_limit
                        || $el_deg_end   > $elevation_limit
