@@ -559,7 +559,10 @@ sub _extract_coord_info {
       %coords = ( long => $cc{c1}, lat => $cc{c2}, 
 		  type => 'galactic', units=>'deg' );
     } elsif ($type eq 'Az/El' || $type eq 'AZEL') {
-      %coords = ( az => $cc{c1}, el => $cc{c2} );
+      my $unit = ($cc{c1} =~ /:/ or $cc{c2} =~ /:/)
+               ? 'sexagesimal'
+               : 'degrees';
+      %coords = ( az => $cc{c1}, el => $cc{c2}, units => $unit );
     } elsif ($type eq 'HADEC') {
       throw JAC::OCS::Config::Error::FatalError("HA/Dec requires a telescope but no telescope is defined!") unless defined $tel;
 
