@@ -36,7 +36,7 @@ use base qw/ JAC::OCS::Config::CfgBase /;
 
 use vars qw/ $VERSION /;
 
-$VERSION = "1.03";
+$VERSION = "1.04";
 
 # List of all recipe parameters
 # Should be extended to include corresponding recipe names
@@ -56,6 +56,8 @@ our @PARAMS = (qw/
                    N_CALSAMPLES
                    N_DARKSAMPLES
                    N_FLATSAMPLES
+                   N_INDEX
+                   N_MS_INDEX
                    N_REFSAMPLES
                    PISTON_NUM
                    PISTON_START
@@ -414,6 +416,36 @@ sub n_flatsamples {
     $self->{N_FLATSAMPLES} = shift;
   }
   return $self->{N_FLATSAMPLES};
+}
+
+=item B<n_index>
+
+Informational: the number of offset (index) positions
+in the TCS configuration.
+
+=cut
+
+sub n_index {
+  my $self = shift;
+  if (@_) {
+    $self->{N_INDEX} = shift;
+  }
+  return $self->{N_INDEX};
+}
+
+=item B<n_ms_index>
+
+Informational: the number of microstep positions
+in the TCS configuration.
+
+=cut
+
+sub n_ms_index {
+  my $self = shift;
+  if (@_) {
+    $self->{N_MS_INDEX} = shift;
+  }
+  return $self->{N_MS_INDEX};
 }
 
 =item B<n_refsamples>
