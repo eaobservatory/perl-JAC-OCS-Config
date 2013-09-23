@@ -19,7 +19,7 @@ my $build = $class->new
    dist_abstract => 'JCMT OCS Configuration file parsing and writing',
    dist_author => 'Tim Jenness <t.jenness@jach.hawaii.edu>',
    meta_merge => {
-               resources =>  {repository => "git:///jac_sw/gitroot/perl-JAC-OCS-Config.git"},
+               resources =>  {repository => "git://jac_sw/gitroot/perl-JAC-OCS-Config.git"},
                 },
    requires => {
                 'perl'          => '5.8.0',
