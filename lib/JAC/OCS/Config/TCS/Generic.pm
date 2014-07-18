@@ -327,6 +327,20 @@ sub coords_to_xml {
 
     $xml .= "  </conicSystem>\n";
 
+  } elsif ($type eq 'TLE') {
+    $xml .=
+    "  <tleSystem>\n" .
+    '    <epochYr>' . $c->epoch_year() . "</epochYr>\n" .
+    '    <epochDay>' . $c->epoch_day() . "</epochDay>\n" .
+    '    <inclination>' . $c->inclination()->degrees() . "</inclination>\n" .
+    '    <raanode>' . $c->raanode()->degrees() . "</raanode>\n" .
+    '    <perigee>' . $c->perigee()->degrees() . "</perigee>\n" .
+    '    <e>' . $c->e() . "</e>\n" .
+    '    <LorM>' . $c->mean_anomaly()->degrees() . "</LorM>\n" .
+    '    <mm>' . $c->mean_motion() . "</mm>\n" .
+    '    <bstar>' . $c->bstar() . "</bstar>\n" .
+    "  </tleSystem>\n";
+
   } else {
     throw JAC::OCS::Config::Error::FatalError("Do not yet know how to xml-ify coords of type $type");
   }

@@ -33,6 +33,7 @@ use Astro::Telescope;
 use Astro::Coords;
 use Astro::Coords::Offset;
 use Astro::Coords::Angle;
+use Astro::Coords::TLE;
 use Data::Dumper;
 
 use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr
@@ -512,6 +513,10 @@ sub _extract_coord_info {
   my $type;
   if ($sysname eq 'spherSystem') {
     $type = $system->getAttribute("SYSTEM");
+  } elsif ($sysname eq 'tleSystem') {
+    # The TLE system does not have a sub system / type, so provide a dummy
+    # value to prevent the check below from failing.
+    $type = 'TLE';
   } else {
     my $lc = $system->getAttribute("type");
     my $uc = $system->getAttribute("TYPE");
@@ -664,6 +669,27 @@ sub _extract_coord_info {
     $c = Astro::Coords->new( planet => $name);
 
     throw JAC::OCS::Config::Error::FatalError("Unable to process planet '$name'\n")
+      unless defined $c;
+
+  } elsif ($sysname eq 'tleSystem') {
+    $c = new Astro::Coords::TLE(
+        name         => $name,
+        epoch_year   => get_pcdata($system, 'epochYr'),
+        epoch_day    => get_pcdata($system, 'epochDay'),
+        inclination  => new Astro::Coords::Angle(get_pcdata(
+                            $system, 'inclination'), units => 'deg'),
+        raanode      => new Astro::Coords::Angle(get_pcdata(
+                            $system, 'raanode'), units => 'deg'),
+        perigee      => new Astro::Coords::Angle(get_pcdata(
+                            $system, 'perigee'), units => 'deg'),
+        e            => get_pcdata($system, 'e'),
+        mean_anomaly => new Astro::Coords::Angle(get_pcdata(
+                            $system, 'LorM'), units => 'deg'),
+        mean_motion  => get_pcdata($system, 'mm'),
+        bstar        => get_pcdata($system, 'bstar'),
+    );
+
+    throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name as TLE")
       unless defined $c;
 
   } else {
