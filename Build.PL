@@ -33,6 +33,7 @@ my $build = $class->new
                },
    build_requires => {
                       'Test::More' => 0,
+                      'Test::Number::Delta' => 0,
                      },
    configure_requires => {
                           'Module::Build' => '0.30',
