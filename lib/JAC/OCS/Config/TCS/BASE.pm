@@ -492,7 +492,7 @@ sub _extract_coord_info {
   # Now we need to look for the coordinates. If we have hmsdegSystem
   # or degdegSystem (for Galactic) we translate those to a nice easy
   # J2000. If we have conicSystem or namedSystem then we have a moving
-  # source on our hands and we have to work out it's azel dynamically
+  # source on our hands and we have to work out its azel dynamically
   # If we have a degdegSystem with altaz we can always schedule it.
   # spherSystem now replaces hmsdegsystem and degdegsystem
 
