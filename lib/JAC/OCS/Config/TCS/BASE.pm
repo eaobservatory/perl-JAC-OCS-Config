@@ -41,6 +41,7 @@ use JAC::OCS::Config::XMLHelper qw/ get_pcdata get_pcdata_multi find_attr
 				    /;
 use JAC::OCS::Config::TCS::Generic qw/ coords_to_xml offset_to_xml find_offsets /;
 use JAC::OCS::Config::Error;
+use JAC::OCS::Config::Coords::AutoTLE;
 
 use base qw/ JAC::OCS::Config::CfgBase /;
 
@@ -672,21 +673,32 @@ sub _extract_coord_info {
       unless defined $c;
 
   } elsif ($sysname eq 'tleSystem') {
-    $c = new Astro::Coords::TLE(
+    my $epoch_year = get_pcdata($system, 'epochYr');
+    my $epoch_day = get_pcdata($system, 'epochDay');
+    my $inclination = get_pcdata($system, 'inclination');
+    my $raanode = get_pcdata($system, 'raanode');
+    my $perigee = get_pcdata($system, 'perigee');
+    my $e = get_pcdata($system, 'e');
+    my $m_anomaly = get_pcdata($system, 'LorM');
+    my $m_motion = get_pcdata($system, 'mm');
+    my $bstar = get_pcdata($system, 'bstar');
+
+    $c = (grep {$_ != 0.0} ($epoch_year, $epoch_day, $inclination, $raanode,
+                             $perigee, $e, $m_anomaly, $m_motion, $bstar))
+    ? new Astro::Coords::TLE(
         name         => $name,
-        epoch_year   => get_pcdata($system, 'epochYr'),
-        epoch_day    => get_pcdata($system, 'epochDay'),
-        inclination  => new Astro::Coords::Angle(get_pcdata(
-                            $system, 'inclination'), units => 'deg'),
-        raanode      => new Astro::Coords::Angle(get_pcdata(
-                            $system, 'raanode'), units => 'deg'),
-        perigee      => new Astro::Coords::Angle(get_pcdata(
-                            $system, 'perigee'), units => 'deg'),
-        e            => get_pcdata($system, 'e'),
-        mean_anomaly => new Astro::Coords::Angle(get_pcdata(
-                            $system, 'LorM'), units => 'deg'),
-        mean_motion  => get_pcdata($system, 'mm'),
-        bstar        => get_pcdata($system, 'bstar'),
+        epoch_year   => $epoch_year,
+        epoch_day    => $epoch_day,
+        inclination  => new Astro::Coords::Angle($inclination, units => 'deg'),
+        raanode      => new Astro::Coords::Angle($raanode, units => 'deg'),
+        perigee      => new Astro::Coords::Angle($perigee, units => 'deg'),
+        e            => $e,
+        mean_anomaly => new Astro::Coords::Angle($m_anomaly, units => 'deg'),
+        mean_motion  => $m_motion,
+        bstar        => $bstar,
+    )
+    : new JAC::OCS::Config::Coords::AutoTLE(
+        name         => $name,
     );
 
     throw JAC::OCS::Config::Error::FatalError("Error reading coordinates from XML for target $name as TLE")

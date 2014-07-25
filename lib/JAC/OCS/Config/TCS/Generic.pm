@@ -327,7 +327,7 @@ sub coords_to_xml {
 
     $xml .= "  </conicSystem>\n";
 
-  } elsif ($type eq 'TLE') {
+  } elsif ($type eq 'TLE' or $type eq 'AUTO-TLE') {
     $xml .=
     "  <tleSystem>\n" .
     '    <epochYr>' . $c->epoch_year() . "</epochYr>\n" .
