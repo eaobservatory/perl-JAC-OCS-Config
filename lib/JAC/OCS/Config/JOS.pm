@@ -748,7 +748,7 @@ sub stringify {
 
   my %params = $self->parameters;
   $xml .= "<parameters \n";
-  for my $p (keys %params) {
+  for my $p (sort keys %params) {
     $xml .= "            $p=\"$params{$p}\"\n"
       if defined $params{$p};
   }
