@@ -25,6 +25,7 @@ use warnings;
 
 use vars qw/ $VERSION /;
 
+use XML::LibXML;
 use JAC::OCS::Config::Error;
 
 # Overloading
@@ -457,7 +458,7 @@ sub stringify {
     unless ($self->type eq 'BLANKFIELD' || $self->type eq 'COMMENT');
   $xml .= "        COMMENT=\"" . $self->comment . "\"\n" 
     if (defined $self->comment);
-  $xml .= "        VALUE=\"" . (defined $self->value ? $self->value : "") . "\" "
+  $xml .= "        VALUE=\"" . (defined $self->value ? XML::LibXML::Attr->new("VALUE", $self->value)->serializeContent() : "") . "\" "
     unless $self->type eq 'BLANKFIELD';
 
   if ($self->source) {
