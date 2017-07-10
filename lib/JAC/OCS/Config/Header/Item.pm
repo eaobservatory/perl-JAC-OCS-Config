@@ -458,7 +458,11 @@ sub stringify {
     unless ($self->type eq 'BLANKFIELD' || $self->type eq 'COMMENT');
   $xml .= "        COMMENT=\"" . $self->comment . "\"\n" 
     if (defined $self->comment);
-  $xml .= "        VALUE=\"" . (defined $self->value ? XML::LibXML::Attr->new("VALUE", $self->value)->serializeContent() : "") . "\" "
+  # XML::LibXML::Attr::serializeContent returns undef if the value is "",
+  # so we need to do this first and check again that it is defined to avoid
+  # warnings here.
+  my $xml_value = (defined $self->value ? XML::LibXML::Attr->new("VALUE", $self->value)->serializeContent() : undef);
+  $xml .= "        VALUE=\"" . (defined $xml_value ? $xml_value : "") . "\" "
     unless $self->type eq 'BLANKFIELD';
 
   if ($self->source) {
