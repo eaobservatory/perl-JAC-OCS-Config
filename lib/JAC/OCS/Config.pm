@@ -2191,7 +2191,13 @@ sub qsummary {
     $obsmode .= ' (' . join(', ', @par) . ')' if scalar @par;
   }
 
-  $str = sprintf("%-11s %-7s %-16s",$targ, $instrument,$obsmode);
+  # Add frequency if present.
+  my $fe = $self->frontend();
+  if (defined $fe) {
+    $instrument = sprintf("%s %6.3f", $instrument, $fe->rest_frequency());
+  }
+
+  $str = sprintf("%-11s %-15s %-16s",$targ, $instrument,$obsmode);
   return $str;
 }
 
