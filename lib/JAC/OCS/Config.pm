@@ -9,8 +9,8 @@ JAC::OCS::Config - Parse and write JCMT OCS Configuration XML
   use JAC::OCS::Config;
 
   $cfg = new JAC::OCS::Config( XML => $xml );
-  $cfg = new JAC::OCS::Config( FILE => $filename );
-  $cfg = new JAC::OCS::Config( FILE => $filename, telescope => 'UKIRT' );
+  $cfg = new JAC::OCS::Config( File => $filename );
+  $cfg = new JAC::OCS::Config( File => $filename, telescope => 'UKIRT' );
 
   $inst = $cfg->instrument;
   $proj = $cfg->projectid;
