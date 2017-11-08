@@ -1437,6 +1437,22 @@ sub msbtid {
   return $self->_get_set_header_value( "MSBTID", @_ );
 }
 
+=item B<msbtitle>
+
+The MSB title associated with this configuration. If none is defined
+(e.g. if no HEADER_CONFIG available), then the method will return undef.
+
+  my $title = $cfg->msbtitle();
+
+Can be used to set the value.
+
+=cut
+
+sub msbtitle {
+  my $self = shift;
+  return $self->_get_set_header_value("MSBTITLE", @_);
+}
+
 # Generic function for read something from the Header
 
 sub _get_set_header_value {
