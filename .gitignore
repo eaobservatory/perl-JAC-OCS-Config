@@ -4,6 +4,8 @@ pm_to_blib
 _build/
 lib/JAC/OCS/Config/Version.pm
 *.bak
+*~
+.*.swp
 Makefile.old
 Build
 JAC-OCS-Config-*.tar.gz
