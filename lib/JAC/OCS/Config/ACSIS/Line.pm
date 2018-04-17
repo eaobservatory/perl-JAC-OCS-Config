@@ -120,13 +120,14 @@ sub restfreq {
 =cut
 
 # Routine to clean up molecule and transition strings
-# to remove trailing and leading spaces.
+# to remove duplicate, trailing and leading spaces.
 
 sub _cleanup {
   my $x = shift;
   return unless defined $x;
   $x =~ s/^\s*//;
   $x =~ s/\s*$//;
+  $x =~ s/\s\s+/ /;
   return $x;
 }
 
