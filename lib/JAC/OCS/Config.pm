@@ -1453,6 +1453,22 @@ sub msbtitle {
   return $self->_get_set_header_value("MSBTITLE", @_);
 }
 
+=item B<shift_type>
+
+The shift type associated with this configuration. If none is defined
+(e.g. if no HEADER_CONFIG available), then the method will return undef.
+
+  my $type = $cfg->shift_type();
+
+Can be used to set the value.
+
+=cut
+
+sub shift_type {
+  my $self = shift;
+  return $self->_get_set_header_value('OPER_SFT', @_);
+}
+
 # Generic function for read something from the Header
 
 sub _get_set_header_value {
