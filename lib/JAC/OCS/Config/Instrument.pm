@@ -164,7 +164,9 @@ Heterodyne receptors have the following information in addition to that above:
  pol_type - Polarisation type for this pixel (eg Linear)
  refpix -  ID of reference pixel for gain calibration
  sensitivity - Relative sensitivity of this pixel to the reference pixel
- angle  - polarization angle (Astro::Coords::Angle object)
+ angle  - polarization angle (Astro::Coords::Angle object, if pol_type not "Circular")
+ sideband - "LSB" or "USB" (2SB receivers only)
+ handedness - "left" or "right" (if pol_type is "Circular")
 
 The reference pixel should refer to one of the pixels in this receptor
 hash.
@@ -604,7 +606,19 @@ sub stringify {
       $xml .= "<sensitivity reference=\"$refpix\"\n";
       $xml .= "             value=\"$rec{$r}{sensitivity}\" />\n";
 
-      $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
+
+      if (exists $rec{$r}{'angle'}) {
+        $xml .= "<angle units=\"rad\" value=\"".$rec{$r}{angle}->radians."\" />\n";
+      }
+
+      if (exists $rec{$r}{'handedness'}) {
+        $xml .= '<handedness value="' . $rec{$r}{'handedness'} . "\" />\n";
+      }
+
+      if (exists $rec{$r}{'sideband'}) {
+        $xml .= '<sideband value="' . $rec{$r}{'sideband'} . "\" />\n";
+      }
+
       $xml .= "</$array_or_receptor>\n";
     } else {
       # not a container element so just empty the opening element
@@ -925,9 +939,23 @@ sub _process_dom {
       $attr{sensitivity} = $sens{value};
       $attr{refpix} = $sens{reference};
 
-      $child = find_children($r,"angle",min=>1,max=>1);
-      my %ang = find_attr($child,"units","value");
-      $attr{angle} = Astro::Coords::Angle->new( $ang{value}, units => $ang{units} );
+      $child = find_children($r,"angle",min=>0,max=>1);
+      if (defined $child) {
+        my %ang = find_attr($child,"units","value");
+        $attr{angle} = Astro::Coords::Angle->new( $ang{value}, units => $ang{units} );
+      }
+
+      $child = find_children($r, 'handedness', min => 0, max => 1);
+      if (defined $child) {
+        my %hand = find_attr($child, 'value');
+        $attr{'handedness'} = $hand{'value'};
+      }
+
+      $child = find_children($r, 'sideband', min => 0, max => 1);
+      if (defined $child) {
+        my %sideband = find_attr($child, 'value');
+        $attr{'sideband'} = $sideband{'value'};
+      }
     }
 
     # Store the information indexed by ID
