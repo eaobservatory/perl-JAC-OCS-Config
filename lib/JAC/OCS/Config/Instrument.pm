@@ -494,6 +494,25 @@ sub receptor_ids {
   return keys %rec;
 }
 
+=item B<receptor_sideband>
+
+Returns the receptor sideband if present (e.g. for a 2SB instrument)
+or undef otherwise.
+
+  $sideband = $ins->receptor_sideband('NU1U');
+
+=cut
+
+sub receptor_sideband {
+  my $self = shift;
+  my $receptor = uc(shift);
+  my %rec = $self->receptors;
+  throw JAC::OCS::Config::Error::FatalError("Supplied receptor '$receptor' does not exist in this instrument configuration")
+    unless exists $rec{$receptor};
+  return undef unless exists $rec{$receptor}{'sideband'};
+  return $rec{$receptor}{'sideband'};
+}
+
 =item B<working_receptor_ids>
 
 Returns the IDs of the working receptors present on this instrument.
