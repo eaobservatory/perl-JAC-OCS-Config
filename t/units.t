@@ -28,10 +28,10 @@ my %units = (
 		     power => -6,
 		     fullprefix => 'micro',
 		    },
-	     ZJy => {
+	     YJy => {
 		     name => "jansky",
 		     symbol => 'Jy',
-		     prefix => 'Z',
+		     prefix => 'Y',
 		     power => 24,
 		     fullprefix => 'yotta',
 		    },

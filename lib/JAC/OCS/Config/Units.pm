@@ -37,8 +37,9 @@ $VERSION = "1.01";
 # PREFIXES
 
 my %PREFIXES = (
-		Z => { power => 24, name => 'yotta' },
-		E => { power => 21, name => 'exa'},
+		Y => { power => 24, name => 'yotta'},
+		Z => { power => 21, name => 'zetta'},
+		E => { power => 18, name => 'exa'},
 		P => { power => 15, name => 'peta'},
 		T => { power => 12, name => 'tera'},
 		G => { power => 9, name => 'giga'},
