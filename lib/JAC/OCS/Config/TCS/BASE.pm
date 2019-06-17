@@ -550,7 +550,9 @@ sub _extract_coord_info {
       # Proper motions and parallax
       my %pm = get_pcdata_multi( $system, "epoch", "pm1", "pm2", "parallax");
 
-      %coords = ( ra => $cc{c1}, dec => $cc{c2}, type => $type);
+      %coords = ( ra => $cc{c1}, dec => $cc{c2}, type => $type, units => [
+          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'hours'),
+          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
 
       $coords{parallax} = $pm{parallax} if defined $pm{parallax};
       $coords{epoch} = $pm{epoch} if defined $pm{epoch};
@@ -563,16 +565,19 @@ sub _extract_coord_info {
 
     } elsif ($type =~ /gal/i) {
       %coords = ( long => $cc{c1}, lat => $cc{c2}, 
-		  type => 'galactic', units=>'deg' );
+		  type => 'galactic', units => [
+          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'degrees'),
+          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
     } elsif ($type eq 'Az/El' || $type eq 'AZEL') {
-      my $unit = ($cc{c1} =~ /:/ or $cc{c2} =~ /:/)
-               ? 'sexagesimal'
-               : 'degrees';
-      %coords = ( az => $cc{c1}, el => $cc{c2}, units => $unit );
+      %coords = ( az => $cc{c1}, el => $cc{c2}, units => [
+          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'degrees'),
+          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
     } elsif ($type eq 'HADEC') {
       throw JAC::OCS::Config::Error::FatalError("HA/Dec requires a telescope but no telescope is defined!") unless defined $tel;
 
-      %coords = ( ha => $cc{c1}, dec => $cc{c2}, units => 'sex',
+      %coords = ( ha => $cc{c1}, dec => $cc{c2}, units => [
+                      (($cc{c1} =~ /:/) ? 'sexagesimal' : 'hours'),
+                      (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')],
 		  tel => $tel );
 
     } else {
