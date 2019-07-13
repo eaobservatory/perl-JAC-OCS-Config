@@ -90,6 +90,7 @@ sub new {
 		   BaseLineRegion => [],  # Intervals
 		   BaseLineFitParams => {},
 		   LineRegion     => [],  # Intervals
+		   SpectrumID => undef,
 		  }, $class;
 
   # Now run accessor methods
@@ -323,6 +324,18 @@ sub numcm {
     }
   }
   return $total;
+}
+
+=item B<spectrum_id>
+
+Spectrum identifier number.
+
+=cut
+
+sub spectrum_id {
+  my $self = shift;
+  if (@_) {$self->{'SpectrumID'} = shift;}
+  return $self->{'SpectrumID'};
 }
 
 =back

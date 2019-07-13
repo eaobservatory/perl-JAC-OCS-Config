@@ -194,7 +194,11 @@ sub stringify {
       # The actual spectral window object is either in %spw or %subbands
       my $sw = ( exists $spw{$spwid} ? $spw{$spwid} : $subbands{$spwid});
 
-      $xml .= "<spectral_window id=\"$spwid\">\n";
+      my $specid = $sw->spectrum_id();
+
+      $xml .= "<spectral_window id=\"$spwid\""
+        . ((defined $specid) ? " spectrum_id=\"$specid\"" : '')
+        . ">\n";
 
       if ($sw->subbands) {
 	$xml .= "<subband_list>\n";
@@ -321,6 +325,7 @@ sub _process_dom {
   # Now extract information from each spectral window
   for my $spw (@spwxml) {
     my $id = find_attr( $spw, "id" );
+    my $specid = find_attr($spw, 'spectrum_id');
     #print "======================== ID $id ====================================\n";
 
     # Either have Subband list *OR*
@@ -404,6 +409,7 @@ sub _process_dom {
 
     # Create spectral window object
     $spw{$id} = new JAC::OCS::Config::ACSIS::SpectralWindow(
+							    spectrum_id => $specid,
 							    fe_sideband => $sideband,
 							    rest_freq_ref => $rest_freq,
 							    if_coordinate => $ifcrd
