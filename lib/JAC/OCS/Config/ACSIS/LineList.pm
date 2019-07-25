@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::LineList;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS Line List configurations
+JAC::OCS::Config::ACSIS::LineList - Parse and modify OCS ACSIS Line List configurations
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::ACSIS_MAP;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS machine map configurations
+JAC::OCS::Config::ACSIS_MAP - Parse and modify OCS ACSIS machine map configurations
 
 =head1 SYNOPSIS
 

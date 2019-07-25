@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::RedConfigList;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS reuduction configurations
+JAC::OCS::Config::ACSIS::RedConfigList - Parse and modify OCS ACSIS reuduction configurations
 
 =head1 SYNOPSIS
 

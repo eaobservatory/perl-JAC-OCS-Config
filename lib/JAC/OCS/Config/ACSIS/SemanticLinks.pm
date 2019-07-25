@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::SemanticLinks;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS semantic links configurations
+JAC::OCS::Config::ACSIS::SemanticLinks - Parse and modify OCS ACSIS semantic links configurations
 
 =head1 SYNOPSIS
 

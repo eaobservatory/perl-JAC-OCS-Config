@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::ProcessLinks;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS process link configurations
+JAC::OCS::Config::ACSIS::ProcessLinks - Parse and modify OCS ACSIS process link configurations
 
 =head1 SYNOPSIS
 

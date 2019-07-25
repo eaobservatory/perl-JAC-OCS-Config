@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::InterfaceList;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS interface configurations
+JAC::OCS::Config::ACSIS::InterfaceList - Parse and modify OCS ACSIS interface configurations
 
 =head1 SYNOPSIS
 

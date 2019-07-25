@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::Simulation;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS simulation configurations
+JAC::OCS::Config::ACSIS::Simulation - Parse and modify OCS ACSIS simulation configurations
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::ACSIS_CORR;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS correlator configurations
+JAC::OCS::Config::ACSIS_CORR - Parse and modify OCS ACSIS correlator configurations
 
 =head1 SYNOPSIS
 

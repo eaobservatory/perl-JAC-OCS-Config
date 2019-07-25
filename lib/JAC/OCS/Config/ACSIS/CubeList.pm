@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::CubeList;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS cube configurations
+JAC::OCS::Config::ACSIS::CubeList - Parse and modify OCS ACSIS cube configurations
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@ package JAC::OCS::Config::SCUBA2;
 
 =head1 NAME
 
-JAC::OCS::Config::Frontend - Parse and modify OCS SCUBA-2 configurations
+JAC::OCS::Config::SCUBA2 - Parse and modify OCS SCUBA-2 configurations
 
 =head1 SYNOPSIS
 

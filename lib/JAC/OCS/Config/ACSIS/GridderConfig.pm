@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::GridderConfig;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS gridder configurations
+JAC::OCS::Config::ACSIS::GridderConfig - Parse and modify OCS ACSIS gridder configurations
 
 =head1 SYNOPSIS
 

@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::SPWList;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS spectral window configurations
+JAC::OCS::Config::ACSIS::SPWList - Parse and modify OCS ACSIS spectral window configurations
 
 =head1 SYNOPSIS
 

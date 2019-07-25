@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::RTDConfig;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS RTD configurations
+JAC::OCS::Config::ACSIS::RTDConfig - Parse and modify OCS ACSIS RTD configurations
 
 =head1 SYNOPSIS
 

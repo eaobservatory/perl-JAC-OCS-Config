@@ -2,7 +2,7 @@ package JAC::OCS::Config::ACSIS::ACSIS_IF;
 
 =head1 NAME
 
-JAC::OCS::Config::ACSIS - Parse and modify OCS ACSIS IF configurations
+JAC::OCS::Config::ACSIS_IF - Parse and modify OCS ACSIS IF configurations
 
 =head1 SYNOPSIS
 
