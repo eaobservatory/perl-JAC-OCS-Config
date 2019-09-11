@@ -618,9 +618,13 @@ sub _process_dom {
   $o = new JAC::OCS::Config::ACSIS::ProcessLayout( DOM => $el );
   $self->process_layout( $o );
 
-  # process_links
-  $o = new JAC::OCS::Config::ACSIS::ProcessLinks( DOM => $el );
-  $self->process_links( $o );
+  # process_links [optional]
+  try {
+    $o = new JAC::OCS::Config::ACSIS::ProcessLinks( DOM => $el );
+    $self->process_links( $o );
+  } catch JAC::OCS::Config::Error::XMLConfigMissing with {
+    # can be ignored
+  };
 
   # interface_list
   $o = new JAC::OCS::Config::ACSIS::InterfaceList( DOM => $el );
