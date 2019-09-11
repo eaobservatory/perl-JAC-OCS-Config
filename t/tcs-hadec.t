@@ -11,7 +11,7 @@ use strict;
 require_ok( "JAC::OCS::Config::TCS" );
 
 my @ha = qw/0.0 1.5 4.0876 10.65484 1:23:45.6789/;
-my @dec = qw/0 1.2342 6.453456 32.8 87:65:43.210/;
+my @dec = qw/0 1.2342 6.453456 32.8 87:56:43.210/;
 
 for my $ha_str (@ha) {
   for my $dec_str (@dec) {
