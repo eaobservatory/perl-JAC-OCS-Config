@@ -506,7 +506,14 @@ sub _import_xml_entity_file {
 
   # get back to the current directory before throwing the exception
   $self->_cdfromxml( $cdinfo );
-  $E->throw if $E;
+  if ($E) {
+    if (ref($E) && $E->can("throw")) {
+      $E->throw;
+    } else {
+      # Convert to an exception if we are not a standard execption
+      JAC::OCS::Config::Error::XMLBadStructure->throw( "$E" );
+    }
+  }
 
   $self->filename( $file );
 }
