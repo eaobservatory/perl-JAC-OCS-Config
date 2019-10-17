@@ -1,6 +1,6 @@
 #!perl
 
-use Test::More tests => 4;
+use Test::More tests => 8;
 
 require_ok( "JAC::OCS::Config::TCS" );
 
@@ -18,6 +18,11 @@ my $ref = $cfg->getTarget( "REFERENCE" );
 
 my $distance = $sci->distance( $ref );
 is($distance->radians, 0, "Distance between science and reference position");
+
+require_ok("JAC::OCS::Config::TCS::BASE");
+ok(! JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12.34567 "));
+ok(JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12:34:56.7 "));
+ok(JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12 34 56.7 "));
 
 # Simple test snippet
 __DATA__

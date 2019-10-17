@@ -551,8 +551,8 @@ sub _extract_coord_info {
       my %pm = get_pcdata_multi( $system, "epoch", "pm1", "pm2", "parallax");
 
       %coords = ( ra => $cc{c1}, dec => $cc{c2}, type => $type, units => [
-          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'hours'),
-          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
+          (_looks_like_sexagesimal($cc{c1}) ? 'sexagesimal' : 'hours'),
+          (_looks_like_sexagesimal($cc{c2}) ? 'sexagesimal' : 'degrees')]);
 
       $coords{parallax} = $pm{parallax} if defined $pm{parallax};
       $coords{epoch} = $pm{epoch} if defined $pm{epoch};
@@ -566,18 +566,18 @@ sub _extract_coord_info {
     } elsif ($type =~ /gal/i) {
       %coords = ( long => $cc{c1}, lat => $cc{c2}, 
 		  type => 'galactic', units => [
-          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'degrees'),
-          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
+          (_looks_like_sexagesimal($cc{c1}) ? 'sexagesimal' : 'degrees'),
+          (_looks_like_sexagesimal($cc{c2}) ? 'sexagesimal' : 'degrees')]);
     } elsif ($type eq 'Az/El' || $type eq 'AZEL') {
       %coords = ( az => $cc{c1}, el => $cc{c2}, units => [
-          (($cc{c1} =~ /:/) ? 'sexagesimal' : 'degrees'),
-          (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')]);
+          (_looks_like_sexagesimal($cc{c1}) ? 'sexagesimal' : 'degrees'),
+          (_looks_like_sexagesimal($cc{c2}) ? 'sexagesimal' : 'degrees')]);
     } elsif ($type eq 'HADEC') {
       throw JAC::OCS::Config::Error::FatalError("HA/Dec requires a telescope but no telescope is defined!") unless defined $tel;
 
       %coords = ( ha => $cc{c1}, dec => $cc{c2}, units => [
-                      (($cc{c1} =~ /:/) ? 'sexagesimal' : 'hours'),
-                      (($cc{c2} =~ /:/) ? 'sexagesimal' : 'degrees')],
+                      (_looks_like_sexagesimal($cc{c1}) ? 'sexagesimal' : 'hours'),
+                      (_looks_like_sexagesimal($cc{c2}) ? 'sexagesimal' : 'degrees')],
 		  tel => $tel );
 
     } else {
@@ -717,6 +717,28 @@ sub _extract_coord_info {
   $c->telescope( $tel ) if defined $tel;
 
   return $c;
+}
+
+=item B<_looks_like_sexagesimal>
+
+This function attempts to determine whether the given string
+looks like a sexagesimal number.  Currently looks for:
+
+=over 4
+
+=item Colons
+
+=item Numbers separated by spaces
+
+=back
+
+=cut
+
+sub _looks_like_sexagesimal {
+  my $str = shift;
+
+  return ($str =~ /:/)
+    || ($str =~ /\d +\d/);
 }
 
 =back
