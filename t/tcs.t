@@ -28,7 +28,7 @@ ok(JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12 34 56.7 "));
 __DATA__
 <?xml version="1.0" encoding="US-ASCII"?>
 
-<!DOCTYPE TCS_CONFIG SYSTEM "file://localhost/JACdocs/JCMT/OCS/ICD/006/tcs.dtd">
+<!DOCTYPE TCS_CONFIG SYSTEM "file:///jac_sw/itsroot/ICD/006/tcs.dtd">
 
 <TCS_CONFIG TELESCOPE="JCMT">
 
