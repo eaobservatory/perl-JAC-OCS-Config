@@ -144,24 +144,6 @@ sub filename {
   return $self->{FileName};
 }
 
-=item B<cfg_version>
-
-Version number associated with the configuration (not always defined).
-
-  $v = $cfg->cfg_version;
-
-Usually obtained from embedded CVS Revision tags. Read only.
-
-=cut
-
-sub cfg_version {
-  my $self = shift;
-  if (@_) {
-    $self->{CfgVersion} = shift;
-  }
-  return $self->{CfgVersion};
-}
-
 =item B<cfg_date>
 
 If the config XML has been read from a file, this is the modification
@@ -531,12 +513,6 @@ sub _import_xml_string {
   my $self = shift;
   my $xml = shift;
 
-  # Look for a CVS Revision (the first hit)
-  # Multi-line match
-  if ($xml =~ /\$Revision: (\d+\.\d+) /m) {
-    $self->cfg_version( $1 );
-  }
-
   # create new parser
   my $parser = new XML::LibXML;
   $parser->validation( $self->_validation );
@@ -650,7 +626,6 @@ sub _introductory_xml {
   }
 
   # Filename and version number if available
-  my $cfg_v = $self->cfg_version;
   my $cfg_d = $self->cfg_date;
   my $file  = $self->filename;
   if (defined $file) {
@@ -659,7 +634,6 @@ sub _introductory_xml {
     $xml .= "+ configuration file last modified on " . gmtime($cfg_d) ." UT\n"
       if defined $cfg_d;
   }
-  $xml .= "+ CVS Revision of XML: $cfg_v\n" if defined $cfg_v;
 
   # close the comment
   $xml .= "-->\n";
