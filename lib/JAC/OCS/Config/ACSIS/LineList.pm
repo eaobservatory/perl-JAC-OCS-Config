@@ -124,7 +124,7 @@ sub stringify {
   my $unit = new JAC::OCS::Config::Units( "Hz" );
 
   # loop over all keys
-  for my $id (keys %lines) {
+  for my $id (sort {($a =~ /NOLINE/ && $b !~ /NOLINE/) ? 1 : (($a !~ /NOLINE/ && $b =~ /NOLINE/) ? -1 : ($a cmp $b))} keys %lines) {
     $xml .= "<rest_frequency id=\"$id\" units=\"GHz\" ";
     $xml .= "molecule=\"".$lines{$id}->molecule ."\" " if defined $lines{$id}->molecule;
     $xml .= "transition=\"".$lines{$id}->transition ."\" " if defined $lines{$id}->transition;
