@@ -19,7 +19,7 @@ C<OCS_CONFIG> root element).
 
 use strict;
 use warnings;
-use XML::LibXML;
+use XML::LibXML qw/:libxml/;
 use File::Spec;
 use File::Basename qw/ dirname /;
 use Cwd qw/ getcwd /;
@@ -299,19 +299,35 @@ sub stringify {
 
     # Create comment node
     my $com = XML::LibXML::Comment->new( $comstring );
+    my $nl = XML::LibXML::Text->new("\n");
 
     # Get first child
     my $fc = $root->firstChild;
 
-    # and insert the comment
-    $root->insertBefore( $com, $fc );
+    my $already_have = 0;
+    if ($fc->nodeType() eq XML_COMMENT_NODE) {
+      $already_have = 1;
+    } elsif ($fc->nodeType() eq XML_TEXT_NODE) {
+      my $sibling = $fc->nextSibling();
+      if ((defined $sibling) and $sibling->nodeType() eq XML_COMMENT_NODE) {
+        $already_have = 1;
+      }
+    }
+
+    # and insert the comment if we don't already have one
+    unless ($already_have) {
+      $root->insertBefore( $nl, $fc );
+      $root->insertBefore( $com, $fc );
+    }
 
     # and stringify the resultant node
     $string = $root->toString;
 
-    # Remove the comment again
-    $com->unbindNode;
-
+    unless ($already_have) {
+      # Remove the comment again
+      $com->unbindNode;
+      $nl->unbindNode;
+    }
   }
 
   return $string;
