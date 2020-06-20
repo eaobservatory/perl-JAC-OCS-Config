@@ -269,10 +269,21 @@ sub indent_xml_string {
   # Re-indent the XML
   $xml = '';
   my $indent = 0;
+  my $in_el_open = 0;
+  my $in_el_close = 0;
+  my $in_comm = 0;
+  my $lead_sp = undef;
   for my $l (@lines) {
-    # clean leading space unless there are no open angle brackets
-    # at all
-    $l =~ s/^\s+// if $l =~ /</;
+    # clean leading space unless in an element
+    unless ($in_el_open || $in_el_close) {
+      if ($l =~ /^\s*</ or not defined $lead_sp) {
+        $l =~ s/^(\s+)//;
+        $lead_sp = defined $1 ? length $1 : 0;
+      }
+      else {
+        $l =~ s/^\s{0,$lead_sp}//;
+      }
+    }
 
     # indent to apply this time round depends on whether we
     # are opening new elements (use previous value) or closing
@@ -282,15 +293,71 @@ sub indent_xml_string {
     # See if indent has increased [simplistic approach]
     # but should be okay since I try to create xml with stand alone
     # elements rather than multiple elements per line
-    if ($l =~ />/ && ($l !~ /\/>/ && $l !~ /<\// && $l !~ /->/)) {
-      # Match closing angle bracket but no closing element \>
-      # This allows us to deal with elements that are spread over multiple
-      # lines with attributes
-      $indent ++;
-    } elsif ($l =~ /<\// && $l !~ /<\w/) {
-      # close bracket without open bracket
+    my $el_open_st = () = $l =~ /<(?!\/|!|\?)/g;
+    my $el_close_st = () = $l =~ /<\//g;
+    my $el_en = () = $l =~ /(?<!\/|-|\?)>/g;
+    my $el_selfcl_en = () = $l =~ /\/>/g;
+    my $comm_st = () = $l =~ /<!--/g;
+    my $comm_en = () = $l =~ /-->/g;
+
+    # Deal with comments / elements already inside.
+    if ($in_comm and $comm_en) {
+      $in_comm = 0;
+      $comm_en --;
       $indent --;
-      $this_indent = $indent;
+      $this_indent = $indent if $l =~ /^\s*-->/;
+      undef $lead_sp;
+    }
+    if ($in_el_open) {
+      if ($el_en) {
+        $in_el_open = 0;
+        $el_en --;
+        $indent ++;
+        undef $lead_sp;
+      }
+      elsif ($el_selfcl_en) {
+        $in_el_open = 0;
+        $el_selfcl_en --;
+        undef $lead_sp;
+      }
+    }
+    if ($in_el_close) {
+      if ($el_en) {
+        $in_el_close = 0;
+        $el_en --;
+        $indent --;
+        undef $lead_sp;
+      }
+    }
+
+    # Deal with elements opening and closing.
+    $el_open_st -= $el_selfcl_en;
+
+    while ($el_open_st > 0 and $el_en > 0) {
+      $el_open_st --;
+      $el_en --;
+      $indent ++;
+      undef $lead_sp;
+    }
+    while ($el_close_st > 0 and $el_en > 0) {
+      $el_close_st --;
+      $el_en --;
+      $indent --;
+      $this_indent = $indent if $l =~ /^\s*<\//;
+      undef $lead_sp;
+    }
+
+    # Deal with comments / elements starting.
+    if ($comm_st > $comm_en) {
+      $in_comm = 1;
+      $indent ++;
+      undef $lead_sp;
+    }
+    elsif ($el_open_st > 0) {
+      $in_el_open = 1;
+    }
+    elsif ($el_close_st > 0) {
+      $in_el_close = 1;
     }
 
     # prepend current indent and store in output "buffer"
@@ -299,7 +366,7 @@ sub indent_xml_string {
       chomp($xml);
       $xml .= " >\n";
     } else {
-      if (length($l)) {
+      if ($l =~ /\S/) {
         $xml .= ("   " x $this_indent) . $l ."\n";
       } else {
         # do not indent a blank line
