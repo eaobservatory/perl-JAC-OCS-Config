@@ -27,9 +27,6 @@ ok(JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12 34 56.7 "));
 # Simple test snippet
 __DATA__
 <?xml version="1.0" encoding="US-ASCII"?>
-
-<!DOCTYPE TCS_CONFIG SYSTEM "file:///jac_sw/itsroot/ICD/006/tcs.dtd">
-
 <TCS_CONFIG TELESCOPE="JCMT">
 
     <!-- This base element contains a target, an offset, and a
@@ -40,7 +37,7 @@ __DATA__
 
       <target>
         <targetName>Foo</targetName>
-        <spherSystem>
+        <spherSystem SYSTEM="J2000">
            <c1>18:30:20.45</c1>
            <c2>17:25:43.8</c2>
            <epoch>1997.3</epoch>
@@ -69,7 +66,7 @@ __DATA__
 
       <target>
         <targetName>Foo</targetName>
-        <spherSystem>
+        <spherSystem SYSTEM="J2000">
            <c1>18:30:20.45</c1>
            <c2>17:25:43.8</c2>
         </spherSystem>
