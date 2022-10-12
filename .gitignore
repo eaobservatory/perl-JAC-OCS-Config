@@ -9,3 +9,4 @@ lib/JAC/OCS/Config/Version.pm
 Makefile.old
 Build
 JAC-OCS-Config-*.tar.gz
+/MYMETA.*
