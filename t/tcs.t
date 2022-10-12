@@ -6,7 +6,7 @@ require_ok( "JAC::OCS::Config::TCS" );
 
 my @xml = <DATA>;
 my $cfg = new JAC::OCS::Config::TCS( XML => join("\n",@xml),
-				     validation => 1,
+				     validation => 0,
 				   );
 
 isa_ok( $cfg, "JAC::OCS::Config::TCS" );
