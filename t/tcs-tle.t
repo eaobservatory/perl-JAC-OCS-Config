@@ -2,10 +2,20 @@
 
 # Test script for TCS XML handling of TLE data.
 
-use Test::More tests => 5 + 2 * 10;
+use Test::More;
 use Test::Number::Delta;
 
 use strict;
+
+eval {
+    require Astro::Coords::TLE;
+};
+if ($@) {
+    plan skip_all => 'Astro::Coords::TLE not installed';
+}
+else {
+    plan tests => 5 + 2 * 10;
+}
 
 my @xml = <DATA>;
 
