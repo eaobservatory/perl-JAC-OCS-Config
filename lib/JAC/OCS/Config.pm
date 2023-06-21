@@ -1013,7 +1013,7 @@ sub duration_acsis {
       for my $ang (@scan_pa) {
         my $key = "HEIGHT";
         my $okey = "WIDTH";
-        if (abs(90-$ang) <= 45) {
+        if (abs(90-abs($ang)) <= 45) {
           # width
           $key = "WIDTH";
           $okey = "HEIGHT";
