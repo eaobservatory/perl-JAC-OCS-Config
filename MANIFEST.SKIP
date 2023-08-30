@@ -45,3 +45,5 @@
 
 # Avoid archives of this distribution
 \bJAC-OCS-Config-[\d\.\_]+
+^MYMETA\.yml$
+^MYMETA\.json$
