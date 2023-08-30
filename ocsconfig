@@ -6,13 +6,13 @@ ocsconfig - Describe or manipulate an OCS configuration
 
 =head1 SYNOPSIS
 
-  ocsconfig --help
-  cat config.xml | ocsconfig --target=URANUS | less
+    ocsconfig --help
+    cat config.xml | ocsconfig --target=URANUS | less
 
-  ocsconfig config.xml
-  cat config.xml | ocsconfig --outdir=/tmp/
-  cat config.xml | ocsconfig > new.xml
-  ocsconfig --outdir /tmp config.xml
+    ocsconfig config.xml
+    cat config.xml | ocsconfig --outdir=/tmp/
+    cat config.xml | ocsconfig > new.xml
+    ocsconfig --outdir /tmp config.xml
 
 =head1 DESCRIPTION
 
@@ -70,19 +70,21 @@ use Getopt::Long;
 use Pod::Usage;
 
 use JAC::OCS::Config;
+use JAC::OCS::Config::Version;
 
 use Astro::Catalog;   # for catalogue parsing
 
 
 # Options
 my ($help, $man, $valid, $version, $outdir, $target);
-my $status = GetOptions("help" => \$help,
-                        "man" => \$man,
-			"version" => \$version,
-			"valid" => \$valid,
-			"outdir=s" => \$outdir,
-			"target=s" => \$target,
-                       );
+my $status = GetOptions(
+    "help" => \$help,
+    "man" => \$man,
+    "version" => \$version,
+    "valid" => \$valid,
+    "outdir=s" => \$outdir,
+    "target=s" => \$target,
+);
 
 pod2usage(1) if !$status;
 
@@ -90,10 +92,10 @@ pod2usage(1) if $help;
 pod2usage(-exitstatus => 0, -verbose => 2) if $man;
 
 if ($version) {
-  my $id = '$Id$ ';
-  print "ocsconfig - OCS config manipulator\n";
-  print " CVS revision: $id\n";
-  exit;
+    my $sha = JAC::OCS::Config::Version::version();
+    print "ocsconfig - OCS config manipulator\n";
+    print "Git version: $sha\n";
+    exit;
 }
 
 
@@ -104,24 +106,26 @@ my $xml;
     # Can not let this localization propoagate to other classes
     # since this affects the srccatalog parsing
     local $/ = undef;
-  
-  if (@ARGV) {
-      my $file = shift(@ARGV);
-      open( my $fh, "< $file") or die "Error reading input config from file $file: $!";
-      $xml = <$fh>;
-  } else {
-      # Stdin should be readable
-      my $rin = '';
-      vec($rin,fileno(STDIN),1) = 1;
-      my $nfound = select($rin,undef,undef,0.1);
 
-      if ($nfound) {
-	  $xml = <>;
-      } else {
-	  die "No filename specified for configuration and nothing appearing from pipe on STDIN\n";
-      }
-  }
+    if (@ARGV) {
+        my $file = shift(@ARGV);
+        open(my $fh, "< $file")
+            or die "Error reading input config from file $file: $!";
+        $xml = <$fh>;
+    }
+    else {
+        # Stdin should be readable
+        my $rin = '';
+        vec($rin, fileno(STDIN), 1) = 1;
+        my $nfound = select($rin, undef, undef, 0.1);
 
+        if ($nfound) {
+            $xml = <>;
+        }
+        else {
+            die "No filename specified for configuration and nothing appearing from pipe on STDIN\n";
+        }
+    }
 }
 
 # see if we got anything
@@ -129,7 +133,7 @@ die "Must supply either a file name on the command line or config via stdin\n"
     if !$xml;
 
 # Convert to an object
-my $cfg = new JAC::OCS::Config( XML => $xml, validation => $valid );
+my $cfg = new JAC::OCS::Config(XML => $xml, validation => $valid);
 
 # validation has either failed or worked. so just exit now.
 exit if $valid;
@@ -141,11 +145,11 @@ die "Unable to create config object\n" unless defined $cfg;
 if ($target) {
     # need a catalogue - assume default. can provide explicit path
     # if need to.
-    my $cat = new Astro::Catalog( Format => 'JCMT' );
+    my $cat = new Astro::Catalog(Format => 'JCMT');
 
     # find the target name - use a pattern match for case insensitivity
     my $pattern = quotemeta($target);
-    my @targets = $cat->filter_by_cb( sub { $_[0]->id =~ /^$pattern$/i;} );
+    my @targets = $cat->filter_by_cb(sub {$_[0]->id =~ /^$pattern$/i;});
 
     die "Unable to locate target '$target' in catalogue\n" unless @targets;
 
@@ -156,41 +160,42 @@ if ($target) {
     my $tcs = $cfg->tcs;
 
     die "Request to modify target in TCS_CONFIG but no TCS_CONFIG is present\n"
-	unless defined $tcs;
+        unless defined $tcs;
 
     # override all target information
-    my @unmod = $tcs->setTargetSync( $match->coords );
+    my @unmod = $tcs->setTargetSync($match->coords);
     if (@unmod) {
-	die "Attempted to modify target but some tags were not offsets from the old SCIENCE position\n";
+        die "Attempted to modify target but some tags were not offsets from the old SCIENCE position\n";
     }
 
     # we need to change the group_centre of the output cube accordingly
     my $acsis = $cfg->acsis;
     if (defined $acsis) {
-      my $clist = $acsis->cube_list;
-      if (defined $clist) {
-	# delete the group centre unless equatorial coordinates
-	my $coords = $match->coords;
-	my $delc = ($coords->isa("Astro::Coords::Equatorial") ? 0 : 1);
-	my %cubes = $clist->cubes;
-	for my $cub (values %cubes) {
-	  if ($delc) {
-	    $cub->group_centre( undef );
-	  } else {
-	    $cub->group_centre( $coords );
-	  }
-	}
-      }
+        my $clist = $acsis->cube_list;
+        if (defined $clist) {
+            # delete the group centre unless equatorial coordinates
+            my $coords = $match->coords;
+            my $delc = ($coords->isa("Astro::Coords::Equatorial") ? 0 : 1);
+            my %cubes = $clist->cubes;
+            for my $cub (values %cubes) {
+                if ($delc) {
+                    $cub->group_centre(undef);
+                }
+                else {
+                    $cub->group_centre($coords);
+                }
+            }
+        }
     }
-
 }
 
 # Is something attached to STDOUT? Then just write it out
 if (!-t STDOUT) {
     print $cfg;
-} else {
+}
+else {
     # write configuration
-    my $file = $cfg->write_entry( $outdir );
+    my $file = $cfg->write_entry($outdir);
     print STDERR "Configuration written to $file\n";
 }
 
@@ -217,4 +222,3 @@ this program; if not, write to the Free Software Foundation, Inc., 59 Temple
 Place,Suite 330, Boston, MA  02111-1307, USA
 
 =cut
-

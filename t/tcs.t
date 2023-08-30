@@ -2,21 +2,22 @@
 
 use Test::More tests => 8;
 
-require_ok( "JAC::OCS::Config::TCS" );
+require_ok("JAC::OCS::Config::TCS");
 
 my @xml = <DATA>;
-my $cfg = new JAC::OCS::Config::TCS( XML => join("\n",@xml),
-				     validation => 0,
-				   );
+my $cfg = new JAC::OCS::Config::TCS(
+    XML => join("\n", @xml),
+    validation => 0,
+);
 
-isa_ok( $cfg, "JAC::OCS::Config::TCS" );
+isa_ok($cfg, "JAC::OCS::Config::TCS");
 
-is($cfg->telescope, "JCMT", "Check telescope" );
+is($cfg->telescope, "JCMT", "Check telescope");
 
-my $sci = $cfg->getTarget( "SCIENCE" );
-my $ref = $cfg->getTarget( "REFERENCE" );
+my $sci = $cfg->getTarget("SCIENCE");
+my $ref = $cfg->getTarget("REFERENCE");
 
-my $distance = $sci->distance( $ref );
+my $distance = $sci->distance($ref);
 is($distance->radians, 0, "Distance between science and reference position");
 
 require_ok("JAC::OCS::Config::TCS::BASE");
@@ -123,7 +124,7 @@ __DATA__
     <SECONDARY MOTION="CONTINUOUS">
     <JIGGLE_CHOP>
        <JIGGLE NAME="64POINT" SYSTEM="FPLANE" SCALE="1.0" >
-	 <PA>45</PA>
+         <PA>45</PA>
        </JIGGLE>
 
        <!-- Define a chop here -->

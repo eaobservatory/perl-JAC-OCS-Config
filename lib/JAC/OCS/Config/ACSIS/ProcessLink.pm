@@ -6,17 +6,18 @@ JAC::OCS::Config::ACSIS::ProcessLink - Representation of a glish link between tw
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::ProcessLink;
+    use JAC::OCS::Config::ACSIS::ProcessLink;
 
-  $ProcessLink = new JAC::OCS::Config::ACSIS::ProcessLink( from_ref => 'if_monitor',
-                                                           from_event => 'if_data',
-                                                           to_ref => 'sync1',
-                                                           to_event => 'if_data');
+    $ProcessLink = JAC::OCS::Config::ACSIS::ProcessLink->new(
+        from_ref => 'if_monitor',
+        from_event => 'if_data',
+        to_ref => 'sync1',
+        to_event => 'if_data');
 
 =head1 DESCRIPTION
 
 This class represents a glish links bewteen two glish processes. It can
-be used in single molecular ProcessLink and can be used in a 
+be used in single molecular ProcessLink and can be used in a
 C<JAC::OCS::Config::ACSIS::ProcessLinks> object to represent the
 different ProcessLinks.
 
@@ -27,11 +28,9 @@ use strict;
 use Carp;
 use warnings;
 
-use JAC::OCS::Config::Error qw/ :try /;
+use JAC::OCS::Config::Error qw/:try/;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -43,33 +42,48 @@ $VERSION = "1.01";
 
 Construct a ProcessLink object. Recognized keys are:
 
-  from_ref => name of the process to link from
-  from_event => name of the event the from_ref will raise
-  to_ref => name of the process to link to
-  to_event => name of the event the to_ref will see
+=over 4
+
+=item from_ref
+
+name of the process to link from
+
+=item from_event
+
+name of the event the from_ref will raise
+
+=item to_ref
+
+name of the process to link to
+
+=item to_event
+
+name of the event the to_ref will see
+
+=back
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
 
-  my $ProcessLink = bless {}, $class;
+    my $ProcessLink = bless {}, $class;
 
-  # Read the input hash and convert all keys to lower case
-  my %args = @_;
-  for my $k (keys %args) {
-    $args{lc($k)} = $args{$k};
-  } 
-
-  # now configure it
-  for my $k (qw/ from_ref from_event to_ref to_event / ) {
-    if (exists $args{$k}) {
-      $ProcessLink->$k( $args{$k} );
+    # Read the input hash and convert all keys to lower case
+    my %args = @_;
+    for my $k (keys %args) {
+        $args{lc($k)} = $args{$k};
     }
-  }
 
-  return $ProcessLink;
+    # now configure it
+    for my $k (qw/from_ref from_event to_ref to_event/) {
+        if (exists $args{$k}) {
+            $ProcessLink->$k($args{$k});
+        }
+    }
+
+    return $ProcessLink;
 }
 
 =back
@@ -87,9 +101,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub from_ref {
-  my $self = shift;
-  if (@_) { $self->{from_ref} = _cleanup(shift) }
-  return $self->{from_ref};
+    my $self = shift;
+    if (@_) {
+        $self->{from_ref} = _cleanup(shift);
+    }
+    return $self->{from_ref};
 }
 
 =item B<from_event>
@@ -101,9 +117,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub from_event {
-  my $self = shift;
-  if (@_) { $self->{from_event} = _cleanup(shift) }
-  return $self->{from_event};
+    my $self = shift;
+    if (@_) {
+        $self->{from_event} = _cleanup(shift);
+    }
+    return $self->{from_event};
 }
 
 =item B<to_ref>
@@ -115,9 +133,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub to_ref {
-  my $self = shift;
-  if (@_) { $self->{to_ref} = _cleanup(shift) }
-  return $self->{to_ref};
+    my $self = shift;
+    if (@_) {
+        $self->{to_ref} = _cleanup(shift);
+    }
+    return $self->{to_ref};
 }
 
 =item B<to_event>
@@ -129,9 +149,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub to_event {
-  my $self = shift;
-  if (@_) { $self->{to_event} = _cleanup(shift) }
-  return $self->{to_event};
+    my $self = shift;
+    if (@_) {
+        $self->{to_event} = _cleanup(shift);
+    }
+    return $self->{to_event};
 }
 
 =back
@@ -142,12 +164,11 @@ sub to_event {
 # spaces from a string.
 
 sub _cleanup {
-  my $x = shift;
-  $x =~ s/^\s*//;
-  $x =~ s/\s*$//;
-  return $x;
+    my $x = shift;
+    $x =~ s/^\s*//;
+    $x =~ s/\s*$//;
+    return $x;
 }
-
 
 =head1 AUTHOR
 

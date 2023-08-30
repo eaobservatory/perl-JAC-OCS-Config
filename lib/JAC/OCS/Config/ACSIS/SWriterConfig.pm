@@ -6,9 +6,9 @@ JAC::OCS::Config::ACSIS::SWriterConfig - Parse and modify OCS ACSIS spectrum wri
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::SWriterConfig;
+    use JAC::OCS::Config::ACSIS::SWriterConfig;
 
-  $cfg = new JAC::OCS::Config::ACSIS::SWriterConfig( DOM => $dom);
+    $cfg = new JAC::OCS::Config::ACSIS::SWriterConfig(DOM => $dom);
 
 =head1 DESCRIPTION
 
@@ -24,13 +24,11 @@ use Carp;
 use warnings;
 use XML::LibXML;
 
-use JAC::OCS::Config::Error qw| :try |;
+use JAC::OCS::Config::Error qw/:try/;
 
-use base qw/ JAC::OCS::Config::CfgBase /;
+use base qw/JAC::OCS::Config::CfgBase/;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -43,12 +41,12 @@ $VERSION = "1.01";
 Return the name of the _CONFIG element that should be the root
 node of the XML tree corresponding to the ACSIS spec writer config.
 
- @names = $h->getRootElementName;
+    @names = $h->getRootElementName;
 
 =cut
 
 sub getRootElementName {
-  return( "swriter_config" );
+    return ("swriter_config");
 }
 
 =back

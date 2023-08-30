@@ -10,7 +10,7 @@ use strict;
 # Validation of the sample XML is off until the DTD is installed.
 
 BEGIN {
-  use_ok( "JAC::OCS::Config::FTS2" );
+    use_ok( "JAC::OCS::Config::FTS2" );
 }
 
 my $sample_rapid = '<FTS2_CONFIG>
@@ -138,21 +138,21 @@ is(strip_xml($xml_out), $construct_rapid, 'Rapid scan constructed');
 
 # Assumes whole line block comments and gets rid of them.
 sub strip_xml {
-  my $xml = shift;
-  my $comment = 0;
-  my @out;
-  foreach (split "\n", $xml) {
-    if (/<!--/) {
-      $comment ++;
-      next;
-    }
-    elsif ($comment and /-->/) {
-      $comment = 0;
-      next;
+    my $xml = shift;
+    my $comment = 0;
+    my @out;
+    foreach (split "\n", $xml) {
+        if (/<!--/) {
+            $comment++;
+            next;
+        }
+        elsif ($comment and /-->/) {
+            $comment = 0;
+            next;
+        }
+
+        push @out, $_ unless $comment;
     }
 
-    push @out, $_ unless $comment;
-  }
-
-  return join("\n", @out);
+    return join("\n", @out);
 }

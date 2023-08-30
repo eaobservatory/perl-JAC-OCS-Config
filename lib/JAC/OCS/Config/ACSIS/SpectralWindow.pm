@@ -6,12 +6,11 @@ JAC::OCS::Config::ACSIS::SpectralWindow - ACSIS Spectral Window specification
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::SpectralWindow;
+    use JAC::OCS::Config::ACSIS::SpectralWindow;
 
-  my $spw = new JAC::OCS::Config::ACSIS::SpectralWindow;
+    my $spw = new JAC::OCS::Config::ACSIS::SpectralWindow;
 
-  my %subbands = $spw->subbands;
-
+    my %subbands = $spw->subbands;
 
 =head1 DESCRIPTION
 
@@ -23,41 +22,71 @@ obtained using the C<subbands> method.
 
 All spectral window objects must have the following attributes:
 
- rest_freq_ref - Rest frequency of the band (as a string ID from LineList)
- fe_sideband   - the front end sideband
- if_coordinate - details of the if (as a IFCoord object)
+=over 4
+
+=item rest_freq_ref
+
+Rest frequency of the band (as a string ID from LineList)
+
+=item fe_sideband
+
+the front end sideband
+
+=item if_coordinate
+
+details of the if (as a IFCoord object)
+
+=back
 
 If this object refers to a hybrid spectral window the following
 attributes are relevant:
 
- subbands  - the sub band objects
- baseline_region - Array of Interval objects specifying the baseline
- baseline_fit    - Hash of fitting parameters
- line_region     - Line region of interest as array of Interval objects
+=over 4
+
+=item subbands
+
+the sub band objects
+
+=item baseline_region
+
+Array of Interval objects specifying the baseline
+
+=item baseline_fit
+
+Hash of fitting parameters
+
+=item line_region
+
+Line region of interest as array of Interval objects
+
+=back
 
 A sub-band spectral window must have the shared attributed and
 the following:
 
- bandwidth_mode
- window
- align_shift
+=over 4
+
+=item bandwidth_mode
+
+=item window
+
+=item align_shift
+
+=back
 
 Additionally, if a spectral window is itself just a simple subband
 then all values are valid except for C<subbands>.
 
 =cut
 
-
 use 5.006;
 use strict;
 use Carp;
 use warnings;
 
-use JAC::OCS::Config::Helper qw/ check_class_fatal check_class_hash_fatal /;
+use JAC::OCS::Config::Helper qw/check_class_fatal check_class_hash_fatal/;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -70,53 +99,53 @@ $VERSION = "1.01";
 Create a new spectral window object. Takes hash arguments, the names
 of which must match accessor methods.
 
- $sw = new JAC::OCS::Config::ACSIS::SpectralWindow( line_region => \@interval);
-
+    $sw = new JAC::OCS::Config::ACSIS::SpectralWindow(line_region => \@interval);
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
 
-  my $spw = bless {
-		   Subbands => {},       # SpectralWindow
-		   BandWidthMode => undef,
-		   Window => undef,
-		   AlignShift => undef,
-		   RestFreqRef => undef, # Should match LineList
-		   FESideband => undef,
-		   IFCoordinate => undef, # IFCoord object or hash?
-		   BaseLineRegion => [],  # Intervals
-		   BaseLineFitParams => {},
-		   LineRegion     => [],  # Intervals
-		   SpectrumID => undef,
-		  }, $class;
+    my $spw = bless {
+        Subbands => {},    # SpectralWindow
+        BandWidthMode => undef,
+        Window => undef,
+        AlignShift => undef,
+        RestFreqRef => undef,    # Should match LineList
+        FESideband => undef,
+        IFCoordinate => undef,    # IFCoord object or hash?
+        BaseLineRegion => [],     # Intervals
+        BaseLineFitParams => {},
+        LineRegion => [],         # Intervals
+        SpectrumID => undef,
+    }, $class;
 
-  # Now run accessor methods
-  my %args = @_;
-  for my $key (keys %args) {
-    my $method = lc($key);
-    if ( $spw->can( $method ) ) {
-      my $ref = ref($args{$key});
+    # Now run accessor methods
+    my %args = @_;
+    for my $key (keys %args) {
+        my $method = lc($key);
+        if ($spw->can($method)) {
+            my $ref = ref($args{$key});
 
-      # Dereference unblessed hashes to list
-      my @args;
-      if ($ref eq 'HASH') {
-	@args = %{$args{$key}};
-      } elsif ($ref eq 'ARRAY') {
-	@args = @{$args{$key}};
-      } else {
-	@args = ($args{$key});
-      }
+            # Dereference unblessed hashes to list
+            my @args;
+            if ($ref eq 'HASH') {
+                @args = %{$args{$key}};
+            }
+            elsif ($ref eq 'ARRAY') {
+                @args = @{$args{$key}};
+            }
+            else {
+                @args = ($args{$key});
+            }
 
-      $spw->$method( @args );
+            $spw->$method(@args);
+        }
     }
-  }
 
-  return $spw;
+    return $spw;
 }
-
 
 =back
 
@@ -131,16 +160,16 @@ window.  If this hash is empty, the spectral window object refers to
 an actual subband. Each hash key refers to the ID of the subband
 spectral window.
 
-  %sb = $spw->subbands;
+    %sb = $spw->subbands;
 
 =cut
 
 sub subbands {
-  my $self = shift;
-  if (@_) {
-    %{$self->{Subbands}} = check_class_hash_fatal( "JAC::OCS::Config::ACSIS::SpectralWindow",@_);
-  }
-  return %{ $self->{Subbands}};
+    my $self = shift;
+    if (@_) {
+        %{$self->{Subbands}} = check_class_hash_fatal("JAC::OCS::Config::ACSIS::SpectralWindow", @_);
+    }
+    return %{$self->{Subbands}};
 }
 
 =item B<bandwidth_mode>
@@ -153,9 +182,11 @@ Only used for non-hybrid spectral windows.
 =cut
 
 sub bandwidth_mode {
-  my $self = shift;
-  if (@_) { $self->{BandWidthMode} = shift; }
-  return $self->{BandWidthMode};
+    my $self = shift;
+    if (@_) {
+        $self->{BandWidthMode} = shift;
+    }
+    return $self->{BandWidthMode};
 }
 
 =item B<window>
@@ -167,9 +198,11 @@ Only used for non-hybrid spectral windows.
 =cut
 
 sub window {
-  my $self = shift;
-  if (@_) { $self->{Window} = shift; }
-  return $self->{Window};
+    my $self = shift;
+    if (@_) {
+        $self->{Window} = shift;
+    }
+    return $self->{Window};
 }
 
 =item B<align_shift>
@@ -182,9 +215,11 @@ Units are in channels.
 =cut
 
 sub align_shift {
-  my $self = shift;
-  if (@_) { $self->{AlignShift} = shift; }
-  return $self->{AlignShift};
+    my $self = shift;
+    if (@_) {
+        $self->{AlignShift} = shift;
+    }
+    return $self->{AlignShift};
 }
 
 =item B<rest_freq_ref>
@@ -197,9 +232,11 @@ This does not (yet) point directly to an object in the LineList.
 =cut
 
 sub rest_freq_ref {
-  my $self = shift;
-  if (@_) { $self->{RestFreqRef} = shift; }
-  return $self->{RestFreqRef};
+    my $self = shift;
+    if (@_) {
+        $self->{RestFreqRef} = shift;
+    }
+    return $self->{RestFreqRef};
 }
 
 =item B<fe_sideband>
@@ -209,9 +246,11 @@ Sideband to use in the frontend. -1 for LSB, +1 for USB.
 =cut
 
 sub fe_sideband {
-  my $self = shift;
-  if (@_) { $self->{FESideband} = shift; }
-  return $self->{FESideband};
+    my $self = shift;
+    if (@_) {
+        $self->{FESideband} = shift;
+    }
+    return $self->{FESideband};
 }
 
 =item B<if_coordinate>
@@ -221,11 +260,11 @@ Details of the IF configuration. Must be an IFCoord object.
 =cut
 
 sub if_coordinate {
-  my $self = shift;
-  if (@_) {
-    $self->{IFCoordinate} = check_class_fatal("JAC::OCS::Config::ACSIS::IFCoord",shift);
-  }
-  return $self->{IFCoordinate};
+    my $self = shift;
+    if (@_) {
+        $self->{IFCoordinate} = check_class_fatal("JAC::OCS::Config::ACSIS::IFCoord", shift);
+    }
+    return $self->{IFCoordinate};
 }
 
 =item B<baseline_region>
@@ -236,12 +275,11 @@ that should be used for baseline subtraction.
 =cut
 
 sub baseline_region {
-  my $self = shift;
-  if (@_) { 
-    @{$self->{BaseLineRegion}} =check_class_fatal("JAC::OCS::Config::Interval",
-						  @_);
-  }
-  return @{$self->{BaseLineRegion}};
+    my $self = shift;
+    if (@_) {
+        @{$self->{BaseLineRegion}} = check_class_fatal("JAC::OCS::Config::Interval", @_);
+    }
+    return @{$self->{BaseLineRegion}};
 }
 
 =item B<baseline_fit>
@@ -249,17 +287,26 @@ sub baseline_region {
 Hash of parameters describing how to fit the baseline.
 Currently only understands
 
-  function => "polynomial"
-  degree   => number corresponding to polynomial order
+=over 4
+
+=item function
+
+"polynomial"
+
+=item degree
+
+number corresponding to polynomial order
+
+=back
 
 =cut
 
 sub baseline_fit {
-  my $self = shift;
-  if (@_) { 
-    %{$self->{BaseLineFitParams}} = @_;
-  }
-  return %{$self->{BaseLineFitParams}};
+    my $self = shift;
+    if (@_) {
+        %{$self->{BaseLineFitParams}} = @_;
+    }
+    return %{$self->{BaseLineFitParams}};
 }
 
 =item B<line_region>
@@ -270,12 +317,11 @@ of interest.
 =cut
 
 sub line_region {
-  my $self = shift;
-  if (@_) { 
-    @{$self->{LineRegion}} =check_class_fatal("JAC::OCS::Config::Interval",
-					      @_);
-  }
-  return @{$self->{LineRegion}};
+    my $self = shift;
+    if (@_) {
+        @{$self->{LineRegion}} = check_class_fatal("JAC::OCS::Config::Interval", @_);
+    }
+    return @{$self->{LineRegion}};
 }
 
 =item B<ishybrid>
@@ -283,18 +329,19 @@ sub line_region {
 Returns true if this is a hybridized spectral window, else returns
 false.
 
-  $ish = $spw->ishybrid;
+    $ish = $spw->ishybrid;
 
 =cut
 
 sub ishybrid {
-  my $self = shift;
-  my %sb = $self->subbands;
-  if (keys %sb) {
-    return 1;
-  } else {
-    return 0;
-  }
+    my $self = shift;
+    my %sb = $self->subbands;
+    if (keys %sb) {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 =item B<numcm>
@@ -305,25 +352,29 @@ mode. A hybrid mode will return the sum o
 =cut
 
 sub numcm {
-  my $self = shift;
-  my $total = 0;
-  if ($self->ishybrid) {
-    my %sb = $self->subbands;
-    for my $sb (keys %sb) {
-      $total += $sb->numcm;
+    my $self = shift;
+    my $total = 0;
+    if ($self->ishybrid) {
+        my %sb = $self->subbands;
+        for my $sb (keys %sb) {
+            $total += $sb->numcm;
+        }
     }
-  } else {
-    my $if = $self->if_coordinate;
-    my $nchan = $if->nchannels;
-    if ($nchan == 1024 || $nchan == 4096) {
-      $total = 1;
-    } elsif ($nchan == 2048 || $nchan == 8192) {
-      $total = 2;
-    } else {
-      throw JAC::OCS::Config::Error::FatalError("Unrecognized number of channels when counting correlator modules: $nchan\n");
+    else {
+        my $if = $self->if_coordinate;
+        my $nchan = $if->nchannels;
+        if ($nchan == 1024 || $nchan == 4096) {
+            $total = 1;
+        }
+        elsif ($nchan == 2048 || $nchan == 8192) {
+            $total = 2;
+        }
+        else {
+            throw JAC::OCS::Config::Error::FatalError(
+                "Unrecognized number of channels when counting correlator modules: $nchan\n");
+        }
     }
-  }
-  return $total;
+    return $total;
 }
 
 =item B<spectrum_id>
@@ -333,9 +384,11 @@ Spectrum identifier number.
 =cut
 
 sub spectrum_id {
-  my $self = shift;
-  if (@_) {$self->{'SpectrumID'} = shift;}
-  return $self->{'SpectrumID'};
+    my $self = shift;
+    if (@_) {
+        $self->{'SpectrumID'} = shift;
+    }
+    return $self->{'SpectrumID'};
 }
 
 =back
@@ -363,5 +416,3 @@ Place,Suite 330, Boston, MA  02111-1307, USA
 =cut
 
 1;
-
-

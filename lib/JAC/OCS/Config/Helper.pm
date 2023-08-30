@@ -6,10 +6,9 @@ JAC::OCS::Config::Helper - General helper functions for Config classes
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::Helper qw/ check_class /;
+    use JAC::OCS::Config::Helper qw/check_class/;
 
-  @ok = check_class( $class, @objects );
-
+    @ok = check_class($class, @objects);
 
 =head1 DESCRIPTION
 
@@ -23,19 +22,15 @@ use Carp;
 use warnings;
 use Exporter;
 
-use JAC::OCS::Config::Error qw/ :try /;
+use JAC::OCS::Config::Error qw/:try/;
 
-use base qw/ Exporter /;
-use vars qw/ $VERSION @EXPORT_OK /;
+use base qw/Exporter/;
 
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
-@EXPORT_OK = qw(
-		check_class
-		check_class_fatal
-		check_class_hash
-		check_class_hash_fatal
-	       );
+our @EXPORT_OK = qw/
+    check_class check_class_fatal check_class_hash check_class_hash_fatal
+/;
 
 =head1 FUNCTIONS
 
@@ -47,7 +42,7 @@ Given a class name, and some objects, check that each object is one of
 those classes. Returns all the valid input arguments, allowing direct
 assignment of return value
 
- @ok = check_class( "Astro", @input );
+    @ok = check_class("Astro", @input);
 
 Note that the number of return arguments can be smaller than the number
 of input arguments.
@@ -57,11 +52,11 @@ In scalar context returns the first valid argument.
 =cut
 
 sub check_class {
-  my $class = shift;
+    my $class = shift;
 
-  # Now check inheritance
-  my @output = grep { UNIVERSAL::isa($_, $class) } @_;
-  return (wantarray ? @output : $output[0] );
+    # Now check inheritance
+    my @output = grep {UNIVERSAL::isa($_, $class)} @_;
+    return (wantarray ? @output : $output[0]);
 }
 
 =item B<check_class_fatal>
@@ -71,64 +66,65 @@ of the supplied arguments are incorrect.
 
 =cut
 
-
 sub check_class_fatal {
-  # run check_class with the supplied arguments
-  my @output = check_class( @_ );
+    # run check_class with the supplied arguments
+    my @output = check_class(@_);
 
-  # compare the number of returned arguments with the number supplied
-  # (taking into account the extra input argument
-  if (@output != (scalar(@_) - 1 ) ) {
-    # get the parent function
-    my @c = caller(1);
-    my $n_in = scalar(@_) - 1;
-    my $lost = $n_in - scalar(@output);
+    # compare the number of returned arguments with the number supplied
+    # (taking into account the extra input argument
+    if (@output != (scalar(@_) - 1)) {
+        # get the parent function
+        my @c = caller(1);
+        my $n_in = scalar(@_) - 1;
+        my $lost = $n_in - scalar(@output);
 
-    my $msg;
-    if ($n_in == 1) {
-      my $first = $_[1];
-      my $first_txt = '';
-      if (defined $first) {
-	if (ref($first)) {
-	  $first_txt = ref($first);
-	} else {
-	  $first_txt = "<scalar:$first>";
-	}
-      } else {
-	$first_txt = '<undef>';
-      }
-      $msg = "The input argument ($first_txt) ";
+        my $msg;
+        if ($n_in == 1) {
+            my $first = $_[1];
+            my $first_txt = '';
+            if (defined $first) {
+                if (ref($first)) {
+                    $first_txt = ref($first);
+                }
+                else {
+                    $first_txt = "<scalar:$first>";
+                }
+            }
+            else {
+                $first_txt = '<undef>';
+            }
+            $msg = "The input argument ($first_txt) ";
+        }
+        else {
+            $msg = "$lost out of $n_in arguments ";
+        }
+        $msg .= "to '$c[3]' not of class '$_[0]'";
 
-    } else {
-      $msg = "$lost out of $n_in arguments ";
+        Carp::cluck("here");
+        throw JAC::OCS::Config::Error::BadClass($msg);
     }
-    $msg .= "to '$c[3]' not of class '$_[0]'";
-
-    Carp::cluck("here");
-    throw JAC::OCS::Config::Error::BadClass( $msg );
-  }
-  return (wantarray ? @output : $output[0] );
+    return (wantarray ? @output : $output[0]);
 }
 
 =item B<check_class_hash>
 
 Check that all the values in the supplied hash are of the correct class.
 
-  %output = check_class_hash( $class, %input );
+    %output = check_class_hash($class, %input);
 
 Returns hash containing valid keys and values.
 
 =cut
 
 sub check_class_hash {
-  my $class = shift;
-  my %in = @_;
-  my %out;
-  for my $key (keys %in) {
-    my $retval = check_class( $class, $in{$key});
-    $out{$key} = $retval if defined $retval;
-  }
-  return %out;
+    my $class = shift;
+    my %in = @_;
+    my %out;
+    for my $key (keys %in) {
+        my $retval = check_class($class, $in{$key});
+        $out{$key} = $retval if defined $retval;
+    }
+    return %out;
 }
 
 =item B<check_class_hash_fatal>
@@ -139,25 +135,24 @@ is not valid.
 =cut
 
 sub check_class_hash_fatal {
-  my $class = shift;
-  my %in = @_;
+    my $class = shift;
+    my %in = @_;
 
-  # could just pass all the values to check_class_fatal but
-  # in order for the error message to be useful we get the valid
-  # keys
-  my %valid = check_class_hash( $class, %in);
+    # could just pass all the values to check_class_fatal but
+    # in order for the error message to be useful we get the valid
+    # keys
+    my %valid = check_class_hash($class, %in);
 
-  if (scalar keys %valid != scalar keys %in ) {
-    # problem. Build up error message.
-    # by seeing which keys in %in are not in %valid
-    my @invalid = grep { !exists $valid{$_} } keys %in;
-    throw JAC::OCS::Config::Error::BadClass( "The keys (".
-					     join(",",@invalid)
-					   .") are not of class '$class'");
-  }
+    if (scalar keys %valid != scalar keys %in) {
+        # problem. Build up error message.
+        # by seeing which keys in %in are not in %valid
+        my @invalid = grep {!exists $valid{$_}} keys %in;
+        throw JAC::OCS::Config::Error::BadClass(
+            "The keys (" . join(",", @invalid) . ") are not of class '$class'");
+    }
 
-  # everything okay, return the input
-  return %in;
+    # everything okay, return the input
+    return %in;
 }
 
 =back
@@ -185,5 +180,3 @@ Place,Suite 330, Boston, MA  02111-1307, USA
 =cut
 
 1;
-
-

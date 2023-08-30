@@ -6,9 +6,9 @@ JAC::OCS::Config::ACSIS::RTDConfig - Parse and modify OCS ACSIS RTD configuratio
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::RTDConfig;
+    use JAC::OCS::Config::ACSIS::RTDConfig;
 
-  $cfg = new JAC::OCS::Config::ACSIS::RTDConfig( DOM => $dom);
+    $cfg = new JAC::OCS::Config::ACSIS::RTDConfig(DOM => $dom);
 
 =head1 DESCRIPTION
 
@@ -23,13 +23,11 @@ use Carp;
 use warnings;
 use XML::LibXML;
 
-use JAC::OCS::Config::Error qw| :try |;
+use JAC::OCS::Config::Error qw/:try/;
 
-use base qw/ JAC::OCS::Config::CfgBase /;
+use base qw/JAC::OCS::Config::CfgBase/;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -42,12 +40,12 @@ $VERSION = "1.01";
 Return the name of the _CONFIG element that should be the root
 node of the XML tree corresponding to the ACSIS RTD config.
 
- @names = $h->getRootElementName;
+    @names = $h->getRootElementName;
 
 =cut
 
 sub getRootElementName {
-  return( "rtd_config" );
+    return ("rtd_config");
 }
 
 =back

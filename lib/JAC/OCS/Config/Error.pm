@@ -10,8 +10,8 @@ JAC::OCS::Config::Error - Exception handling in an object orientated manner.
     use JAC::OCS::Config::Constants qw /:status/;
 
     # throw an error to be caught
-    throw JAC::OCS::Config::Error::AuthenticationFail( $message, OMP__AUTHFAIL );
-    throw JAC::OCS::Config::Error::FatalError( $message, OMP__FATAL );
+    throw JAC::OCS::Config::Error::AuthenticationFail($message, OMP__AUTHFAIL);
+    throw JAC::OCS::Config::Error::FatalError($message, OMP__FATAL);
 
     # record and then retrieve an error
     do_stuff();
@@ -19,26 +19,24 @@ JAC::OCS::Config::Error - Exception handling in an object orientated manner.
     JAC::OCS::Config::Error->flush if defined $Error;
 
     sub do_stuff {
-        record JAC::OCS::Config::Error::FatalError( $message, OMP__FATAL);
+        record JAC::OCS::Config::Error::FatalError($message, OMP__FATAL);
     }
 
     # try and catch blocks
     try {
-       stuff();
+        stuff();
     }
-    catch JAC::OCS::Config::Error::FatalError with 
-    {
+    catch JAC::OCS::Config::Error::FatalError with {
         # its a fatal error
         my $Error = shift;
-	orac_exit_normally($Error);
+        orac_exit_normally($Error);
     }
-    otherwise 
-    {
-       # this block catches croaks and other dies
-       my $Error = shift;
-       orac_exit_normally($Error);
+    otherwise {
+        # this block catches croaks and other dies
+        my $Error = shift;
+        orac_exit_normally($Error);
 
-    }; # Dont forget the trailing semi-colon to close the catch block
+    };    # Don't forget the trailing semi-colon to close the catch block
 
 =head1 DESCRIPTION
 
@@ -111,10 +109,10 @@ constructor. The elements that are used by, or are retrievable by the
 C<JAC::OCS::Config::Error> class are listed below, other classes may
 add to these.
 
-	-file
-	-line
-	-text
-	-value
+    -file
+    -line
+    -text
+    -value
 
 If C<-file> or C<-line> are not specified in the constructor arguments
 then these will be initialized with the file name and line number
@@ -125,7 +123,7 @@ created, and also the last error associated with a package.
 
 =over 4
 
-=item throw ( [ ARGS ] )
+=item throw([ARGS])
 
 Create a new C<JAC::OCS::Config::Error> object and throw an error,
 which will be caught by a surrounding C<try> block, if there is
@@ -133,20 +131,20 @@ one. Otherwise it will cause the program to exit.
 
 C<throw> may also be called on an existing error to re-throw it.
 
-=item with ( [ ARGS ] )
+=item with([ARGS])
 
 Create a new C<JAC::OCS::Config::Error> object and returns it. This
 is defined for syntactic sugar, eg
 
-    die with JAC::OCS::Config::Error::FatalError ( $message, OMP__FATAL );
+    die with JAC::OCS::Config::Error::FatalError($message, OMP__FATAL);
 
-=item record ( [ ARGS ] )
+=item record([ARGS])
 
 Create a new C<JAC::OCS::Config::Error> object and returns it. This
 is defined for syntactic sugar, eg
 
-  record JAC::OCS::Config::Error::AuthenticationFail ( $message, OMP__ABORT )
-	and return;
+    record JAC::OCS::Config::Error::AuthenticationFail($message, OMP__ABORT)
+        and return;
 
 =back
 
@@ -154,13 +152,12 @@ is defined for syntactic sugar, eg
 
 =over 4
 
-=item prior ( [ PACKAGE ] )
+=item prior([PACKAGE])
 
 Return the last error created, or the last error associated with
 C<PACKAGE>
 
     my $Error = JAC::OCS::Config::Error->prior;
-
 
 =back
 
@@ -244,7 +241,6 @@ Too many relevant configs were found in the DOM tree.
 
 =back
 
-
 =head1 AUTHORS
 
 Tim Jenness E<lt>t.jenness@jach.hawaii.eduE<gt>,
@@ -274,51 +270,45 @@ use Error;
 use warnings;
 use strict;
 
-use vars qw/$VERSION/;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 # flush method added to the base class
-use base qw/ Error::Simple /;
+use base qw/Error::Simple/;
 
 package JAC::OCS::Config::Error::Authentication;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::BadArgs;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::BadClass;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::DirectoryNotFound;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::FatalError;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::IOError;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::MissingTarget;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::NeedNextTarget;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::XMLBadStructure;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::XMLConfigMissing;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::XMLEmpty;
-use base qw/ JAC::OCS::Config::Error /;
+use base qw/JAC::OCS::Config::Error/;
 
 package JAC::OCS::Config::Error::XMLSurfeit;
-use base qw/ JAC::OCS::Config::Error /;
-
-
-
+use base qw/JAC::OCS::Config::Error/;
 
 1;
-

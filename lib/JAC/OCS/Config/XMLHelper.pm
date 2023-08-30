@@ -6,10 +6,10 @@ JAC::OCS::Config::XMLHelper - Helper functions for XML parsing
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::XMLHelper;
+    use JAC::OCS::Config::XMLHelper;
 
-  $pcdata = get_pcdata( $el, $elname );
-  %attr = find_attr( $el, @keys );
+    $pcdata = get_pcdata($el, $elname);
+    %attr = find_attr($el, @keys);
 
 =head1 DESCRIPTION
 
@@ -17,7 +17,6 @@ Generic XML helper routines, useful for all config classes.
 This package is not a class.
 
 =cut
-
 
 use 5.006;
 use strict;
@@ -30,16 +29,15 @@ use Data::Dumper;
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::Interval;
 
-use base qw/ Exporter /;
-use vars qw/ $VERSION @EXPORT_OK /;
+use base qw/Exporter/;
 
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
-@EXPORT_OK = qw(  get_pcdata find_attr find_children get_pcdata_multi
-		  get_this_pcdata find_attr_child find_attrs_and_pcdata
-		  _check_range indent_xml_string find_range interval_to_xml
-		  attrs_only
-	       );
+our @EXPORT_OK = qw/
+    get_pcdata find_attr find_children get_pcdata_multi
+    get_this_pcdata find_attr_child find_attrs_and_pcdata
+    _check_range indent_xml_string find_range interval_to_xml
+    attrs_only/;
 
 =head1 FUNCTIONS
 
@@ -49,7 +47,7 @@ $VERSION = "1.01";
 
 Given a node object, return the first child as a string.
 
- $string = get_this_pcdata( $el );
+    $string = get_this_pcdata($el);
 
 The string is cleaned by removing leading and trailing whitespace.
 Can return undef if there is no child.
@@ -57,21 +55,21 @@ Can return undef if there is no child.
 =cut
 
 sub get_this_pcdata {
-  my $el = shift;
+    my $el = shift;
 
-  my $child = $el->firstChild;
+    my $child = $el->firstChild;
 
-  # Return undef if the element contains no text children
-  return undef unless defined $child;
-  my $pcdata = $child->toString;
+    # Return undef if the element contains no text children
+    return undef unless defined $child;
+    my $pcdata = $child->toString;
 
-  # strip leading and trailing spaces
-  if (defined $pcdata) {
-    $pcdata =~ s/^\s+//;
-    $pcdata =~ s/\s+$//;
-  }
+    # strip leading and trailing spaces
+    if (defined $pcdata) {
+        $pcdata =~ s/^\s+//;
+        $pcdata =~ s/\s+$//;
+    }
 
-  return $pcdata;
+    return $pcdata;
 }
 
 =item B<get_pcdata>
@@ -79,7 +77,7 @@ sub get_this_pcdata {
 Given an element and a tag name, find the element corresponding to
 that tag and return the PCDATA entry from the last matching element.
 
- $pcdata = get_pcdata( $el, $tag );
+    $pcdata = get_pcdata($el, $tag);
 
 Convenience wrapper.
 
@@ -94,20 +92,20 @@ the change back to C<OMP::MSB>.
 =cut
 
 sub get_pcdata {
-  my ($el, $tag ) = @_;
-  my @matches = $el->getChildrenByTagName( $tag );
-  my $pcdata;
-  if (@matches) {
-    $pcdata = get_this_pcdata( $matches[-1] );
-  }
-  return $pcdata;
+    my ($el, $tag) = @_;
+    my @matches = $el->getChildrenByTagName($tag);
+    my $pcdata;
+    if (@matches) {
+        $pcdata = get_this_pcdata($matches[-1]);
+    }
+    return $pcdata;
 }
 
 =item B<get_pcdata_multi>
 
 Same as C<get_pcdata> but can be run with multiple tag names.
 
-  %results = get_pcdata_multi( $el, @tags );
+    %results = get_pcdata_multi($el, @tags);
 
 There is an entry in the return hash for each input tag
 unless that tag could not be found.
@@ -115,15 +113,15 @@ unless that tag could not be found.
 =cut
 
 sub get_pcdata_multi {
-  my $el = shift;
-  my @tags = @_;
+    my $el = shift;
+    my @tags = @_;
 
-  my %results;
-  for my $t (@tags) {
-    my $val = get_pcdata( $el, $t);
-    $results{$t} = $val if defined $val;
-  }
-  return %results;
+    my %results;
+    for my $t (@tags) {
+        my $val = get_pcdata($el, $t);
+        $results{$t} = $val if defined $val;
+    }
+    return %results;
 }
 
 =item B<find_attr>
@@ -131,53 +129,56 @@ sub get_pcdata_multi {
 Given the element object and a list of attributes, return the attributes
 as a hash.
 
-  %attr = find_attr( $el, @keys );
+    %attr = find_attr($el, @keys);
 
 Missing attributes will not be included in the returned hash.
 
 In scalar context, the value associated with the first key in the list
 is returned (even if that value is missing).
 
-  $val = find_attr( $el, "KEY");
+    $val = find_attr($el, "KEY");
 
 =cut
 
 sub find_attr {
-  my $el = shift;
-  JAC::OCS::Config::Error::BadArgs->throw("find_attr - Internal programming error. Supplied attribute object not defined - ". join(",",caller()))
-    unless defined $el;
-  my @keys = @_;
+    my $el = shift;
+    JAC::OCS::Config::Error::BadArgs->throw(
+        "find_attr - Internal programming error. Supplied attribute object not defined - "
+        . join(",", caller()))
+        unless defined $el;
+    my @keys = @_;
 
-  my %attr;
-  for my $a (@keys) {
-    my $val = $el->getAttribute( $a );
-    $attr{$a} = $val if defined $val;
-  }
+    my %attr;
+    for my $a (@keys) {
+        my $val = $el->getAttribute($a);
+        $attr{$a} = $val if defined $val;
+    }
 
-  if (wantarray) {
-    return %attr;
-  } else {
-    # inefficient since we find all the attributes before discarding them
-    return $attr{$keys[0]};
-  }
+    if (wantarray) {
+        return %attr;
+    }
+    else {
+        # inefficient since we find all the attributes before discarding them
+        return $attr{$keys[0]};
+    }
 
 }
 
 =item B<find_attr_child>
 
-Find attributes associated with a child element. There must be only a 
+Find attributes associated with a child element. There must be only a
 single match for the child element name.
 
-  %attr = find_attr_child( $parent, $child_name, @attr_names );
+    %attr = find_attr_child($parent, $child_name, @attr_names);
 
 The end arguments and the return values match those of C<find_attr>
 
 =cut
 
 sub find_attr_child {
-  my ($el, $tag, @keys) = @_;
-  my $child = find_children( $el, $tag, min => 1, max => 1);
-  return find_attr( $child, @keys );
+    my ($el, $tag, @keys) = @_;
+    my $child = find_children($el, $tag, min => 1, max => 1);
+    return find_attr($child, @keys);
 }
 
 =item B<find_attrs_and_pcdata>
@@ -185,7 +186,7 @@ sub find_attr_child {
 Find both the PCDATA associated with an element and all the attributes
 associated with this element.
 
-  ($pcdata, %attributes) = find_attr_and_pcdata( $el, $tag );
+    ($pcdata, %attributes) = find_attr_and_pcdata($el, $tag);
 
 Note that this function looks for a child element (see C<get_pcdata>)
 and requires a single match of child element.
@@ -195,16 +196,16 @@ Unlike C<find_attr>, all attributes are returned.
 =cut
 
 sub find_attrs_and_pcdata {
-  my ($el, $tag) = @_;
+    my ($el, $tag) = @_;
 
-  my $child = find_children( $el, $tag, min=>1, max=>1);
-  my $pcdata = get_this_pcdata( $child );
+    my $child = find_children($el, $tag, min => 1, max => 1);
+    my $pcdata = get_this_pcdata($child);
 
-  # This returns XML::LibXML::Attr objects
-  my @attributes = $child->attributes();
+    # This returns XML::LibXML::Attr objects
+    my @attributes = $child->attributes();
 
-  # Extract keys and values and return
-  return ($pcdata, map { $_->name, $_->value } @attributes);
+    # Extract keys and values and return
+    return ($pcdata, map {$_->name, $_->value} @attributes);
 }
 
 
@@ -214,7 +215,7 @@ Return the child elements with the supplied tag name but throw an
 exception if the number of children found is not the same as the number
 expected.
 
-  @children = find_children( $el, $tag, min => 0, max => 1);
+    @children = find_children($el, $tag, min => 0, max => 1);
 
 If neither min nor max are specified no exception will be thrown.
 
@@ -226,156 +227,162 @@ returned (which may also trigger an out of range exception).
 
 The tag name can be supplied as a regular expression object.
 
-  @children = find_children( $el, qr/^HEADER/, min => 0, max => 1);
+    @children = find_children($el, qr/^HEADER/, min => 0, max => 1);
 
 =cut
 
 sub find_children {
-  my $el = shift;
-  my $tag = shift;
-  my %range = @_;
+    my $el = shift;
+    my $tag = shift;
+    my %range = @_;
 
-  # Find the children
-  my @children;
-  if (defined $tag && defined $el) {
-    if (not ref $tag) {
-      @children = $el->getChildrenByTagName( $tag )
-    } else {
-      @children = grep { $_->nodeName =~ $tag } $el->childNodes;
+    # Find the children
+    my @children;
+    if (defined $tag && defined $el) {
+        if (not ref $tag) {
+            @children = $el->getChildrenByTagName(
+                $tag);
+        }
+        else {
+            @children = grep {$_->nodeName =~ $tag} $el->childNodes;
+        }
     }
-  }
 
-  # get the nodename for error reporting
-  my $pname = $el->nodeName;
+    # get the nodename for error reporting
+    my $pname = $el->nodeName;
 
-  return _check_range( \%range, "elements named '$tag' in element $pname",
-                       @children);
+    return _check_range(
+        \%range,
+        "elements named '$tag' in element $pname",
+        @children);
 }
 
 =item B<indent_xml_string>
 
 Given an XML string, re-calculates indenting for pretty printing.
 
-  $xml = indent_xml_string( $xml );
+    $xml = indent_xml_string($xml);
 
 =cut
 
 sub indent_xml_string {
-  my $xml = shift;
+    my $xml = shift;
 
-  # Split into individual lines [may be expensive in memory]
-  my @lines = split("\n",$xml);
+    # Split into individual lines [may be expensive in memory]
+    my @lines = split("\n", $xml);
 
-  # Re-indent the XML
-  $xml = '';
-  my $indent = 0;
-  my $in_el_open = 0;
-  my $in_el_close = 0;
-  my $in_comm = 0;
-  my $lead_sp = undef;
-  for my $l (@lines) {
-    # clean leading space unless in an element
-    unless ($in_el_open || $in_el_close) {
-      if ($l =~ /^\s*</ or not defined $lead_sp) {
-        $l =~ s/^(\s+)//;
-        $lead_sp = defined $1 ? length $1 : 0;
-      }
-      else {
-        $l =~ s/^\s{0,$lead_sp}//;
-      }
+    # Re-indent the XML
+    $xml = '';
+    my $indent = 0;
+    my $in_el_open = 0;
+    my $in_el_close = 0;
+    my $in_comm = 0;
+    my $lead_sp = undef;
+    for my $l (@lines) {
+        # clean leading space unless in an element
+        unless ($in_el_open || $in_el_close) {
+            if ($l =~ /^\s*</ or not defined $lead_sp) {
+                $l =~ s/^(\s+)//;
+                $lead_sp = defined $1 ? length $1 : 0;
+            }
+            else {
+                $l =~ s/^\s{0,$lead_sp}//;
+            }
+        }
+
+        # indent to apply this time round depends on whether we
+        # are opening new elements (use previous value) or closing
+        # a set of elements (use correct value)
+        my $this_indent = $indent;
+
+        # See if indent has increased [simplistic approach]
+        # but should be okay since I try to create xml with stand alone
+        # elements rather than multiple elements per line
+        my $el_open_st = () = $l =~ /<(?!\/|!|\?)/g;
+        my $el_close_st = () = $l =~ /<\//g;
+        my $el_en = () = $l =~ /(?<!\/|-|\?)>/g;
+        my $el_selfcl_en = () = $l =~ /\/>/g;
+        my $comm_st = () = $l =~ /<!--/g;
+        my $comm_en = () = $l =~ /-->/g;
+
+        # Deal with comments / elements already inside.
+        if ($in_comm and $comm_en) {
+            $in_comm = 0;
+            $comm_en--;
+            $indent--;
+            $this_indent = $indent if $l =~ /^\s*-->/;
+            undef $lead_sp;
+        }
+        if ($in_el_open) {
+            if ($el_en) {
+                $in_el_open = 0;
+                $el_en--;
+                $indent++;
+                undef $lead_sp;
+            }
+            elsif ($el_selfcl_en) {
+                $in_el_open = 0;
+                $el_selfcl_en--;
+                undef $lead_sp;
+            }
+        }
+        if ($in_el_close) {
+            if ($el_en) {
+                $in_el_close = 0;
+                $el_en--;
+                $indent--;
+                undef $lead_sp;
+            }
+        }
+
+        # Deal with elements opening and closing.
+        $el_open_st -= $el_selfcl_en;
+
+        while ($el_open_st > 0 and $el_en > 0) {
+            $el_open_st--;
+            $el_en--;
+            $indent++;
+            undef $lead_sp;
+        }
+        while ($el_close_st > 0 and $el_en > 0) {
+            $el_close_st--;
+            $el_en--;
+            $indent--;
+            $this_indent = $indent if $l =~ /^\s*<\//;
+            undef $lead_sp;
+        }
+
+        # Deal with comments / elements starting.
+        if ($comm_st > $comm_en) {
+            $in_comm = 1;
+            $indent++;
+            undef $lead_sp;
+        }
+        elsif ($el_open_st > 0) {
+            $in_el_open = 1;
+        }
+        elsif ($el_close_st > 0) {
+            $in_el_close = 1;
+        }
+
+        # prepend current indent and store in output "buffer"
+        # if we just have a lone > assume we can put that on the previous line
+        if ($l =~ /^\s*>\s*$/) {
+            chomp($xml);
+            $xml .= " >\n";
+        }
+        else {
+            if ($l =~ /\S/) {
+                $xml .= ("   " x $this_indent) . $l . "\n";
+            }
+            else {
+                # do not indent a blank line
+                $xml .= "\n";
+            }
+        }
     }
 
-    # indent to apply this time round depends on whether we
-    # are opening new elements (use previous value) or closing
-    # a set of elements (use correct value)
-    my $this_indent = $indent;
-
-    # See if indent has increased [simplistic approach]
-    # but should be okay since I try to create xml with stand alone
-    # elements rather than multiple elements per line
-    my $el_open_st = () = $l =~ /<(?!\/|!|\?)/g;
-    my $el_close_st = () = $l =~ /<\//g;
-    my $el_en = () = $l =~ /(?<!\/|-|\?)>/g;
-    my $el_selfcl_en = () = $l =~ /\/>/g;
-    my $comm_st = () = $l =~ /<!--/g;
-    my $comm_en = () = $l =~ /-->/g;
-
-    # Deal with comments / elements already inside.
-    if ($in_comm and $comm_en) {
-      $in_comm = 0;
-      $comm_en --;
-      $indent --;
-      $this_indent = $indent if $l =~ /^\s*-->/;
-      undef $lead_sp;
-    }
-    if ($in_el_open) {
-      if ($el_en) {
-        $in_el_open = 0;
-        $el_en --;
-        $indent ++;
-        undef $lead_sp;
-      }
-      elsif ($el_selfcl_en) {
-        $in_el_open = 0;
-        $el_selfcl_en --;
-        undef $lead_sp;
-      }
-    }
-    if ($in_el_close) {
-      if ($el_en) {
-        $in_el_close = 0;
-        $el_en --;
-        $indent --;
-        undef $lead_sp;
-      }
-    }
-
-    # Deal with elements opening and closing.
-    $el_open_st -= $el_selfcl_en;
-
-    while ($el_open_st > 0 and $el_en > 0) {
-      $el_open_st --;
-      $el_en --;
-      $indent ++;
-      undef $lead_sp;
-    }
-    while ($el_close_st > 0 and $el_en > 0) {
-      $el_close_st --;
-      $el_en --;
-      $indent --;
-      $this_indent = $indent if $l =~ /^\s*<\//;
-      undef $lead_sp;
-    }
-
-    # Deal with comments / elements starting.
-    if ($comm_st > $comm_en) {
-      $in_comm = 1;
-      $indent ++;
-      undef $lead_sp;
-    }
-    elsif ($el_open_st > 0) {
-      $in_el_open = 1;
-    }
-    elsif ($el_close_st > 0) {
-      $in_el_close = 1;
-    }
-
-    # prepend current indent and store in output "buffer"
-    # if we just have a lone > assume we can put that on the previous line
-    if ($l =~ /^\s*>\s*$/) {
-      chomp($xml);
-      $xml .= " >\n";
-    } else {
-      if ($l =~ /\S/) {
-        $xml .= ("   " x $this_indent) . $l ."\n";
-      } else {
-        # do not indent a blank line
-        $xml .= "\n";
-      }
-    }
-  }
-
-  return $xml;
+    return $xml;
 }
 
 =item B<find_range>
@@ -383,8 +390,8 @@ sub indent_xml_string {
 Locate and parse a <range> element. Returns a C<JAC::OCS::Config::Interval>
 object.
 
-  @range = find_range( $el );
-  $range = find_range( $el );
+    @range = find_range($el);
+    $range = find_range($el);
 
 The element can either be a node that contains <range> elements,
 or a <range> element itself.
@@ -395,37 +402,39 @@ element present.
 =cut
 
 sub find_range {
-  my $el = shift;
+    my $el = shift;
 
-  my %options;
-  if (!wantarray) {
-    # Scalar context so we are expecting exactly one range
-    %options = (min=>1, max => 1);
-  }
+    my %options;
+    if (!wantarray) {
+        # Scalar context so we are expecting exactly one range
+        %options = (min => 1, max => 1);
+    }
 
-  # locate the range [could be this element]
-  my @range;
-  if ($el->nodeName eq 'range') {
-    @range = ($el);
-  } else {
-    @range = find_children( $el, "range", %options);
-  }
+    # locate the range [could be this element]
+    my @range;
+    if ($el->nodeName eq 'range') {
+        @range = ($el);
+    }
+    else {
+        @range = find_children($el, "range", %options);
+    }
 
-  my @int;
-  for my $r (@range) {
-    my $units = find_attr( $r, "units");
-    my $min = get_pcdata( $r, "min");
-    my $max = get_pcdata( $r, "max");
+    my @int;
+    for my $r (@range) {
+        my $units = find_attr($r, "units");
+        my $min = get_pcdata($r, "min");
+        my $max = get_pcdata($r, "max");
 
-    my $interval = new JAC::OCS::Config::Interval( Min => $min,
-						   Max => $max,
-						   Units => $units,
-						 );
+        my $interval = new JAC::OCS::Config::Interval(
+            Min => $min,
+            Max => $max,
+            Units => $units,
+        );
 
-    push(@int, $interval);
-  }
+        push(@int, $interval);
+    }
 
-  return (wantarray ? @int : $int[0]);
+    return (wantarray ? @int : $int[0]);
 }
 
 =item B<interval_to_xml>
@@ -433,21 +442,22 @@ sub find_range {
 Convert one or more C<JAC::OCS::Config::Interval> objects to a standard
 ACSIS <range> element (or multiple elements).
 
- $xml = interval_to_xml( @intervals );
+    $xml = interval_to_xml(@intervals);
 
 =cut
 
 sub interval_to_xml {
-  my @in = @_;
+    my @in = @_;
 
-  my $xml = "";
-  for my $i (@in) {
-    $xml .= "<range units=\"".$i->units."\">\n";
-    $xml .= "  <min>". $i->min ."</min>\n";
-    $xml .= "  <max>". $i->max ."</max>\n";
-    $xml .= "</range>\n";
-  }
-  return $xml;
+    my $xml = "";
+    for my $i (@in) {
+        $xml .= "<range units=\"" . $i->units . "\">\n";
+        $xml .= "  <min>" . $i->min . "</min>\n";
+        $xml .= "  <max>" . $i->max . "</max>\n";
+        $xml .= "</range>\n";
+    }
+
+    return $xml;
 }
 
 =item B<attrs_only>
@@ -456,13 +466,13 @@ Given an element name, and  a hash, return the XML string
 that assumes a simple element with only attributes and no
 PCDATA.
 
- $xml = attrs_only( $el, %attr);
+    $xml = attrs_only($el, %attr);
 
 =cut
 
 sub attrs_only {
-  my ($el, %attr) = @_;
-  return "<$el ". join(" ", map { "$_=\"$attr{$_}\"" } keys %attr ) ." />\n";
+    my ($el, %attr) = @_;
+    return "<$el " . join(" ", map {"$_=\"$attr{$_}\""} keys %attr) . " />\n";
 }
 
 =back
@@ -479,7 +489,7 @@ Given a range specifier, an error message and a list of results,
 compare the list of results to the range and issue a error message
 is appropriate.
 
-  @results = _check_range( { max => 4, min => 0}, "elements", @list);
+    @results = _check_range({max => 4, min => 0}, "elements", @list);
 
 Returns the list in list context, the first element in scalar context,
 else throws an exception.
@@ -487,33 +497,36 @@ else throws an exception.
 =cut
 
 sub _check_range {
-  my $range = shift;
-  my $errmsg = shift;
-  my @input = @_;
+    my $range = shift;
+    my $errmsg = shift;
+    my @input = @_;
 
-  my %range = %$range;
-  my $count = scalar(@input);
+    my %range = %$range;
+    my $count = scalar(@input);
 
-  if (exists $range->{min} && $count < $range{min} ) {
-    # Too few
-    if ($count == 0) {
-      throw JAC::OCS::Config::Error::XMLEmpty("No $errmsg, expecting $range{min}");
-    } else {
-      throw JAC::OCS::Config::Error::XMLBadStructure("Too few $errmsg, expected at least $range{min} but found $count");
+    if (exists $range->{min} && $count < $range{min}) {
+        # Too few
+        if ($count == 0) {
+            throw JAC::OCS::Config::Error::XMLEmpty("No $errmsg, expecting $range{min}");
+        }
+        else {
+            throw JAC::OCS::Config::Error::XMLBadStructure(
+                "Too few $errmsg, expected at least $range{min} but found $count");
+        }
     }
-  }
 
-  if (exists $range{max} && $count > $range{max} ) {
-    # Too many
-    throw JAC::OCS::Config::Error::XMLSurfeit("Too many $errmsg, Expected no more than $range{max} but found $count");
-  }
+    if (exists $range{max} && $count > $range{max}) {
+        # Too many
+        throw JAC::OCS::Config::Error::XMLSurfeit(
+            "Too many $errmsg, Expected no more than $range{max} but found $count");
+    }
 
-  if (wantarray) {
-    return @input;
-  } else {
-    return $input[0];
-  }
-
+    if (wantarray) {
+        return @input;
+    }
+    else {
+        return $input[0];
+    }
 }
 
 =back

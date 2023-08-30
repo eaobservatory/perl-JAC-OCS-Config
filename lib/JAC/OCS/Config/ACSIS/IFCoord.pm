@@ -6,9 +6,7 @@ JAC::OCS::Config::ACSIS::IFCoord - IF specification in spectral window
 
 =head1 SYNOPSIS
 
- use JAC::OCS::Config::ACSIS::IFCoord;
-
-
+    use JAC::OCS::Config::ACSIS::IFCoord;
 
 =head1 DESCRIPTION
 
@@ -24,9 +22,7 @@ use strict;
 use Carp;
 use warnings;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -39,32 +35,32 @@ $VERSION = "1.01";
 Create a new IFCoord object. Takes hash arguments, the names of which must
 match accessor methods.
 
-  $c = new JAC::OCS::Config::ACSIS::IFCoord( if_freq => 5.0 );
+$c = new JAC::OCS::Config::ACSIS::IFCoord(if_freq => 5.0);
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
 
-  my $if = bless {
-		    IFFreq => undef,
-		    RefChannel => undef,
-		    ChannelWidth => undef,
-		    NChannels => undef,
-		   }, $class;
+    my $if = bless {
+        IFFreq => undef,
+        RefChannel => undef,
+        ChannelWidth => undef,
+        NChannels => undef,
+    }, $class;
 
-  # Now run accessor methods
-  my %args = @_;
-  for my $key (keys %args) {
-    my $method = lc($key);
-    if ( $if->can( $method ) ) {
-      # Dereference arrays
-      $if->$method( $args{$key} );
+    # Now run accessor methods
+    my %args = @_;
+    for my $key (keys %args) {
+        my $method = lc($key);
+        if ($if->can($method)) {
+            # Dereference arrays
+            $if->$method($args{$key});
+        }
     }
-  }
 
-  return $if;
+    return $if;
 }
 
 =back
@@ -80,11 +76,11 @@ The IF frequency (in Hz).
 =cut
 
 sub if_freq {
-  my $self = shift;
-  if (@_) {
-    $self->{IFFreq} = shift;
-  }
-  return $self->{IFFreq};
+    my $self = shift;
+    if (@_) {
+        $self->{IFFreq} = shift;
+    }
+    return $self->{IFFreq};
 }
 
 =item B<ref_channel>
@@ -94,11 +90,11 @@ The reference channel in the subband.
 =cut
 
 sub ref_channel {
-  my $self = shift;
-  if (@_) {
-    $self->{RefChannel} = shift;
-  }
-  return $self->{RefChannel};
+    my $self = shift;
+    if (@_) {
+        $self->{RefChannel} = shift;
+    }
+    return $self->{RefChannel};
 }
 
 =item B<channel_width>
@@ -108,11 +104,11 @@ The channel width in Hz.
 =cut
 
 sub channel_width {
-  my $self = shift;
-  if (@_) {
-    $self->{ChannelWidth} = shift;
-  }
-  return $self->{ChannelWidth};
+    my $self = shift;
+    if (@_) {
+        $self->{ChannelWidth} = shift;
+    }
+    return $self->{ChannelWidth};
 }
 
 =item B<nchannels>
@@ -122,11 +118,11 @@ The number of channels in the subband.
 =cut
 
 sub nchannels {
-  my $self = shift;
-  if (@_) {
-    $self->{NChannels} = shift;
-  }
-  return $self->{NChannels};
+    my $self = shift;
+    if (@_) {
+        $self->{NChannels} = shift;
+    }
+    return $self->{NChannels};
 }
 
 =back
@@ -154,4 +150,3 @@ Place,Suite 330, Boston, MA  02111-1307, USA
 =cut
 
 1;
-

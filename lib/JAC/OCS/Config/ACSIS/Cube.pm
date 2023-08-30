@@ -6,14 +6,13 @@ JAC::OCS::Config::ACSIS::Cube - Representation of a single regridding cube
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::Cube;
+    use JAC::OCS::Config::ACSIS::Cube;
 
-  my $c = new JAC::OCS::Config::ACSIS::Cube;
+    my $c = new JAC::OCS::Config::ACSIS::Cube;
 
-  my @offset = $c->offset();
+    my @offset = $c->offset();
 
-  my $group_centre = $c->group_centre();
-
+    my $group_centre = $c->group_centre();
 
 =head1 DESCRIPTION
 
@@ -27,11 +26,9 @@ use strict;
 use Carp;
 use warnings;
 
-use JAC::OCS::Config::Helper qw/ check_class_fatal /;
+use JAC::OCS::Config::Helper qw/check_class_fatal/;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -44,39 +41,41 @@ $VERSION = "1.01";
 Create a new Cube object. Takes hash arguments, the names of which must
 match accessor methods.
 
-  $c = new JAC::OCS::Config::ACSIS::Cube( projection => 'TAN' );
+    $c = new JAC::OCS::Config::ACSIS::Cube(projection => 'TAN');
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
 
-  my $cube = bless {
-		    GroupCentre => undef,  # Astro::Coords
-		    PixelSize => [],
-		    Offset => [],
-		    NPixels => [],
-		    Projection => undef,
-		    PositionAngle => undef, # Angle
-		    GridFunction => undef,
-		    TCSCoords => undef,
-		    TruncationRadius => undef,
-		    DataSourceID => undef,
-		    SPWInt => undef,   # ...::Interval
-		   }, $class;
+    my $cube = bless {
+        GroupCentre => undef,    # Astro::Coords
+        PixelSize => [],
+        Offset => [],
+        NPixels => [],
+        Projection => undef,
+        PositionAngle => undef,    # Angle
+        GridFunction => undef,
+        TCSCoords => undef,
+        TruncationRadius => undef,
+        DataSourceID => undef,
+        SPWInt => undef,           # ...::Interval
+    }, $class;
 
-  # Now run accessor methods
-  my %args = @_;
-  for my $key (keys %args) {
-    my $method = lc($key);
-    if ( $cube->can( $method ) ) {
-      # Dereference arrays
-      $cube->$method( (ref $args{$key} eq 'ARRAY' ? @{$args{$key}} : $args{$key} ) );
+    # Now run accessor methods
+    my %args = @_;
+    for my $key (keys %args) {
+        my $method = lc($key);
+        if ($cube->can($method)) {
+            # Dereference arrays
+            $cube->$method((ref $args{$key} eq 'ARRAY'
+                ? @{$args{$key}}
+                : $args{$key}));
+        }
     }
-  }
 
-  return $cube;
+    return $cube;
 }
 
 =back
@@ -97,13 +96,16 @@ tangent point.
 =cut
 
 sub group_centre {
-  my $self = shift;
-  if (@_) {
-    my $c = shift;
-    # undef is allowed
-    $self->{GroupCentre} = (defined $c ? check_class_fatal( "Astro::Coords", $c) : undef );
-  }
-  return $self->{GroupCentre};
+    my $self = shift;
+    if (@_) {
+        my $c = shift;
+
+        # undef is allowed
+        $self->{GroupCentre} = (defined $c
+            ? check_class_fatal("Astro::Coords", $c)
+            : undef);
+    }
+    return $self->{GroupCentre};
 }
 
 =item B<pixsize>
@@ -111,53 +113,53 @@ sub group_centre {
 The X and Y pixel size in arcsec, stored as C<Astro::Coords::Angle>
 objects.
 
-  ($x, $y) = $c->pixsize;
-  $c->pixsize( @xy );
+    ($x, $y) = $c->pixsize;
+    $c->pixsize(@xy);
 
 =cut
 
 sub pixsize {
-  my $self = shift;
-  if (@_) {
-    @{$self->{PixelSize}} = check_class_fatal( "Astro::Coords::Angle",@_);
-  }
-  return @{ $self->{PixelSize}};
+    my $self = shift;
+    if (@_) {
+        @{$self->{PixelSize}} = check_class_fatal("Astro::Coords::Angle", @_);
+    }
+    return @{$self->{PixelSize}};
 }
 
 =item B<npix>
 
 The number of pixels in the X and Y dimension.
 
-  ($nx, $ny) = $c->npix;
-  $c->npix( @nxy );
+    ($nx, $ny) = $c->npix;
+    $c->npix(@nxy);
 
 =cut
 
 sub npix {
-  my $self = shift;
-  if (@_) {
-    @{$self->{NPixels}} = @_;
-  }
-  return @{ $self->{NPixels}};
+    my $self = shift;
+    if (@_) {
+        @{$self->{NPixels}} = @_;
+    }
+    return @{$self->{NPixels}};
 }
 
 =item B<offset>
 
 X and Y offset of the grid.
 
-  ($dx, $dy) = $c->offset;
-  $c->offset( @xy );
+    ($dx, $dy) = $c->offset;
+    $c->offset(@xy);
 
 Units are pixels but can be floating point.
 
 =cut
 
 sub offset {
-  my $self = shift;
-  if (@_) {
-    @{$self->{Offset}} = @_;
-  }
-  return @{ $self->{Offset}};
+    my $self = shift;
+    if (@_) {
+        @{$self->{Offset}} = @_;
+    }
+    return @{$self->{Offset}};
 }
 
 =item B<projection>
@@ -167,9 +169,11 @@ Projection used for the regridding.
 =cut
 
 sub projection {
-  my $self = shift;
-  if (@_) { $self->{Projection} = shift; }
-  return $self->{Projection};
+    my $self = shift;
+    if (@_) {
+        $self->{Projection} = shift;
+    }
+    return $self->{Projection};
 }
 
 =item B<grid_function>
@@ -179,11 +183,12 @@ Regridding function to use.
 =cut
 
 sub grid_function {
-  my $self = shift;
-  if (@_) { $self->{GridFunction} = shift; }
-  return $self->{GridFunction};
+    my $self = shift;
+    if (@_) {
+        $self->{GridFunction} = shift;
+    }
+    return $self->{GridFunction};
 }
-
 
 =item B<tcs_coord>
 
@@ -193,9 +198,11 @@ or AZEL.
 =cut
 
 sub tcs_coord {
-  my $self = shift;
-  if (@_) { $self->{TCSCoords} = shift; }
-  return $self->{TCSCoords};
+    my $self = shift;
+    if (@_) {
+        $self->{TCSCoords} = shift;
+    }
+    return $self->{TCSCoords};
 }
 
 =item B<posang>
@@ -205,11 +212,11 @@ Position angle of the map, East of North.
 =cut
 
 sub posang {
-  my $self = shift;
-  if (@_) {
-    $self->{PositionAngle} = check_class_fatal( "Astro::Coords::Angle",shift);
-  }
-  return $self->{PositionAngle};
+    my $self = shift;
+    if (@_) {
+        $self->{PositionAngle} = check_class_fatal("Astro::Coords::Angle", shift);
+    }
+    return $self->{PositionAngle};
 }
 
 =item B<truncation_radius>
@@ -220,9 +227,11 @@ flux. Maximum radius of convolution function in arcsec.
 =cut
 
 sub truncation_radius {
-  my $self = shift;
-  if (@_) { $self->{TruncationRadius} = shift; }
-  return $self->{TruncationRadius};
+    my $self = shift;
+    if (@_) {
+        $self->{TruncationRadius} = shift;
+    }
+    return $self->{TruncationRadius};
 }
 
 =item B<fwhm>
@@ -233,9 +242,11 @@ function.
 =cut
 
 sub fwhm {
-  my $self = shift;
-  if (@_) { $self->{FWHM} = shift; }
-  return $self->{FWHM};
+    my $self = shift;
+    if (@_) {
+        $self->{FWHM} = shift;
+    }
+    return $self->{FWHM};
 }
 
 =item B<spw_id>
@@ -245,9 +256,11 @@ Spectral window ID that should be regridded.
 =cut
 
 sub spw_id {
-  my $self = shift;
-  if (@_) { $self->{DataSourceID} = shift; }
-  return $self->{DataSourceID};
+    my $self = shift;
+    if (@_) {
+        $self->{DataSourceID} = shift;
+    }
+    return $self->{DataSourceID};
 }
 
 =item B<spw_interval>
@@ -258,16 +271,13 @@ should be regridded. A C<JAC::OCS::Config::Interval> object.
 =cut
 
 sub spw_interval {
-  my $self = shift;
-  if (@_) { 
-    $self->{SPWInt} = check_class_fatal("JAC::OCS::Config::Interval",shift);
-  }
-  return $self->{SPWInt};
+    my $self = shift;
+    if (@_) {
+        $self->{SPWInt} =
+            check_class_fatal("JAC::OCS::Config::Interval", shift);
+    }
+    return $self->{SPWInt};
 }
-
-
-
-
 
 =back
 
@@ -294,5 +304,3 @@ Place,Suite 330, Boston, MA  02111-1307, USA
 =cut
 
 1;
-
-

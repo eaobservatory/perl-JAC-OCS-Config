@@ -23,7 +23,8 @@ isa_ok($cfg, 'JAC::OCS::Config::TCS');
 my $coord = $cfg->getTarget();
 isa_ok($coord, 'JAC::OCS::Config::Coords::AutoTLE');
 
-my @array = $coord->array(); my $n = 0;
+my @array = $coord->array();
+my $n = 0;
 is((shift @array), 'AUTO-TLE', 'array element ' . $n);
 ok((not defined $_), 'array element ' . ++ $n) foreach @array;
 

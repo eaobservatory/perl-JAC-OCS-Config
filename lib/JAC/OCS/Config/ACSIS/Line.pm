@@ -6,10 +6,11 @@ JAC::OCS::Config::ACSIS::Line - Representation of a single molecular line
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::ACSIS::Line;
+    use JAC::OCS::Config::ACSIS::Line;
 
-  $line = new JAC::OCS::Config::ACSIS::Line( Molecule => 'CO',
-                                             Transition => '3-2');
+    $line = JAC::OCS::Config::ACSIS::Line->new(
+        Molecule => 'CO',
+        Transition => '3-2');
 
 =head1 DESCRIPTION
 
@@ -24,12 +25,10 @@ use strict;
 use Carp;
 use warnings;
 
-use JAC::OCS::Config::Error qw/ :try /;
+use JAC::OCS::Config::Error qw/:try/;
 use JAC::OCS::Config::Units;
 
-use vars qw/ $VERSION /;
-
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -41,32 +40,44 @@ $VERSION = "1.01";
 
 Construct a Line object. Recognized keys are:
 
-  Molecule => Name of the molecule
-  Transition => Molecular transition (a string)
-  RestFreq => Rest frequency in Hz for this transition
+=over 4
+
+=item Molecule
+
+Name of the molecule
+
+=item Transition
+
+Molecular transition (a string)
+
+=item RestFreq
+
+Rest frequency in Hz for this transition
+
+=back
 
 =cut
 
 sub new {
-  my $proto = shift;
-  my $class = ref($proto) || $proto;
+    my $proto = shift;
+    my $class = ref($proto) || $proto;
 
-  my $line = bless {}, $class;
+    my $line = bless {}, $class;
 
-  # Read the input hash and convert all keys to lower case
-  my %args = @_;
-  for my $k (keys %args) {
-    $args{lc($k)} = $args{$k};
-  } 
-
-  # now configure it
-  for my $k (qw/ molecule transition restfreq / ) {
-    if (exists $args{$k}) {
-      $line->$k( $args{$k} );
+    # Read the input hash and convert all keys to lower case
+    my %args = @_;
+    for my $k (keys %args) {
+        $args{lc($k)} = $args{$k};
     }
-  }
 
-  return $line;
+    # now configure it
+    for my $k (qw/molecule transition restfreq/) {
+        if (exists $args{$k}) {
+            $line->$k($args{$k});
+        }
+    }
+
+    return $line;
 }
 
 =back
@@ -84,9 +95,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub molecule {
-  my $self = shift;
-  if (@_) { $self->{Molecule} = _cleanup(shift) }
-  return $self->{Molecule};
+    my $self = shift;
+    if (@_) {
+        $self->{Molecule} = _cleanup(shift);
+    }
+    return $self->{Molecule};
 }
 
 =item B<transition>
@@ -98,9 +111,11 @@ Trailing and leading space is ignored.
 =cut
 
 sub transition {
-  my $self = shift;
-  if (@_) { $self->{Transition} = _cleanup(shift) }
-  return $self->{Transition};
+    my $self = shift;
+    if (@_) {
+        $self->{Transition} = _cleanup(shift);
+    }
+    return $self->{Transition};
 }
 
 =item B<restfreq>
@@ -110,9 +125,11 @@ The rest frequenct (in Hz) associated with this line.
 =cut
 
 sub restfreq {
-  my $self = shift;
-  if (@_) { $self->{RestFreq} = shift }
-  return $self->{RestFreq};
+    my $self = shift;
+    if (@_) {
+        $self->{RestFreq} = shift;
+    }
+    return $self->{RestFreq};
 }
 
 =back
@@ -123,14 +140,13 @@ sub restfreq {
 # to remove duplicate, trailing and leading spaces.
 
 sub _cleanup {
-  my $x = shift;
-  return unless defined $x;
-  $x =~ s/^\s*//;
-  $x =~ s/\s*$//;
-  $x =~ s/\s\s+/ /;
-  return $x;
+    my $x = shift;
+    return unless defined $x;
+    $x =~ s/^\s*//;
+    $x =~ s/\s*$//;
+    $x =~ s/\s\s+/ /;
+    return $x;
 }
-
 
 =head1 AUTHOR
 

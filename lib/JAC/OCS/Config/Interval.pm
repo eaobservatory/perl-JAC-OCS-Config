@@ -6,13 +6,13 @@ JAC::OCS::Config::Interval - Numeric intervals for OCS Configs
 
 =head1 SYNOPSIS
 
-  use JAC::OCS::Config::Interval;
+    use JAC::OCS::Config::Interval;
 
-  $i = new JAC::OCS::Config::Interval(Min => -4, Max => 20, units => 'pixels');
-  $i = new JAC::OCS::Config::Interval( Min => 0 );
-  $i->units("pixels");
+    $i = new JAC::OCS::Config::Interval(Min => -4, Max => 20, units => 'pixels');
+    $i = new JAC::OCS::Config::Interval(Min => 0);
+    $i->units("pixels");
 
-  print "$r";
+    print "$i";
 
 =head1 DESCRIPTION
 
@@ -26,10 +26,9 @@ use strict;
 use warnings;
 use Carp;
 
-use base qw/ Number::Interval /;
-use vars qw/ $VERSION /;
+use base qw/Number::Interval/;
 
-$VERSION = "1.01";
+our $VERSION = "1.01";
 
 =head1 METHODS
 
@@ -42,22 +41,22 @@ $VERSION = "1.01";
 Create a new object. Can be populated when supplied with
 keys C<Max> and C<Min>.
 
-  $r = new JAC::OCS::Config::Range();
-  $r = new JAC::OCS::Config::Range( Max => 5, Units => 'pixels' );
+    $i = new JAC::OCS::Config::Interval();
+    $i = new JAC::OCS::Config::Interval(Max => 5, Units => 'pixels');
 
 =cut
 
 sub new {
-  my $class = shift;
-  my $i = $class->SUPER::new( @_ );
+    my $class = shift;
+    my $i = $class->SUPER::new(@_);
 
-  # Populate it with units
-  if (@_) {
-    my %args = @_;
-    $i->units( $args{Units}) if exists $args{Units};
-  }
+    # Populate it with units
+    if (@_) {
+        my %args = @_;
+        $i->units($args{Units}) if exists $args{Units};
+    }
 
-  return $i;
+    return $i;
 }
 
 =back
@@ -70,19 +69,19 @@ sub new {
 
 Units of the numbers comprising the interval.
 
-  $u = $r->units;
-  $i->units("pixels");
+    $u = $i->units;
+    $i->units("pixels");
 
 Can return C<undef> if no unit has been specified.
 
 =cut
 
 sub units {
-  my $self = shift;
-  if (@_) {
-    $self->{Units} = shift;
-  }
-  return $self->{Units};
+    my $self = shift;
+    if (@_) {
+        $self->{Units} = shift;
+    }
+    return $self->{Units};
 }
 
 =back
@@ -114,4 +113,3 @@ Place,Suite 330, Boston, MA  02111-1307, USA
 =cut
 
 1;
-

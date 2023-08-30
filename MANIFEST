@@ -43,7 +43,7 @@ lib/JAC/OCS/Config/TCS/obsArea.pm
 lib/JAC/OCS/Config/TCS/Secondary.pm
 lib/JAC/OCS/Config/Units.pm
 lib/JAC/OCS/Config/XMLHelper.pm
-MANIFEST			This list of files
+MANIFEST
 MANIFEST.SKIP
 META.yml
 ocsconfig
