@@ -45,12 +45,23 @@ our @EXPORT_OK = qw/
 
 =item B<get_this_pcdata>
 
-Given a node object, return the first child as a string.
+Given a node object, return the text content.
 
     $string = get_this_pcdata($el);
 
 The string is cleaned by removing leading and trailing whitespace.
 Can return undef if there is no child.
+
+B<Historical note:> it looks like the original implementation of this function
+pre-dated the C<XML::LibXML> method C<textContent> and therefore returned
+the serialized form of the first child.  (Assuming the element contains only
+one child which was a text node, this would return the text content, except
+that it could include XML-encoded things, such as entities.)  For now
+we retain the behavior of returning C<undef> if the node has no child
+nodes, but we could perhaps instead check if C<textContent> returns
+an empty string, or maybe only white space.  However the returned value
+should now not include XML-encoded things and may include text from
+multiple child nodes, e.g. additional text following an XML comment.
 
 =cut
 
@@ -61,7 +72,8 @@ sub get_this_pcdata {
 
     # Return undef if the element contains no text children
     return undef unless defined $child;
-    my $pcdata = $child->toString;
+
+    my $pcdata = $el->textContent;
 
     # strip leading and trailing spaces
     if (defined $pcdata) {
