@@ -37,7 +37,7 @@ our @EXPORT_OK = qw/
     get_pcdata find_attr find_children get_pcdata_multi
     get_this_pcdata find_attr_child find_attrs_and_pcdata
     _check_range indent_xml_string find_range interval_to_xml
-    attrs_only/;
+    attrs_only escape_xml/;
 
 =head1 FUNCTIONS
 
@@ -473,6 +473,44 @@ PCDATA.
 sub attrs_only {
     my ($el, %attr) = @_;
     return "<$el " . join(" ", map {"$_=\"$attr{$_}\""} keys %attr) . " />\n";
+}
+
+=item B<escape_xml>
+
+Escape a string for use in XML with ASCII encoding.
+
+    $escaped = escape_xml($string);
+
+Since we generate XML documents with a declaration specifying
+C<encoding="US-ASCII">, we need to ensure strings are suitable.
+This function therefore escapes the given string as follows:
+
+=over 4
+
+=item Special characters: & E<lt> E<gt> " '
+
+Replaced with named entities.
+
+=item Non-ASCII characters
+
+Replaced with a numeric reference in hex.
+
+=back
+
+=cut
+
+sub escape_xml {
+    my $text = shift;
+
+    $text =~ s/&/&amp;/g;
+    $text =~ s/</&lt;/g;
+    $text =~ s/>/&gt;/g;
+    $text =~ s/"/&quot;/g;
+    $text =~ s/'/&apos;/g;
+
+    $text =~ s/([^ -~\s])/sprintf('&#x%02x;', ord($1))/aeg;
+
+    return $text;
 }
 
 =back
