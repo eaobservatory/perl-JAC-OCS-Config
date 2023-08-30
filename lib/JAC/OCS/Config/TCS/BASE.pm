@@ -627,7 +627,7 @@ sub _extract_coord_info {
         if ($rv) {
             my %vel = find_attr($rv, "defn", "frame");
             $vel{rv} = get_pcdata($system, "rv");
-            if ($vel{defn} eq 'REDSHIFT') {
+            if (defined $vel{defn} and $vel{defn} eq 'REDSHIFT') {
                 $coords{redshift} = $vel{rv};
             }
             else {
