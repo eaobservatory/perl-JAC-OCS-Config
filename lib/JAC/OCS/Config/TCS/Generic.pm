@@ -38,7 +38,7 @@ use base qw/Exporter/;
 
 use JAC::OCS::Config::Error;
 use JAC::OCS::Config::XMLHelper qw/
-    get_pcdata _check_range find_children find_attr get_pcdata_multi/;
+    get_pcdata _check_range find_children find_attr get_pcdata_multi escape_xml/;
 
 our $VERSION = "1.01";
 
@@ -217,7 +217,7 @@ sub coords_to_xml {
 
     if (!$simple) {
         $xml = "<target>\n";
-        $xml .= "  <targetName>$name</targetName>\n";
+        $xml .= "  <targetName>" . escape_xml($name) . "</targetName>\n";
     }
 
     if ($type eq "PLANET") {

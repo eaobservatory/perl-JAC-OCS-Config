@@ -57,6 +57,7 @@ t/fts2.t
 t/header.t
 t/tcs-autotle.t
 t/tcs-azel.t
+t/tcs-base.t
 t/tcs-gal.t
 t/tcs-hadec.t
 t/tcs-j2000.t
