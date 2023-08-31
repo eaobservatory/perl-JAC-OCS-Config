@@ -54,6 +54,7 @@ README
 t/1_compile.t
 t/acsis_line.t
 t/fts2.t
+t/header.t
 t/tcs-autotle.t
 t/tcs-azel.t
 t/tcs-gal.t

@@ -467,6 +467,8 @@ sub stringify {
     # XML::LibXML::Attr::serializeContent returns undef if the value is "",
     # so we need to do this first and check again that it is defined to avoid
     # warnings here.
+    # Note: since this XML::LibXML::Attr is not bound to a document (with encoding),
+    # libxml2 will use hex character references for non-ASCII characters.)
     my $xml_value = (
         defined $self->value
         ? XML::LibXML::Attr->new("VALUE", $self->value)->serializeContent()
