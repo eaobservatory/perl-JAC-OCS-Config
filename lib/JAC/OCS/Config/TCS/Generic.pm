@@ -131,10 +131,10 @@ sub find_pa {
     # Now iterate over all matches
     my @posangs;
     for my $o (@matches) {
-        my $posang = $o->firstChild;
-        next unless $posang;
+        my $posang = $o->textContent();
+        next unless (defined $posang and $posang =~ /\S/);
         push @posangs, Astro::Coords::Angle->new(
-            $posang->toString,
+            $posang,
             units => 'deg',
             range => 'PI',
         );

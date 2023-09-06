@@ -973,9 +973,9 @@ sub _find_elevations {
 
     my @el;
     for my $element (@elevation_nodes) {
-        my $value = $element->firstChild();
-        next unless $value;
-        push(@el, Astro::Coords::Angle->new($value->toString, units => 'deg'));
+        my $value = $element->textContent();
+        next unless (defined $value and $value =~ /\S/);
+        push(@el, Astro::Coords::Angle->new($value, units => 'deg'));
     }
     return @el;
 }
