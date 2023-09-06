@@ -568,7 +568,7 @@ sub _process_dom {
 
     # red_recipe_id *
     my $id = get_pcdata($el, "red_recipe_id");
-    $self->red_recipe_id($mode) if defined $id;
+    $self->red_recipe_id($id) if defined $id;
 
     # semantic_links
     $o = new JAC::OCS::Config::ACSIS::SemanticLinks(DOM => $el);
