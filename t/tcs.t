@@ -1,6 +1,7 @@
 #!perl
 
 use Test::More tests => 8;
+use Test::Number::Delta within => 1e-9;
 
 require_ok("JAC::OCS::Config::TCS");
 
@@ -18,7 +19,7 @@ my $sci = $cfg->getTarget("SCIENCE");
 my $ref = $cfg->getTarget("REFERENCE");
 
 my $distance = $sci->distance($ref);
-is($distance->radians, 0, "Distance between science and reference position");
+delta_ok($distance->radians, 0, "Distance between science and reference position");
 
 require_ok("JAC::OCS::Config::TCS::BASE");
 ok(! JAC::OCS::Config::TCS::BASE::_looks_like_sexagesimal(" 12.34567 "));
