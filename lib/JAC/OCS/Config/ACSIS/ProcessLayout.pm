@@ -61,6 +61,8 @@ sub new {
         @_,
         $JAC::OCS::Config::CfgBase::INITKEY => {
             monitorInterfaces => {},
+            drMachines => {},
+            drDispMachines => {},
         });
 }
 
@@ -74,13 +76,35 @@ sub new {
 
 Return a list of names of the monitors used in this observation
 
-    @monitors = $pl->getMonitorInterfaces();
+    %monitors = $pl->getMonitorInterfaces();
 
 =cut
 
 sub getMonitorInterfaces {
     my $self = shift;
     return %{$self->{monitorInterfaces}};
+}
+
+=item B<getDRMachines>
+
+Return mapping of virtual DR machine names to real machines.
+
+=cut
+
+sub getDRMachines {
+    my $self = shift;
+    return %{$self->{'drMachines'}};
+}
+
+=item B<getDRDispMachines>
+
+Return mapping of operator desktops to associated displays.
+
+=cut
+
+sub getDRDispMachines {
+    my $self = shift;
+    return %{$self->{'drDispMachines'}};
 }
 
 =back
@@ -137,6 +161,18 @@ sub _process_dom {
         my $if = find_attr($monitor, "interface");
 
         ${$self->{monitorInterfaces}}{$id} = $if;
+    }
+
+    my $machine_table = find_children($el, 'machine_table', min => 0, max => 1);
+    if (defined $machine_table) {
+        foreach (find_children($machine_table, 'dr_machine', min => 0)) {
+            $self->{'drMachines'}->{find_attr($_, 'virtual_machine')} = find_attr($_, 'real_machine');
+        }
+        foreach (find_children($machine_table, 'dr_disp_machine', min => 0)) {
+            my $id = find_attr($_, 'virtual_machine');
+            $id =~ s/^dr_disp_//;
+            $self->{'drDispMachines'}->{$id} = find_attr($_, 'real_machine');
+        }
     }
 }
 
