@@ -920,10 +920,10 @@ sub duration_acsis {
 
     # Need the observing area (either for the number of offset positions or the
     # map area
-    my $oa = $tcs->getObsArea;
+    my $obsarea = $tcs->getObsArea;
     throw JAC::OCS::Config::Error::FatalError(
         "Unable to determine duration since there is no observing area configuration")
-        unless defined $oa;
+        unless defined $obsarea;
 
     # Secondary information
     my $secondary = $tcs->getSecondary;
@@ -959,34 +959,34 @@ sub duration_acsis {
     $sw_mode =~ s/_spin//;
 
     # Basic step time
-    my $step = $jos->step_time;
+    my $step_time = $jos->step_time;
     throw JAC::OCS::Config::Error::FatalError("JOS Steptime must be positive")
-        unless $step > 0;
+        unless $step_time > 0;
 
     # This will be the number of steps per cycle to complete the observation
-    my $nsteps = 0;
+    my $num_steps = 0;
 
     # Number of reference observations
     # Number of times we go to a reference.
-    my $nrefs = 0;
+    my $num_refs = 0;
 
     # Number of times we go to a reference and the number of times we come back
     # Not necessarily 2 times the number of
     # times we do a reference (because of OFF ON ON OFF). "1" for a single
     # visit, "2" if we need to go back to the targer.
-    my $ntel_ref_moves = 0;
+    my $num_tel_ref_moves = 0;
 
     # Number of steps spent on single reference
-    my $nsteps_ref = 0;
+    my $ref_steps = 0;
 
     # Number of telescope nods (A->B or B->A)
-    my $nnods = 0;
+    my $num_nods = 0;
 
     # Number of SMU positions during the observations
-    my $nsmu = 1;
+    my $num_smu = 1;
 
     # Number of sequences started. A bit of a fudge factor
-    my $nseq = 0;
+    my $num_seq = 0;
 
     # Each mode needs a different calculation
     if ($obs_type =~ /skydip/) {
@@ -994,7 +994,7 @@ sub duration_acsis {
     }
     elsif ($map_mode =~ /(raster|scan)/) {
         # consistency check
-        my $mode = $oa->mode;
+        my $mode = $obsarea->mode;
         throw JAC::OCS::Config::Error::FatalError(
             "Inconsistency in configuration. Scan map requested but obsArea does not specify a map area (mode='$mode' not 'area')")
             unless $mode =~ /area/i;
@@ -1002,19 +1002,19 @@ sub duration_acsis {
         # Need to work out the number of samples in the map
 
         # Area of map
-        my %mapdims = $oa->maparea();
+        my %mapdims = $obsarea->maparea();
         my $maparea = $mapdims{HEIGHT} * $mapdims{WIDTH};
 
         # Area of each "sample point"
-        my %scan = $oa->scan;
-        my $dx = $scan{VELOCITY} * $step;
+        my %scan = $obsarea->scan;
+        my $dx = $scan{VELOCITY} * $step_time;
         my $dy = $scan{DY};
         my $samparea = $dx * $dy;
 
         # Number of sample points
-        $nsteps = $maparea / $samparea;
+        $num_steps = $maparea / $samparea;
 
-        print "Number of steps for map = $nsteps ($dx x $dy in $mapdims{HEIGHT} x $mapdims{WIDTH})\n"
+        print "Number of steps for map = $num_steps ($dx x $dy in $mapdims{HEIGHT} x $mapdims{WIDTH})\n"
             if $DEBUG;
 
         # Work out which edge we will be scanning relative to.
@@ -1027,7 +1027,7 @@ sub duration_acsis {
         }
         else {
             # Map position angle (pick the first angle if there are multiples)
-            my $map_pa = $oa->posang->degrees;
+            my $map_pa = $obsarea->posang->degrees;
 
             # Scan angles (relative to map position angle) normalised to
             # -PI to PI
@@ -1065,34 +1065,34 @@ sub duration_acsis {
         }
 
         # Work out how many scans we need
-        my $nscans = ceil($ysize / $scan{DY});
+        my $num_scans = ceil($ysize / $scan{DY});
 
         # number of steps in a row
-        my $rsteps = ceil($rowlen / $dx);
+        my $row_steps = ceil($rowlen / $dx);
 
         # number of rows per refs (must be smaller than steps_btwn_refs
         # but at least 1.
-        my $nrows_per_ref = int($jos->steps_btwn_refs / $rsteps);
+        my $nrows_per_ref = int($jos->steps_btwn_refs / $row_steps);
         $nrows_per_ref = 1 if $nrows_per_ref < 1;
 
         # So the number of refs the total number of scans required
         # divided by the number of rows we can do per ref
-        $nrefs = ceil($nscans / $nrows_per_ref);
+        $num_refs = ceil($num_scans / $nrows_per_ref);
 
         # Convert to number of reference steps
-        $nsteps_ref = ceil(sqrt($nrows_per_ref * $rsteps));
+        $ref_steps = ceil(sqrt($nrows_per_ref * $row_steps));
 
         # For scan/pssw we interpolate offs so the number of times we go to
         # reference is the same as the actual number of refs required. So number
         # of telescope moves is 2 times the number of refs with the last ref
         # not required to return
-        $ntel_ref_moves = (2 * $nrefs) - 1;
+        $num_tel_ref_moves = (2 * $num_refs) - 1;
 
         # at least 2
-        $ntel_ref_moves = 2 if $ntel_ref_moves < 2;
+        $num_tel_ref_moves = 2 if $num_tel_ref_moves < 2;
 
         # Number of sequences is number of rows plus number of refs
-        $nseq = $nrefs + $nscans;
+        $num_seq = $num_refs + $num_scans;
 
     }
     elsif ($map_mode eq 'jiggle' && $sw_mode =~ /^(chop|freqsw)$/) {
@@ -1100,14 +1100,14 @@ sub duration_acsis {
         # No position switch
 
         # consistency check
-        my $mode = $oa->mode;
+        my $mode = $obsarea->mode;
         throw JAC::OCS::Config::Error::FatalError(
             "Inconsistency in configuration. Jiggle requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Work out how many offsets we have
-        my @offsets = $oa->offsets;
-        my $noffsets = scalar(@offsets);
+        my @offsets = $obsarea->offsets;
+        my $num_offsets = scalar(@offsets);
 
         throw JAC::OCS::Config::Error::FatalError(
             "Unable to determine duration since there is no secondary mirror information")
@@ -1115,35 +1115,35 @@ sub duration_acsis {
 
         # and the number of points in the jiggle pattern
         my $jig = $secondary->jiggle;
-        my $njigs = $jig->guess_npts;
+        my $num_jig_pts = $jig->guess_npts;
 
         # since we are going for a ball park number we just assume
         # this controls the shared vs non-shared and do not attempt
         # to add chop overhead
         if ($secondary->smu_mode eq 'chop_jiggle') {
             # non-shared - repeated in off
-            $nsteps = $jos->jos_mult * $njigs * 2;
+            $num_steps = $jos->jos_mult * $num_jig_pts * 2;
         }
         elsif ($secondary->smu_mode eq 'jiggle_chop') {
             my %t = $secondary->timing;
 
             # time in the on
-            $nsteps = $jos->jos_mult * $njigs;
+            $num_steps = $jos->jos_mult * $num_jig_pts;
 
             # time in the off
-            my $nchunks = $njigs / $t{N_JIGS_ON};
-            $nsteps += $nchunks * $t{N_CYC_OFF};
+            my $num_chunks = $num_jig_pts / $t{N_JIGS_ON};
+            $num_steps += $num_chunks * $t{N_CYC_OFF};
         }
         elsif ($secondary->smu_mode eq 'jiggle') {
             # no chopping
-            $nsteps = $jos->jos_mult * $njigs;
+            $num_steps = $jos->jos_mult * $num_jig_pts;
         }
         else {
             throw JAC::OCS::Config::Error::FatalError(
                 "Unexpected smu mode: " . $secondary->smu_mode);
         }
 
-        print "Nsteps = $nsteps\n"
+        print "Nsteps = $num_steps\n"
             if $DEBUG;
 
         if ($sw_mode eq 'chop') {
@@ -1156,22 +1156,22 @@ sub duration_acsis {
             # Number of nods (A -> B  + B -> A)
             # AB is the minimum set. Nod Set Size can be ABBA
             # include the offsetting
-            $nnods = $jos->num_nod_sets * $nod_set_size * $noffsets;
-            print "Number of nods = $nnods\n" if $DEBUG;
+            $num_nods = $jos->num_nod_sets * $nod_set_size * $num_offsets;
+            print "Number of nods = $num_nods\n" if $DEBUG;
 
             # Total number of steps is twice this because each spectrum
             # is an AB
-            $nsteps *= $nnods * 2;
+            $num_steps *= $num_nods * 2;
 
             # Number of sequence starts
-            $nseq = $nnods * 2;
+            $num_seq = $num_nods * 2;
         }
         elsif ($sw_mode eq 'freqsw') {
             print "No nodding\n" if $DEBUG;
-            $nseq = $jos->num_cycles;
+            $num_seq = $jos->num_cycles;
 
             # 2 switches for frequency switch
-            $nsteps *= 2 * $jos->num_cycles;
+            $num_steps *= 2 * $jos->num_cycles;
         }
         else {
             throw JAC::OCS::Config::Error::FatalError(
@@ -1182,37 +1182,37 @@ sub duration_acsis {
         # Just offsets. No chopping or nodding
 
         # consistency check
-        my $mode = $oa->mode;
+        my $mode = $obsarea->mode;
         throw JAC::OCS::Config::Error::FatalError(
             "Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Work out how many offsets we have
-        my @offsets = $oa->offsets;
-        my $noffsets = scalar(@offsets);
+        my @offsets = $obsarea->offsets;
+        my $num_offsets = scalar(@offsets);
 
         # Number of steps in a single sequence times the number of cycles
-        $nsteps = $jos->jos_mult * 2 * $jos->num_cycles;
+        $num_steps = $jos->jos_mult * 2 * $jos->num_cycles;
 
         # Number of sequence starts is just the number of offsets
-        $nseq = $jos->num_cycles * $noffsets;
+        $num_seq = $jos->num_cycles * $num_offsets;
     }
     elsif ($map_mode eq 'grid' && $sw_mode eq 'chop') {
         # ABBA nodding
         # No position switch
 
         # consistency check
-        my $mode = $oa->mode;
+        my $mode = $obsarea->mode;
         throw JAC::OCS::Config::Error::FatalError(
             "Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Work out how many offsets we have
-        my @offsets = $oa->offsets;
-        my $noffsets = scalar(@offsets);
+        my @offsets = $obsarea->offsets;
+        my $num_offsets = scalar(@offsets);
 
         # Number of steps in a single sequence including the off
-        $nsteps = $jos->jos_mult * 2;
+        $num_steps = $jos->jos_mult * 2;
 
         # Nod set size
         my $nod_set_size = 2;    # ABBA
@@ -1222,83 +1222,83 @@ sub duration_acsis {
 
         # Number of nods (A -> B  + B -> A)
         # includes all the offsets
-        $nnods = $jos->num_nod_sets * $nod_set_size * $noffsets;
+        $num_nods = $jos->num_nod_sets * $nod_set_size * $num_offsets;
 
         # Total number of steps
-        $nsteps *= $nnods * 2;
+        $num_steps *= $num_nods * 2;
 
         # Number of sequence starts
-        $nseq = $nnods * 2;
+        $num_seq = $num_nods * 2;
     }
     elsif ($map_mode =~ /grid|jiggle/ && $sw_mode eq 'pssw') {
         # consistency check
-        my $mode = $oa->mode;
+        my $mode = $obsarea->mode;
         throw JAC::OCS::Config::Error::FatalError(
             "Inconsistency in configuration. Grid/jiggle requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Number of on is simply the number of offsets
-        my @offsets = $oa->offsets;
-        my $noffsets = scalar(@offsets);
+        my @offsets = $obsarea->offsets;
+        my $num_offsets = scalar(@offsets);
 
         # and the number of jiggle positions
-        my $njigs = 1;
+        my $num_jig_pts = 1;
         if ($map_mode =~ /jiggle/) {
             throw JAC::OCS::Config::Error::FatalError(
                 "Unable to determine duration since there is no secondary mirror information")
                 unless defined $secondary;
 
             my $jig = $secondary->jiggle;
-            $njigs = $jig->guess_npts;
+            $num_jig_pts = $jig->guess_npts;
         }
 
         # Number of chunks to break up the observation
-        my $nchunks = $jos->num_cycles * $noffsets;
+        my $num_chunks = $jos->num_cycles * $num_offsets;
 
         # Number of steps on source = JOS_MIN
         # * the number of positions
-        $nsteps = $nchunks * $jos->jos_min;
+        $num_steps = $num_chunks * $jos->jos_min;
 
-        print "Nchunks= $nchunks NStepsOn = $nsteps\n" if $DEBUG;
+        print "Nchunks= $num_chunks NStepsOn = $num_steps\n" if $DEBUG;
 
         # number of JOS_MIN we can fit into STEPS_BTWN_REFS
-        my $n_chunks_per_ref = 1;
+        my $num_chunks_per_ref = 1;
         if (@offsets > 1) {
             my $min_per_ref = int($jos->steps_btwn_refs / $jos->jos_min);
             if ($min_per_ref > 1 && $jos->shareoff) {
-                $n_chunks_per_ref = $min_per_ref;
+                $num_chunks_per_ref = $min_per_ref;
             }
         }
 
         # calculate the number of times we go to refs
-        $nrefs = ceil($nchunks / $n_chunks_per_ref);
+        $num_refs = ceil($num_chunks / $num_chunks_per_ref);
 
         # Length of a ref depends on shareoff
         if ($jos->shareoff) {
             if ($map_mode =~ /jiggle/) {
                 # timing depends on the size of the jiggle pattern
                 # and the number of times we have gone round it
-                $nsteps_ref = ($jos->jos_min / $njigs) * sqrt($njigs);
+                $ref_steps = ($jos->jos_min / $num_jig_pts) * sqrt($num_jig_pts);
             }
             else {
                 # timing depends on the number of offsets we did per ON
-                $nsteps_ref = $jos->jos_min * sqrt($n_chunks_per_ref);
+                $ref_steps = $jos->jos_min * sqrt($num_chunks_per_ref);
             }
         }
         else {
             # Not shared so we do JOS_MIN in the OFF
             # We do not do multiple offsets since we can not distribute the OFFs
             # across multiple sequences
-            $nsteps_ref = $jos->jos_min;
+            $ref_steps = $jos->jos_min;
         }
 
         # We observe as OFF ON ON OFF OFF ON ON OFF
         # number of telescope moves is therefore the number of refs
         # to a first approximation
-        $ntel_ref_moves = $nrefs;
+        $num_tel_ref_moves = $num_refs;
 
         # Sequence count fudge
-        $nseq = $nrefs + $nchunks;
+        $num_seq = $num_refs + $num_chunks;
     }
     else {
         throw JAC::OCS::Config::Error::FatalError(
@@ -1306,63 +1306,63 @@ sub duration_acsis {
     }
 
     # Total number of steps on+off and smu position
-    my $npercyc = $nsteps + ($nrefs * $nsteps_ref) + ($nnods * $nsteps_ref);
-    print "Steps on+off = $npercyc\n" if $DEBUG;
-    print "Nrefs * steps = $nrefs * $nsteps_ref\n" if $DEBUG;
+    my $steps_per_cyc = $num_steps + ($num_refs * $ref_steps) + ($num_nods * $ref_steps);
+    print "Steps on+off = $steps_per_cyc\n" if $DEBUG;
+    print "Nrefs * steps = $num_refs * $ref_steps\n" if $DEBUG;
 
     # if we are focus, multiply all this by the number of focus steps
     # This induces overhead
     if ($obssum->type =~ /^focus/i) {
-        $nsmu = $jos->num_focus_steps;
+        $num_smu = $jos->num_focus_steps;
     }
 
     # Total number of steps in entire observation
-    my $ntot = $npercyc * $nsmu;
+    my $total_steps = $steps_per_cyc * $num_smu;
 
     # Approximate number of cals - needs the total number of steps
     # And make sure the cal is at least long enough for the ref
-    my $cal_len = ($jos->n_calsamples || 0);
-    $cal_len = max($nsteps_ref, $cal_len) if $cal_len;
-    my $ncals = 0;
+    my $cal_steps = ($jos->n_calsamples || 0);
+    $cal_steps = max($ref_steps, $cal_steps) if $cal_steps;
+    my $num_cals = 0;
     if ($jos->n_calsamples > 0) {
-        $ncals = ceil($ntot / $jos->steps_btwn_cals);
+        $num_cals = ceil($total_steps / $jos->steps_btwn_cals);
     }
 
     # Assume that if a cal can share the ref, that the number of steps
     # due to the SKY cal (Which we assume to dominate because the others
     # can be done in parallel) is the delta over the refs.
-    print "Original length of cal = $cal_len  Steps per ref = $nsteps_ref\n"
+    print "Original length of cal = $cal_steps  Steps per ref = $ref_steps\n"
         if $DEBUG;
-    $cal_len = $cal_len - $nsteps_ref if $nrefs;
-    $cal_len = 0 if $cal_len < 0;
-    my $nsteps_cal = $cal_len * $ncals;
+    $cal_steps = $cal_steps - $ref_steps if $num_refs;
+    $cal_steps = 0 if $cal_steps < 0;
+    my $cal_steps_total = $cal_steps * $num_cals;
 
     # Focus and pointing are not calibrated
     if ($obssum->type =~ /(focus|pointing)/i) {
-        $ncals = 0;
+        $num_cals = 0;
     }
 
-    print "NCals = $ncals Nrefs = $nrefs nsteps_cal= $nsteps_cal Tel moves=$ntel_ref_moves\n"
+    print "NCals = $num_cals Nrefs = $num_refs nsteps_cal= $cal_steps_total Tel moves=$num_tel_ref_moves\n"
         if $DEBUG;
 
     # Time per cycle, including overheads
     # Convert to an actual time
-    my $duration = ($npercyc * $step)              # on+off time
-        + ($ntel_ref_moves * $tel_ref_overhead)    # number of refs
-        + ($nseq * $seq_overhead)                  # sequence overhead
-        + ($nnods * $tel_nod_overhead);            # number of nods
+    my $duration = ($steps_per_cyc * $step_time)   # on+off time
+        + ($num_tel_ref_moves * $tel_ref_overhead) # number of refs
+        + ($num_seq * $seq_overhead)               # sequence overhead
+        + ($num_nods * $tel_nod_overhead);         # number of nods
 
-    print "Duration=$duration TotSteps=$npercyc obs_overhead=$obs_overhead\n"
+    print "Duration=$duration TotSteps=$steps_per_cyc obs_overhead=$obs_overhead\n"
         if $DEBUG;
 
     # Take into account SMU moves (assumes NUM_CYCLES is inside SMU loop)
     # but in general the FOCUS recipe forces NUM_CYCLES = 1
-    $duration *= $nsmu;
-    $duration += ($nsmu - 1) * $smu_overhead;
+    $duration *= $num_smu;
+    $duration += ($num_smu - 1) * $smu_overhead;
 
     # Take into account cal overhead
-    if ($ncals > 0) {
-        $duration += ($nsteps_cal * $step) + ($ncals * $cal_overhead);
+    if ($num_cals > 0) {
+        $duration += ($cal_steps_total * $step_time) + ($num_cals * $cal_overhead);
     }
 
     # General start up / shutdown overhead
