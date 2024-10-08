@@ -57,6 +57,15 @@ When used, the configuration is not sent to standard output.
 Modifies the configuration picking up new target coordinates from the
 JCMT pointing catalogue.
 
+=item B<--debug>
+
+Enable debugging.  (Sets $JAC::OCS::Config::DEBUG = 1.)
+
+=item B<--duration>
+
+Instead of writing out the configuration, calculate the expected duration
+(in seconds).
+
 =back
 
 =cut
@@ -76,7 +85,7 @@ use Astro::Catalog;   # for catalogue parsing
 
 
 # Options
-my ($help, $man, $valid, $version, $outdir, $target);
+my ($help, $man, $valid, $version, $outdir, $target, $opt_duration, $opt_debug);
 my $status = GetOptions(
     "help" => \$help,
     "man" => \$man,
@@ -84,6 +93,8 @@ my $status = GetOptions(
     "valid" => \$valid,
     "outdir=s" => \$outdir,
     "target=s" => \$target,
+    duration => \$opt_duration,
+    debug => \$opt_debug,
 );
 
 pod2usage(1) if !$status;
@@ -97,6 +108,8 @@ if ($version) {
     print "Git version: $sha\n";
     exit;
 }
+
+$JAC::OCS::Config::DEBUG = 1 if $opt_debug;
 
 
 # The configuration is either on the command line or stdin
@@ -189,8 +202,11 @@ if ($target) {
     }
 }
 
-# Is something attached to STDOUT? Then just write it out
-if (!-t STDOUT) {
+if ($opt_duration) {
+    print $cfg->duration->seconds, "\n";
+}
+elsif (! -t STDOUT) {
+    # Is something attached to STDOUT? Then just write it out
     print $cfg;
 }
 else {
