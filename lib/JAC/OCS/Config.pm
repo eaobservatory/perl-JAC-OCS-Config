@@ -1102,7 +1102,7 @@ sub duration_acsis {
         # consistency check
         my $mode = $oa->mode;
         throw JAC::OCS::Config::Error::FatalError(
-            "Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
+            "Inconsistency in configuration. Jiggle requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Work out how many offsets we have
@@ -1234,7 +1234,7 @@ sub duration_acsis {
         # consistency check
         my $mode = $oa->mode;
         throw JAC::OCS::Config::Error::FatalError(
-            "Inconsistency in configuration. Grid requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
+            "Inconsistency in configuration. Grid/jiggle requested but obsArea does not specify offset mode (mode='$mode' not 'offsets')")
             unless $mode =~ /offsets/i;
 
         # Number of on is simply the number of offsets
