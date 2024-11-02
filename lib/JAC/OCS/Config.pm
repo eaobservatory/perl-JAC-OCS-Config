@@ -962,6 +962,7 @@ sub duration_acsis {
     my $step_time = $jos->step_time;
     throw JAC::OCS::Config::Error::FatalError("JOS Steptime must be positive")
         unless $step_time > 0;
+    print "Step time = $step_time sec\n" if $DEBUG;
 
     # This will be the number of steps per cycle to complete the observation
     my $num_steps = 0;
@@ -1138,31 +1139,36 @@ sub duration_acsis {
         # since we are going for a ball park number we just assume
         # this controls the shared vs non-shared and do not attempt
         # to add chop overhead
+        my $jos_mult = $jos->jos_mult;
         if ($secondary->smu_mode eq 'chop_jiggle') {
             # non-shared - repeated in off
-            $num_steps = $jos->jos_mult * $num_jig_pts * 2;
+            $num_steps = $jos_mult * $num_jig_pts * 2;
+
+            print "Number of steps = $jos_mult * $num_jig_pts * 2 = $num_steps (non-shared)\n" if $DEBUG;
         }
         elsif ($secondary->smu_mode eq 'jiggle_chop') {
             my %t = $secondary->timing;
 
             # time in the on
-            $num_steps = $jos->jos_mult * $num_jig_pts;
+            $num_steps = $jos_mult * $num_jig_pts;
 
             # time in the off
             my $num_chunks = $num_jig_pts / $t{N_JIGS_ON};
             $num_steps += $num_chunks * $t{N_CYC_OFF};
+
+            print "Number of chunks = $num_jig_pts / $t{N_JIGS_ON} = $num_chunks\n" if $DEBUG;
+            print "Number of steps = $jos_mult * $num_jig_pts + $num_chunks * $t{N_CYC_OFF} = $num_steps (shared)\n" if $DEBUG;
         }
         elsif ($secondary->smu_mode eq 'jiggle') {
             # no chopping
-            $num_steps = $jos->jos_mult * $num_jig_pts;
+            $num_steps = $jos_mult * $num_jig_pts;
+
+            print "Number of steps = $jos_mult * $num_jig_pts = $num_steps (no chop)\n" if $DEBUG;
         }
         else {
             throw JAC::OCS::Config::Error::FatalError(
                 "Unexpected smu mode: " . $secondary->smu_mode);
         }
-
-        print "Nsteps = $num_steps\n"
-            if $DEBUG;
 
         if ($sw_mode eq 'chop') {
             # Nod set size
@@ -1174,8 +1180,9 @@ sub duration_acsis {
             # Number of nods (A -> B  + B -> A)
             # AB is the minimum set. Nod Set Size can be ABBA
             # include the offsetting
-            $num_nods = $jos->num_nod_sets * $nod_set_size * $num_offsets;
-            print "Number of nods = $num_nods\n" if $DEBUG;
+            my $num_nod_sets = $jos->num_nod_sets;
+            $num_nods = $num_nod_sets * $nod_set_size * $num_offsets;
+            print "Number of nods = $num_nod_sets * $nod_set_size * $num_offsets = $num_nods\n" if $DEBUG;
 
             # Total number of steps is twice this because each spectrum
             # is an AB
@@ -1323,10 +1330,13 @@ sub duration_acsis {
             "Unrecognized mapping mode for duration calculation: $map_mode/$sw_mode");
     }
 
+    print "Steps per cycle = $num_steps\n" if $DEBUG;
+    print "Ref steps (ref) = $num_refs * $ref_steps = " . ($num_refs * $ref_steps) . "\n" if $DEBUG;
+    print "Ref steps (nod) = $num_nods * $ref_steps = " . ($num_nods * $ref_steps). "\n" if $DEBUG;
+
     # Total number of steps on+off and smu position
     my $steps_per_cyc = $num_steps + ($num_refs * $ref_steps) + ($num_nods * $ref_steps);
-    print "Steps on+off = $steps_per_cyc\n" if $DEBUG;
-    print "Nrefs * steps = $num_refs * $ref_steps\n" if $DEBUG;
+    print "Steps per cycle (on + off) = $steps_per_cyc\n" if $DEBUG;
 
     # if we are focus, multiply all this by the number of focus steps
     # This induces overhead
@@ -1335,24 +1345,28 @@ sub duration_acsis {
     }
 
     # Total number of steps in entire observation
+    print "Number of SMU positions = $num_smu\n" if $DEBUG;
     my $total_steps = $steps_per_cyc * $num_smu;
 
     # Approximate number of cals - needs the total number of steps
     # And make sure the cal is at least long enough for the ref
     my $cal_steps = ($jos->n_calsamples || 0);
+    print "Original steps per calibration = $cal_steps\n"
+        if $DEBUG;
     $cal_steps = max($ref_steps, $cal_steps) if $cal_steps;
+    print "Steps per calibration = $cal_steps\n" if $DEBUG;
     my $num_cals = 0;
     if ($jos->n_calsamples > 0) {
         $num_cals = ceil($total_steps / $jos->steps_btwn_cals);
     }
+    print "Number of calibrations = $num_cals\n" if $DEBUG;
 
     # Assume that if a cal can share the ref, that the number of steps
     # due to the SKY cal (Which we assume to dominate because the others
     # can be done in parallel) is the delta over the refs.
-    print "Original length of cal = $cal_steps  Steps per ref = $ref_steps\n"
-        if $DEBUG;
     $cal_steps = $cal_steps - $ref_steps if $num_refs;
     $cal_steps = 0 if $cal_steps < 0;
+    print "Steps per calibration (after subtracting steps per ref) = $cal_steps\n" if $DEBUG;
     my $cal_steps_total = $cal_steps * $num_cals;
 
     # Focus and pointing are not calibrated
@@ -1360,8 +1374,8 @@ sub duration_acsis {
         $num_cals = 0;
     }
 
-    print "NCals = $num_cals Nrefs = $num_refs nsteps_cal= $cal_steps_total Tel moves=$num_tel_ref_moves\n"
-        if $DEBUG;
+    print "Total calibration steps = $cal_steps_total\n" if $DEBUG;
+    print "Number of telescope moves = $num_tel_ref_moves\n" if $DEBUG;
 
     # Time per cycle, including overheads
     # Convert to an actual time
@@ -1370,24 +1384,27 @@ sub duration_acsis {
         + ($num_seq * $seq_overhead)               # sequence overhead
         + ($num_nods * $tel_nod_overhead);         # number of nods
 
-    print "Duration=$duration TotSteps=$steps_per_cyc obs_overhead=$obs_overhead\n"
-        if $DEBUG;
+    print "Duration = $duration, Total Steps = $steps_per_cyc\n" if $DEBUG;
 
     # Take into account SMU moves (assumes NUM_CYCLES is inside SMU loop)
     # but in general the FOCUS recipe forces NUM_CYCLES = 1
     $duration *= $num_smu;
     $duration += ($num_smu - 1) * $smu_overhead;
+    print "SMU overhead = " . ($num_smu - 1) . " * $smu_overhead\n" if $DEBUG;
 
     # Take into account cal overhead
     if ($num_cals > 0) {
         $duration += ($cal_steps_total * $step_time) + ($num_cals * $cal_overhead);
+        print "Calibration time = " . ($cal_steps_total * $step_time) . "\n" if $DEBUG;
+        print "Calibration overhead = $num_cals * $cal_overhead\n" if $DEBUG;
     }
 
     # General start up / shutdown overhead
     # probably should include average slew time
+    print "Observation overhead = $obs_overhead\n" if $DEBUG;
     $duration += $obs_overhead;
 
-    print "\tEstimated Duration: $duration sec\n" if $DEBUG;
+    print "Estimated Duration: $duration sec\n" if $DEBUG;
 
     return Time::Seconds->new($duration);
 }
