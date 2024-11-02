@@ -1094,6 +1094,24 @@ sub duration_acsis {
         # Number of sequences is number of rows plus number of refs
         $num_seq = $num_refs + $num_scans;
 
+        # Sometimes a far-away reference position is chosen for
+        # raster ppsw observations.  Check the distance here and if necessary
+        # adjust the reference overhead.  It looks like the translator
+        # will currently always write the reference position as an offset
+        # from the base, so for now we can just check for an offset on
+        # the reference tag.
+        my $ref_offset = $tcs->getOffset('REFERENCE');
+        if (defined $ref_offset) {
+            my $ref_distance_std = 900.0;
+            my $ref_distance = $ref_offset->distance->arcsec;
+            print "Distance to reference = $ref_distance\"\n" if $DEBUG;
+            if ($ref_distance > $ref_distance_std) {
+                $tel_ref_overhead += sprintf '%.3f', min($ref_distance - $ref_distance_std, 18000.0) * 0.00035;
+                print "Adjusted reference overhead to: $tel_ref_overhead\n" if $DEBUG;
+            }
+        }
+        # Also increase general overhead for raster pssw?
+        $obs_overhead += 40.0;
     }
     elsif ($map_mode eq 'jiggle' && $sw_mode =~ /^(chop|freqsw)$/) {
         # ABBA nodding except for focus (AB)
