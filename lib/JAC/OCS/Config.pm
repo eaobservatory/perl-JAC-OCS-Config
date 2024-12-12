@@ -1154,10 +1154,10 @@ sub duration_acsis {
 
             # time in the off
             my $num_chunks = $num_jig_pts / $t{N_JIGS_ON};
-            $num_steps += $num_chunks * $t{N_CYC_OFF};
+            $num_steps += $jos_mult * 2 * $num_chunks * $t{N_CYC_OFF};
 
             print "Number of chunks = $num_jig_pts / $t{N_JIGS_ON} = $num_chunks\n" if $DEBUG;
-            print "Number of steps = $jos_mult * $num_jig_pts + $num_chunks * $t{N_CYC_OFF} = $num_steps (shared)\n" if $DEBUG;
+            print "Number of steps = $jos_mult * $num_jig_pts + $jos_mult * 2 * $num_chunks * $t{N_CYC_OFF} = $num_steps (shared)\n" if $DEBUG;
         }
         elsif ($secondary->smu_mode eq 'jiggle') {
             # no chopping
