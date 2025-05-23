@@ -296,7 +296,11 @@ sub read_header_exclusion_file {
     my $self = shift;
     my ($xfile, $verbose, $outh) = @_;
 
-    return unless -e $xfile;
+    unless (-e $xfile) {
+        __PACKAGE__->_print_fh("Header exclusion file not found: '$xfile'.\n", $outh)
+            if $verbose;
+        return;
+    }
 
     __PACKAGE__->_print_fh("Processing header exclusion file '$xfile'.\n", $outh)
         if $verbose;
@@ -336,7 +340,7 @@ sub read_header_exclusion_file {
         # INCLUDE directive
         if ($line =~ /^INCLUDE\s+(.*)$/) {
             my $fullpath = File::Spec->catpath($vol, $rootdir, $1);
-            push(@newkeys, $self->read_header_exclusion_file($fullpath));
+            push(@newkeys, $self->read_header_exclusion_file($fullpath, $verbose, $outh));
         }
         else {
             push(@newkeys, $line);
