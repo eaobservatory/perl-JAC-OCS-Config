@@ -259,9 +259,13 @@ sub coords_to_xml {
             }
 
             # Radial Velocity
+            # If this is redshift, we need to use the "redshift" accessor
+            # to have Astro::Coords convert km/s back to redshift.
+            my $vd = lc $c->vdefn;
+            my $rv = ($vd eq 'redshift') ? $c->redshift : $c->rv;
+
             # TCS requires different velocity frame names from those used
             # in Astro::Coords
-            my $rv = $c->rv;
             my $vf = $c->vframe;
             my %vflut = (
                 'HEL' => 'HELIOCENTRIC',
@@ -285,7 +289,7 @@ sub coords_to_xml {
             }
 
             $xml .= "    <rv defn=\""
-                . lc($c->vdefn)
+                . $vd
                 . "\" frame=\""
                 . $vf . "\">"
                 . $rv

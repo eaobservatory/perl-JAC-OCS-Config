@@ -627,7 +627,10 @@ sub _extract_coord_info {
         if ($rv) {
             my %vel = find_attr($rv, "defn", "frame");
             $vel{rv} = get_pcdata($system, "rv");
-            if (defined $vel{defn} and $vel{defn} eq 'REDSHIFT') {
+            # TCS DTD specifies "redshift" here (in lower case) but
+            # we previously looked for "REDSHIFT" (in upper case),
+            # so perform case-insensitive match to allow both for now.
+            if (defined $vel{defn} and 'redshift' eq lc $vel{defn}) {
                 $coords{redshift} = $vel{rv};
             }
             else {
