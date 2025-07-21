@@ -786,6 +786,7 @@ sub setTargetSync {
 
         # get the new coordinates
         my $ncoord = $new->coords;
+        my $ntracksys = $new->tracking_system;
 
         # Get the actual science position for comparison
         my $scoord;
@@ -820,6 +821,7 @@ sub setTargetSync {
             if ($modify) {
                 # can replace
                 $base->coords($ncoord);
+                $base->tracking_system($ntracksys);
                 delete $tags{$t};
             }
         }
